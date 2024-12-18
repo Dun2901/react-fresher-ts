@@ -4,7 +4,7 @@ const AppHeader = () => {
         <div>
             App header
         </div>
-    )
-}
+    );
+};
 
 export default AppHeader;
