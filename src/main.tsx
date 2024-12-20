@@ -11,6 +11,8 @@ import LoginPage from 'pages/client/auth/login';
 import RegisterPage from 'pages/client/auth/register';
 import 'styles/global.scss'
 import HomePage from 'pages/client/home';
+import { App } from 'antd';
+
 
 const router = createBrowserRouter([
   {
@@ -44,6 +46,8 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {/* <Layout /> */}
-    <RouterProvider router={router} />
+    <App>
+      <RouterProvider router={router} />
+    </App>
   </StrictMode>,
 )
