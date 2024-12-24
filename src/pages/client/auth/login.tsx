@@ -4,6 +4,7 @@ import type { FormProps } from 'antd';
 import { Button, Divider, Form, Input, App } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useCurrentApp } from '@/components/context/app.context';
 
 type FieldType = {
     username: string;
@@ -14,6 +15,7 @@ const LoginPage = () => {
     const { message, notification } = App.useApp();
     const navigate = useNavigate();
     const [isSubmit, setIsSubmit] = useState(false);
+    const { setIsAuthenticated, setUser } = useCurrentApp();
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
         const { username, password } = values;
@@ -22,6 +24,8 @@ const LoginPage = () => {
         setIsSubmit(false);
 
         if (res?.data) {
+            setIsAuthenticated(true);
+            setUser(res.data.user);
             localStorage.setItem('access_token', res.data.access_token);
             message.success('Đăng nhập tài khoản thành công!');
             navigate('/');
