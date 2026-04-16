@@ -36,3 +36,32 @@ cp .env.example .env
 # 4. Chạy dự án
 npm run dev
 ```
+
+## 📁 Project Structure
+
+```
+react-fresher-ts/
+├── public/
+├── src/
+│   ├── assets/                  # Hình ảnh, font, static files
+│   ├── components/
+│   │   ├── admin/               # Component dành cho trang admin
+│   │   ├── auth/                # Component đăng nhập, đăng ký
+│   │   ├── context/             # React Context (global state)
+│   │   └── layout/              # Header, Footer, Sidebar
+│   ├── pages/                   # Các trang theo route
+│   │   ├── admin/               # Trang quản trị
+│   │   └── client/              # Trang người dùng
+│   ├── services/                # Gọi API
+│   │   ├── api.ts               # Các hàm gọi API
+│   │   ├── axios.customize.ts   # Cấu hình Axios
+│   │   └── helper.ts            # Hàm tiện ích
+│   ├── styles/                  # File CSS / SCSS global
+│   ├── types/                   # TypeScript interfaces & types
+│   ├── layout.tsx               # Layout chính của app
+│   └── main.tsx                 # Entry point
+├── .env.example
+├── .gitignore
+├── package.json
+└── vite.config.ts
+```
