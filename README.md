@@ -25,7 +25,7 @@ Clone the project
 ```bash
 # 1. Clone
 git clone https://github.com/Dun2901/react-fresher-ts.git
-**cd** react-fresher-ts
+cd react-fresher-ts
 
 # 2. Install dependencies
 npm install
