@@ -7,7 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCurrentApp } from "@/components/context/app.context";
 
 type FieldType = {
-  username: string;
+  email: string;
   password: string;
 };
 
@@ -18,9 +18,9 @@ const LoginPage = () => {
   const { setIsAuthenticated, setUser } = useCurrentApp();
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
-    const { username, password } = values;
+    const { email, password } = values;
     setIsSubmit(true);
-    const res = await loginAPI(username, password);
+    const res = await loginAPI(email, password);
     setIsSubmit(false);
 
     if (res?.data) {
@@ -44,14 +44,14 @@ const LoginPage = () => {
         <div className="container">
           <section className="wrapper">
             <div className="heading">
-              <h2 className="text text-large">Đăng Ký Tài Khoản</h2>
+              <h2 className="text text-large">Đăng Nhập</h2>
               <Divider />
             </div>
             <Form name="form-register" onFinish={onFinish} autoComplete="off">
               <Form.Item<FieldType>
                 labelCol={{ span: 24 }} //whole column
                 label="Email"
-                name="username"
+                name="email"
                 rules={[
                   { required: true, message: "Email không được để trống!" },
                   { type: "email", message: "Email không đúng định dạng!" },
