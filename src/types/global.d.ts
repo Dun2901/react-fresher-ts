@@ -20,14 +20,7 @@ declare global {
 
   interface ILogin {
     access_token: string;
-    user: {
-      email: string;
-      phone: string;
-      fullName: string;
-      role: string;
-      avatar: string;
-      id: string;
-    };
+    user: IUser;
   }
 
   interface IRegister {
@@ -37,12 +30,12 @@ declare global {
   }
 
   interface IUser {
+    _id: string;
     email: string;
     phone: string;
     fullName: string;
     role: string;
     avatar: string;
-    id: string;
   }
 
   interface IFetchAccount {

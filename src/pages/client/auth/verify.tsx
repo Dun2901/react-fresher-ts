@@ -1,7 +1,7 @@
 import type { FormProps } from "antd";
 import { Button, Divider, Form, Input, App } from "antd";
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import "./verify.scss";
 import { resendCodeAPI, verifyAPI } from "@/services/api";
 import { MailOutlined, WarningOutlined } from "@ant-design/icons";
@@ -13,15 +13,11 @@ type FieldType = {
 const VerifyPage = () => {
   const { message } = App.useApp();
   const navigate = useNavigate();
+  const { id } = useParams();
   const { state } = useLocation();
   const [isSubmit, setIsSubmit] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(0);
-
-  // if (!state?._id) {
-  //   navigate("/register");
-  //   return null;
-  // }
 
   const startCountdown = () => {
     setCountdown(10);
@@ -52,22 +48,22 @@ const VerifyPage = () => {
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     setIsSubmit(true);
     const { codeId } = values;
-    const res = await verifyAPI(state?._id, codeId);
+    const res = await verifyAPI(id!, codeId);
 
     if (res && res.data) {
       // Success
-      message.success("Kích hoạt tài khoản thành công!");
+      message.success("Kích hoạt tài khoản thành công! Vui lòng đăng nhập.");
       navigate("/login");
     } else {
       // Error
-      message.error(res.message ?? "Mã xác thực không hợp lệ.");
+      message.error(res.message ?? "Mã xác thực không hợp lệ hoặc đã hết hạn.");
     }
     setIsSubmit(false);
   };
 
   return (
     <>
-      {!state?._id ? (
+      {!id ? (
         // ← Không có _id → hiện trang cảnh báo
         <div className="verify-page">
           <main className="main">

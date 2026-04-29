@@ -102,7 +102,7 @@ const router = createBrowserRouter([
     element: <RegisterPage />,
   },
   {
-    path: "/verify",
+    path: "/verify/:id",
     element: <VerifyPage />,
   },
 ]);

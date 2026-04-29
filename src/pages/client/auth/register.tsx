@@ -13,7 +13,7 @@ type FieldType = {
 };
 
 const RegisterPage = () => {
-  const { message } = App.useApp();
+  const { notification } = App.useApp();
   const navigate = useNavigate();
   const [isSubmit, setIsSubmit] = useState(false);
 
@@ -24,11 +24,19 @@ const RegisterPage = () => {
 
     if (res && res.data) {
       // Success
-      message.success("Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác thực.");
-      navigate("/verify", { state: { _id: res.data._id, email: values.email } });
+      notification.success({
+        message: "Đăng ký thành công!",
+        description: "Vui lòng kiểm tra email để lấy mã xác thực.",
+      });
+      navigate(`/verify/${res.data._id}`, {
+        state: { email: values.email },
+      });
     } else {
-      // Error
-      message.error(res.message);
+      notification.error({
+        message: "Đăng ký thất bại!",
+        description: res.message && Array.isArray(res.message) ? res.message[0] : res.message,
+        duration: 5,
+      });
     }
     setIsSubmit(false);
   };
