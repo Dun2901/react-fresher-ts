@@ -5,7 +5,7 @@ import { Button, Divider, Form, Input, App } from "antd";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCurrentApp } from "@/components/context/app.context";
-import ModalReactive from "./modalReactive";
+import ModalReactive from "./modal.reactive";
 
 type FieldType = {
   email: string;
