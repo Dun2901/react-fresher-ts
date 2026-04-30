@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCurrentApp } from "@/components/context/app.context";
 import ModalReactive from "./modal.reactive";
+import ModalChangePassword from "./modal.change.password";
 
 type FieldType = {
   email: string;
@@ -18,6 +19,7 @@ const LoginPage = () => {
   const [isSubmit, setIsSubmit] = useState(false);
   const { setIsAuthenticated, setUser } = useCurrentApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [userEmail, setUserEmail] = useState("");
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
@@ -81,9 +83,20 @@ const LoginPage = () => {
                 </Form.Item>
 
                 <Form.Item label={null}>
-                  <Button type="primary" htmlType="submit" loading={isSubmit}>
-                    Đăng nhập
-                  </Button>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Button type="primary" htmlType="submit" loading={isSubmit}>
+                      Đăng nhập
+                    </Button>
+                    <Button type="link" onClick={() => setIsChangePasswordOpen(true)}>
+                      Quên mật khẩu?
+                    </Button>
+                  </div>
                 </Form.Item>
                 <Divider>Or</Divider>
                 <p className="text text-normal" style={{ textAlign: "center" }}>
@@ -101,6 +114,10 @@ const LoginPage = () => {
         userEmail={userEmail}
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
+      />
+      <ModalChangePassword
+        isChangePasswordOpen={isChangePasswordOpen}
+        setIsChangePasswordOpen={setIsChangePasswordOpen}
       />
     </>
   );

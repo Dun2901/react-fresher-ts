@@ -42,6 +42,26 @@ export const resendCodeAPI = (email: string) => {
   return axios.post<IBackendRes<IUser>>(urlBackend, { email });
 };
 
+export const forgotPasswordAPI = (email: string) => {
+  const urlBackend = "api/v1/auth/forgot-password";
+  return axios.post<IBackendRes<IUser>>(urlBackend, { email });
+};
+
+export const resetPasswordAPI = (
+  email: string,
+  codeId: string,
+  newPassword: string,
+  confirmPassword: string,
+) => {
+  const urlBackend = "api/v1/auth/reset-password";
+  return axios.post<IBackendRes<IUser>>(urlBackend, {
+    email,
+    codeId,
+    newPassword,
+    confirmPassword,
+  });
+};
+
 export const getUsersAPI = (query: string) => {
   const urlBackend = `/api/v1/user?${query}`;
   return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(urlBackend);

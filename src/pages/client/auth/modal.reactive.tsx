@@ -66,6 +66,7 @@ const ModalReactive = (props: IProps) => {
         onCancel={handleCancel}
         maskClosable={false}
         footer={null}
+        centered
         forceRender
       >
         <Steps
