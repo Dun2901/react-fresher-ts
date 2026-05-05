@@ -1,7 +1,7 @@
 import axios from "services/axios.customize";
 
 export const loginAPI = (email: string, password: string) => {
-  const urlBackend = "/api/v1/auth/login";
+  const urlBackend = "/auth/login";
   return axios.post<IBackendRes<ILogin>>(
     urlBackend,
     { email, password },
@@ -14,12 +14,12 @@ export const loginAPI = (email: string, password: string) => {
 };
 
 export const registerAPI = (fullName: string, email: string, password: string, phone: string) => {
-  const urlBackend = "/api/v1/auth/register";
+  const urlBackend = "/auth/register";
   return axios.post<IBackendRes<IRegister>>(urlBackend, { fullName, email, password, phone });
 };
 
 export const fetchAccountAPI = () => {
-  const urlBackend = "/api/v1/auth/account";
+  const urlBackend = "/auth/account";
   return axios.get<IBackendRes<IFetchAccount>>(urlBackend, {
     headers: {
       delay: 1000,
@@ -28,22 +28,22 @@ export const fetchAccountAPI = () => {
 };
 
 export const logoutAPI = () => {
-  const urlBackend = "/api/v1/auth/logout";
+  const urlBackend = "/auth/logout";
   return axios.post<IBackendRes<IRegister>>(urlBackend);
 };
 
 export const verifyAPI = (_id: string, codeId: string) => {
-  const urlBackend = "api/v1/auth/verify-code";
+  const urlBackend = "/auth/verify-code";
   return axios.post<IBackendRes<IUser>>(urlBackend, { _id, codeId });
 };
 
 export const resendCodeAPI = (email: string) => {
-  const urlBackend = "api/v1/auth/resend-code";
+  const urlBackend = "/auth/resend-code";
   return axios.post<IBackendRes<IUser>>(urlBackend, { email });
 };
 
 export const forgotPasswordAPI = (email: string) => {
-  const urlBackend = "api/v1/auth/forgot-password";
+  const urlBackend = "/auth/forgot-password";
   return axios.post<IBackendRes<IUser>>(urlBackend, { email });
 };
 
@@ -53,7 +53,7 @@ export const resetPasswordAPI = (
   newPassword: string,
   confirmPassword: string,
 ) => {
-  const urlBackend = "api/v1/auth/reset-password";
+  const urlBackend = "/auth/reset-password";
   return axios.post<IBackendRes<IUser>>(urlBackend, {
     email,
     codeId,
@@ -63,6 +63,6 @@ export const resetPasswordAPI = (
 };
 
 export const getUsersAPI = (query: string) => {
-  const urlBackend = `/api/v1/user?${query}`;
+  const urlBackend = `/user?${query}`;
   return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(urlBackend);
 };
