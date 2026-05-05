@@ -24,6 +24,13 @@ export const AppProvider = (props: TProps) => {
 
   useEffect(() => {
     const fetchAccount = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+      if (token) {
+        window.history.replaceState({}, "", window.location.pathname);
+        localStorage.setItem("access_token", token);
+      }
+
       const res = await fetchAccountAPI();
       if (res.data) {
         setUser(res.data.user);
