@@ -2,9 +2,14 @@ export {};
 
 declare global {
   interface IBackendRes<T> {
-    error?: string | string[];
-    message: string;
-    statusCode: number | string;
+    error: {
+      timestamp: string;
+      path: string;
+      statusCode: number | string;
+      message: string | string[];
+    };
+    message?: string;
+    statusCode?: number | string;
     data?: T;
   }
 

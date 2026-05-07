@@ -34,7 +34,7 @@ const RegisterPage = () => {
     } else {
       notification.error({
         message: "Đăng ký thất bại!",
-        description: res.message && Array.isArray(res.message) ? res.message[0] : res.message,
+        description: Array.isArray(res.error.message) ? res.error.message[0] : res.error.message,
         duration: 5,
       });
     }

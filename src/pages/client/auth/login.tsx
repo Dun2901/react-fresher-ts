@@ -44,7 +44,7 @@ const LoginPage = () => {
 
       notification.error({
         message: "Có lỗi xảy ra",
-        description: res.message && Array.isArray(res.message) ? res.message[0] : res.message,
+        description: Array.isArray(res.error.message) ? res.error.message[0] : res.error.message,
         duration: 5,
       });
     }

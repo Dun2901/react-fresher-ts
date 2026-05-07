@@ -63,6 +63,6 @@ export const resetPasswordAPI = (
 };
 
 export const getUsersAPI = (query: string) => {
-  const urlBackend = `/user?${query}`;
+  const urlBackend = `/users?${query}`;
   return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(urlBackend);
 };
