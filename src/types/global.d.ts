@@ -42,13 +42,7 @@ declare global {
     user: IUser;
   }
 
-  interface IUserTable {
-    _id: string;
-    fullName: string;
-    email: string;
-    phone: string;
-    role: string;
-    avatar: string;
+  interface IUserTable extends IUser {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
