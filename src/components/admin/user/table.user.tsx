@@ -7,6 +7,7 @@ import { Button } from 'antd';
 import { useRef, useState } from 'react';
 import { AiOutlineEdit } from "react-icons/ai";
 import { MdDeleteOutline } from "react-icons/md";
+import { Link } from "react-router-dom";
 
 const columns: ProColumns<IUserTable>[] = [
     {
@@ -20,7 +21,9 @@ const columns: ProColumns<IUserTable>[] = [
         hideInSearch: true,
         render(dom, entity, index, action, schema) {
             return (
-                <a href="#">{entity._id}</a>
+                <Link to={`/admin/user/${entity._id}`}>
+                    {entity._id}
+                </Link>
             )
         },
     },

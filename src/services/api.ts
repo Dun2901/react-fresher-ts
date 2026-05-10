@@ -66,3 +66,7 @@ export const getUsersAPI = (query: string) => {
   const urlBackend = `/users?${query}`;
   return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(urlBackend);
 };
+
+export const getUserByIdAPI = (id: string) => {
+  return axios.get(`/users/${id}`);
+}

@@ -18,6 +18,7 @@ import ManageUserPage from "pages/admin/manage.user";
 import LayoutAdmin from "components/layout/layout.admin";
 import enUS from "antd/locale/en_US";
 import VerifyPage from "pages/client/auth/verify";
+import DetailUserPage from "pages/admin/detail.user";
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -84,6 +85,15 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "user/:id",
+        element: (
+            <ProtectedRoute>
+              <DetailUserPage />
+            </ProtectedRoute>
+        ),
+      },
+
+      {
         path: "/admin",
         element: (
           <ProtectedRoute>
@@ -105,6 +115,8 @@ const router = createBrowserRouter([
     path: "/verify/:id",
     element: <VerifyPage />,
   },
+
+
 ]);
 
 createRoot(document.getElementById("root")!).render(
