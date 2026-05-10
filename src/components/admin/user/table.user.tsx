@@ -93,6 +93,16 @@ const TableUser = () => {
                     let query = "";
                     if (params) {
                         query += `current=${params.current}&pageSize=${params.pageSize}`;
+                        //đăng kí sau thì lên trước
+                        if (sort && sort.createdAt) {
+                            query += `&sort=${sort.createdAt === 'ascend'
+                                ? 'createdAt'
+                                : '-createdAt'
+                            }`;
+                        } else {
+                            query += `&sort=-createdAt`;
+                        }
+
                         if (params.email) {
                             query += `&email=/${params.email}/i`;
                         }
