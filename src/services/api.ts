@@ -1,5 +1,6 @@
 import axios from "services/axios.customize";
 
+// ==================== MODULE AUTH ====================
 export const loginAPI = (email: string, password: string) => {
   const urlBackend = "/auth/login";
   return axios.post<IBackendRes<ILogin>>(
@@ -68,5 +69,15 @@ export const getUsersAPI = (query: string) => {
 };
 
 export const getUserByIdAPI = (id: string) => {
-  return axios.get(`/users/${id}`);
-}
+  return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(`/users/${id}`);
+};
+
+export const createUserAPI = (
+  email: string,
+  fullName: string,
+  password: string,
+  phone: string,
+  role: string,
+) => {
+  return axios.post<IBackendRes<IRegister>>("/users", { fullName, email, password, phone, role });
+};

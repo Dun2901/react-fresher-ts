@@ -9,6 +9,7 @@ import { useRef, useState } from "react";
 import { AiOutlineEdit } from "react-icons/ai";
 import { MdDeleteOutline } from "react-icons/md";
 import { Link } from "react-router-dom";
+import CreateUser from "./create.user";
 
 const columns: ProColumns<IUserTable>[] = [
   {
@@ -75,6 +76,12 @@ const TableUser = () => {
     pages: 2,
     total: 9,
   });
+  const [openModalCreate, setOpenModalCreate] = useState<boolean>(false);
+
+  const refreshTable = () => {
+    actionRef.current?.reload();
+  };
+
   return (
     <>
       <AppBreadcrumb items={[{ icon: <TeamOutlined />, label: "Quản lý người dùng" }]} />
@@ -142,13 +149,19 @@ const TableUser = () => {
             key="button"
             icon={<PlusOutlined />}
             onClick={() => {
-              actionRef.current?.reload();
+              setOpenModalCreate(true);
             }}
             type="primary"
           >
             Add new
           </Button>,
         ]}
+      />
+
+      <CreateUser
+        openModalCreate={openModalCreate}
+        setOpenModalCreate={setOpenModalCreate}
+        refreshTable={refreshTable}
       />
     </>
   );
