@@ -49,6 +49,9 @@ declare global {
 
   interface IUserTable extends IUser {
     isActive: boolean;
+    accountType: string;
+    deleted?: boolean;
+    passwordChangeAt?: string;
     createdAt: Date;
     updatedAt: Date;
   }

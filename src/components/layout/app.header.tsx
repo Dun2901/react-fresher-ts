@@ -9,6 +9,7 @@ import "./app.header.scss";
 import { Link } from "react-router-dom";
 import { useCurrentApp } from "components/context/app.context";
 import { logoutAPI } from "@/services/api";
+import { getAvatarUrl } from "@/services/helper";
 
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -55,10 +56,6 @@ const AppHeader = () => {
       key: "admin",
     });
   }
-
-  const urlAvatar = user?.avatar?.startsWith("http")
-    ? user.avatar
-    : `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user?.avatar}`;
 
   const contentPopover = () => {
     return (
@@ -150,7 +147,7 @@ const AppHeader = () => {
                 ) : (
                   <Dropdown menu={{ items }} trigger={["click"]}>
                     <Space>
-                      <Avatar src={urlAvatar} />
+                      <Avatar src={<img src={getAvatarUrl(user?.avatar)} />} />
                       {user?.fullName}
                     </Space>
                   </Dropdown>
