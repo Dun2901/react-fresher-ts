@@ -41,7 +41,7 @@ const CreateUser = (props: IProps) => {
     } else {
       notification.error({
         message: "Đã có lỗi xảy ra!",
-        description: res.message,
+        description: Array.isArray(res.error.message) ? res.error.message[0] : res.error.message,
       });
     }
     setIsSubmit(false);
