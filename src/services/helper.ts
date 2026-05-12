@@ -12,7 +12,7 @@ export const dateRangeValidate = (dateRange: any) => {
 };
 
 export const getAvatarUrl = (avatar?: string): string => {
-  if (!avatar) return "";
+  if (!avatar) return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/default-user.png`;
 
   return avatar.startsWith("http")
     ? avatar
