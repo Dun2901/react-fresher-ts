@@ -87,6 +87,10 @@ export const updateUserAPI = (id: string, fullName: string, phone: string, avata
   return axios.patch<IBackendRes<IRegister>>(`/users/${id}`, { fullName, phone, avatar });
 };
 
+export const deleteUserAPI = (id: string) => {
+  return axios.delete<IBackendRes<IRegister>>(`/users/${id}`);
+};
+
 // ==================== MODULE UPLOAD FILE ====================
 export const uploadAvatarAPI = (formData: FormData) => {
   return axios.post<IBackendRes<{ fileUploaded: string }>>("/files/upload", formData, {
