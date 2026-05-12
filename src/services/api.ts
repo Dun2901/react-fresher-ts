@@ -33,9 +33,9 @@ export const logoutAPI = () => {
   return axios.post<IBackendRes<IRegister>>(urlBackend);
 };
 
-export const verifyAPI = (_id: string, codeId: string) => {
+export const verifyAPI = (id: string, codeId: string) => {
   const urlBackend = "/auth/verify-code";
-  return axios.post<IBackendRes<IUser>>(urlBackend, { _id, codeId });
+  return axios.post<IBackendRes<IUser>>(urlBackend, { id, codeId });
 };
 
 export const resendCodeAPI = (email: string) => {
@@ -63,6 +63,7 @@ export const resetPasswordAPI = (
   });
 };
 
+// ==================== MODULE USER ====================
 export const getUsersAPI = (query: string) => {
   const urlBackend = `/users?${query}`;
   return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(urlBackend);
@@ -80,4 +81,17 @@ export const createUserAPI = (
   role: string,
 ) => {
   return axios.post<IBackendRes<IRegister>>("/users", { fullName, email, password, phone, role });
+};
+
+export const updateUserAPI = (id: string, fullName: string, phone: string, avatar?: string) => {
+  return axios.patch<IBackendRes<IRegister>>(`/users/${id}`, { fullName, phone, avatar });
+};
+
+// ==================== MODULE UPLOAD FILE ====================
+export const uploadAvatarAPI = (formData: FormData) => {
+  return axios.post<IBackendRes<{ fileUploaded: string }>>("/files/upload", formData, {
+    headers: {
+      folder_type: "avatar",
+    },
+  });
 };

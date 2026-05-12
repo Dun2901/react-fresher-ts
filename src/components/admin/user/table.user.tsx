@@ -10,56 +10,7 @@ import { AiOutlineEdit } from "react-icons/ai";
 import { MdDeleteOutline } from "react-icons/md";
 import { Link } from "react-router-dom";
 import CreateUser from "./create.user";
-
-const columns: ProColumns<IUserTable>[] = [
-  {
-    dataIndex: "index",
-    valueType: "indexBorder",
-    width: 48,
-  },
-  {
-    title: "_id",
-    dataIndex: "_id",
-    hideInSearch: true,
-    render(dom, entity, index, action, schema) {
-      return <Link to={`/admin/user/${entity._id}`}>{entity._id}</Link>;
-    },
-  },
-  {
-    title: "Full name",
-    dataIndex: "fullName",
-  },
-  {
-    title: "Email",
-    dataIndex: "email",
-    copyable: true,
-  },
-  {
-    title: "Created At",
-    dataIndex: "createdAt",
-    valueType: "date",
-    sorter: true,
-    hideInSearch: true,
-  },
-  {
-    title: "Created At",
-    dataIndex: "createdAtRange",
-    valueType: "dateRange",
-    hideInTable: true,
-  },
-  {
-    title: "Action",
-    hideInSearch: true,
-    render(dom, entity, index, action, schema) {
-      return (
-        <>
-          <AiOutlineEdit color="#f57800" style={{ cursor: "pointer", marginRight: 15 }} />
-          <MdDeleteOutline color="#ff4d4f" style={{ cursor: "pointer" }} />
-        </>
-      );
-    },
-  },
-];
+import UpdateUser from "./update.user";
 
 type TSearch = {
   fullName: string;
@@ -77,10 +28,70 @@ const TableUser = () => {
     total: 9,
   });
   const [openModalCreate, setOpenModalCreate] = useState<boolean>(false);
+  const [openModalUpdate, setOpenModalUpdate] = useState<boolean>(false);
+  const [dataUpdate, setDataUpdate] = useState<IUserTable | null>(null);
 
   const refreshTable = () => {
     actionRef.current?.reload();
   };
+
+  const columns: ProColumns<IUserTable>[] = [
+    {
+      dataIndex: "index",
+      valueType: "indexBorder",
+      width: 48,
+    },
+    {
+      title: "_id",
+      dataIndex: "_id",
+      hideInSearch: true,
+      render(dom, entity, index, action, schema) {
+        return <Link to={`/admin/user/${entity._id}`}>{entity._id}</Link>;
+      },
+    },
+    {
+      title: "Full name",
+      dataIndex: "fullName",
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      copyable: true,
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      valueType: "date",
+      sorter: true,
+      hideInSearch: true,
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAtRange",
+      valueType: "dateRange",
+      hideInTable: true,
+    },
+    {
+      title: "Action",
+      hideInSearch: true,
+      render(dom, entity, index, action, schema) {
+        return (
+          <>
+            <AiOutlineEdit
+              color="#f57800"
+              style={{ cursor: "pointer", marginRight: 15 }}
+              onClick={() => {
+                console.log(">>> check entity: ", entity);
+                setDataUpdate(entity);
+                setOpenModalUpdate(true);
+              }}
+            />
+            <MdDeleteOutline color="#ff4d4f" style={{ cursor: "pointer" }} />
+          </>
+        );
+      },
+    },
+  ];
 
   return (
     <>
@@ -161,6 +172,13 @@ const TableUser = () => {
       <CreateUser
         openModalCreate={openModalCreate}
         setOpenModalCreate={setOpenModalCreate}
+        refreshTable={refreshTable}
+      />
+      <UpdateUser
+        openModalUpdate={openModalUpdate}
+        setOpenModalUpdate={setOpenModalUpdate}
+        dataUpdate={dataUpdate}
+        setDataUpdate={setDataUpdate}
         refreshTable={refreshTable}
       />
     </>
