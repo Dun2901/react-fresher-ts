@@ -4,8 +4,6 @@ import { Descriptions, Tag, Avatar } from "antd";
 import { getUserByIdAPI } from "@/services/api";
 import dayjs from "dayjs";
 import { getAvatarUrl } from "@/services/helper";
-import AppBreadcrumb from "@/components/share/breadcrumb";
-import { TeamOutlined } from "@ant-design/icons";
 
 const DetailUser = () => {
   const { id } = useParams();
@@ -28,13 +26,6 @@ const DetailUser = () => {
 
   return (
     <>
-      <AppBreadcrumb
-        items={[
-          { icon: <TeamOutlined />, label: "Quản lý người dùng", href: "/admin/user" },
-          { label: id! },
-        ]}
-      />
-
       <Descriptions title="User Detail" bordered column={1}>
         <Descriptions.Item label="ID">{user?._id}</Descriptions.Item>
 

@@ -124,8 +124,6 @@ const TableUser = () => {
 
   return (
     <>
-      <AppBreadcrumb items={[{ icon: <TeamOutlined />, label: "Quản lý người dùng" }]} />
-
       <ProTable<IUserTable, TSearch>
         columns={columns}
         actionRef={actionRef}

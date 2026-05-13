@@ -55,4 +55,13 @@ declare global {
     createdAt: Date;
     updatedAt: Date;
   }
+  // Router type
+  type BreadcrumbItem = {
+    label: string;
+    href?: string;
+    icon?: React.ReactNode;
+  };
+  type HandleType = {
+    breadcrumb: BreadcrumbItem | ((params: Record<string, string | undefined>) => BreadcrumbItem);
+  };
 }

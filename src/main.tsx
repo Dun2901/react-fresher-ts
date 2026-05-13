@@ -19,6 +19,7 @@ import LayoutAdmin from "components/layout/layout.admin";
 import enUS from "antd/locale/en_US";
 import VerifyPage from "pages/client/auth/verify";
 import DetailUserPage from "pages/admin/detail.user";
+import { DollarCircleOutlined, ExceptionOutlined, TeamOutlined } from "@ant-design/icons";
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -67,6 +68,9 @@ const router = createBrowserRouter([
             <ManageBookPage />
           </ProtectedRoute>
         ),
+        handle: {
+          breadcrumb: { label: "Quản lý sách", icon: <ExceptionOutlined /> },
+        },
       },
       {
         path: "order",
@@ -75,31 +79,42 @@ const router = createBrowserRouter([
             <ManageOrderPage />
           </ProtectedRoute>
         ),
+        handle: {
+          breadcrumb: { label: "Quản lý đơn hàng", icon: <DollarCircleOutlined /> },
+        },
       },
       {
         path: "user",
-        element: (
-          <ProtectedRoute>
-            <ManageUserPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "user/:id",
-        element: (
-            <ProtectedRoute>
-              <DetailUserPage />
-            </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "/admin",
-        element: (
-          <ProtectedRoute>
-            <div>admin page</div>
-          </ProtectedRoute>
-        ),
+        handle: {
+          breadcrumb: {
+            label: "Quản lý người dùng",
+            href: "/admin/user",
+            icon: <TeamOutlined />,
+          },
+        },
+        children: [
+          {
+            index: true,
+            element: (
+              <ProtectedRoute>
+                <ManageUserPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: ":id",
+            element: (
+              <ProtectedRoute>
+                <DetailUserPage />
+              </ProtectedRoute>
+            ),
+            handle: {
+              breadcrumb: (params: Record<string, string | undefined>) => ({
+                label: params.id,
+              }),
+            },
+          },
+        ],
       },
     ],
   },
@@ -115,8 +130,6 @@ const router = createBrowserRouter([
     path: "/verify/:id",
     element: <VerifyPage />,
   },
-
-
 ]);
 
 createRoot(document.getElementById("root")!).render(

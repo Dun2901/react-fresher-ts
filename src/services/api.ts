@@ -70,7 +70,7 @@ export const getUsersAPI = (query: string) => {
 };
 
 export const getUserByIdAPI = (id: string) => {
-  return axios.get<IBackendRes<IModelPaginate<IUserTable>>>(`/users/${id}`);
+  return axios.get<IBackendRes<IUserTable>>(`/users/${id}`);
 };
 
 export const createUserAPI = (

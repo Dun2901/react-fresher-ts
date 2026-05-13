@@ -2,14 +2,8 @@ import { Breadcrumb } from "antd";
 import { HomeOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 
-interface IBreadcrumbItem {
-  icon?: React.ReactNode;
-  label: string;
-  href?: string;
-}
-
 interface IProps {
-  items: IBreadcrumbItem[];
+  items: BreadcrumbItem[];
 }
 
 const AppBreadcrumb = ({ items }: IProps) => {
@@ -24,17 +18,24 @@ const AppBreadcrumb = ({ items }: IProps) => {
             </Link>
           ),
         },
-        ...items.map((item) => ({
-          title: item.href ? (
-            <Link to={item.href}>
-              {item.icon} {item.label}
-            </Link>
-          ) : (
-            <span>
-              {item.icon} {item.label}
-            </span>
-          ),
-        })),
+        ...items.map((item, index) => {
+          const isLast = index === items.length - 1; // item cuối = trang hiện tại
+          return {
+            key: item.href ?? item.label,
+            title:
+              item.href && !isLast ? ( // chỉ có link nếu không phải item cuối
+                <Link to={item.href}>
+                  {item.icon && <>{item.icon} </>}
+                  {item.label}
+                </Link>
+              ) : (
+                <span>
+                  {item.icon && <>{item.icon} </>}
+                  {item.label}
+                </span>
+              ),
+          };
+        }),
       ]}
     />
   );
