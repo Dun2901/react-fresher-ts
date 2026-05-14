@@ -24,7 +24,9 @@ const { Content, Footer, Sider } = Layout;
 const LayoutAdmin = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const selectedKey = location.pathname;
+  const selectedKey = "/" + location.pathname.split("/").slice(1, 3).join("/");
+  const openKey = selectedKey.split("/")[2];
+
   const { user, setUser, setIsAuthenticated, isAuthenticated } = useCurrentApp();
 
   const matches = useMatches() as UIMatch<unknown, HandleType>[];
@@ -127,7 +129,12 @@ const LayoutAdmin = () => {
           onCollapse={(value) => setCollapsed(value)}
         >
           <div style={{ height: 32, margin: 16, textAlign: "center" }}>Admin</div>
-          <Menu selectedKeys={[selectedKey]} mode="inline" items={items} />
+          <Menu
+            selectedKeys={[selectedKey]}
+            defaultOpenKeys={openKey ? [openKey] : []}
+            mode="inline"
+            items={items}
+          />
         </Sider>
         <Layout>
           <div
