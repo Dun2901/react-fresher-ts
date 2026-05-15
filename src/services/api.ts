@@ -91,6 +91,20 @@ export const deleteUserAPI = (id: string) => {
   return axios.delete<IBackendRes<IRegister>>(`/users/${id}`);
 };
 
+// ==================== MODULE BOOK ====================
+export const getBooksAPI = (query: string) => {
+  const urlBackend = `/books?${query}`;
+  return axios.get<IBackendRes<IModelPaginate<IBookTable>>>(urlBackend);
+};
+
+export const getBookByIdAPI = (id: string) => {
+  return axios.get<IBackendRes<IBookTable>>(`/books/${id}`);
+};
+
+export const deleteBookAPI = (id: string) => {
+  return axios.delete<IBackendRes<IBookTable>>(`/books/${id}`);
+};
+
 // ==================== MODULE UPLOAD FILE ====================
 export const uploadAvatarAPI = (formData: FormData) => {
   return axios.post<IBackendRes<{ fileUploaded: string }>>("/files/upload", formData, {
