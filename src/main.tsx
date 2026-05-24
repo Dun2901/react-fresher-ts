@@ -7,7 +7,7 @@ import AboutPage from "pages/client/about";
 import LoginPage from "pages/client/auth/login";
 import RegisterPage from "pages/client/auth/register";
 import "styles/global.scss";
-import HomePage from "pages/client/home";
+import HomePage from "pages/client/homepage/home.tsx";
 import { App, ConfigProvider } from "antd";
 import { AppProvider } from "components/context/app.context";
 import ProtectedRoute from "@/components/auth";

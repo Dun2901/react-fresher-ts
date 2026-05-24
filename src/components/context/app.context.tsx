@@ -9,7 +9,19 @@ interface IAppContext {
   user: IUser | null;
   isAppLoading: boolean;
   setIsAppLoading: (v: boolean) => void;
+
+  carts: ICartItem[];
+  setCarts: React.Dispatch<React.SetStateAction<ICartItem[]>>;
 }
+
+export interface ICartItem {
+  id: string;
+  title: string;
+  price: number;
+  thumbnail: string;
+  quantity: number;
+}
+
 
 const CurrentAppContext = createContext<IAppContext | null>(null);
 
@@ -21,6 +33,8 @@ export const AppProvider = (props: TProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<IUser | null>(null);
   const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
+  const [carts, setCarts] = useState<ICartItem[]>([]); // state lưu trữ danh sách giỏ hàng
+
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -53,6 +67,9 @@ export const AppProvider = (props: TProps) => {
             setUser,
             isAppLoading,
             setIsAppLoading,
+
+            carts,
+            setCarts,
           }}
         >
           {props.children}
