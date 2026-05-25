@@ -3,7 +3,8 @@ import {Row, Col, Card, Button, Tooltip, message, Space, Spin, Pagination} from 
 import {ShoppingCartOutlined, EyeOutlined, LoadingOutlined} from '@ant-design/icons';
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import './home.scss';
-import { getBooksAPI } from "@/services/api.ts";
+import {addItemToCartAPI, getBooksAPI} from "@/services/api.ts";
+import axios from "axios";
 
 
 const Homepage: React.FC = () => {
@@ -26,7 +27,7 @@ const Homepage: React.FC = () => {
                 // tạo query
                 const query = `current=${current}&pageSize=${pageSize}&sort=-createdAt`;
                 const res = await getBooksAPI(query);
-                if (res && res.data && res.data) {
+                if (res && res.data) {
                     setListBook(res.data.result || []);
                     setTotal(res.data.meta.total || 0);
                 }
@@ -53,28 +54,24 @@ const Homepage: React.FC = () => {
     };
 
     //thêm sách vào giỏ hàng, sử dụng id của MongoDB
-    const handleAddToCart = (book: IBookTable) => {
-        const cloneCarts = [...carts];
+    const handleAddToCart = async (book: IBookTable) => {
         // Tìm xem sách đã được mua trước đó chưa
-        const findIndex = cloneCarts.findIndex(item => item.id === book._id);
+        try{
+            const res = await addItemToCartAPI(book._id, 1);
+            if(res && res.data){
+                setCarts(res.data.items || []);
+                message.success(`Đã thêm "${book.mainText}" vào giỏ hàng thành công!`);
 
-        if (findIndex > -1) {
-            // Đã có trong giỏ -> Tăng số lượng lên 1
-            cloneCarts[findIndex].quantity += 1;
-        } else {
-            // Chưa có trong giỏ -> Thêm phần tử mới
-            cloneCarts.push({
-                id: book._id,
-                title: book.mainText,
-                price: book.price,
-                thumbnail: book.thumbnail,
-                quantity: 1
-            });
-        }
-
-        // Cập nhật lại State Global -> Header tự động nhảy số theo
-        setCarts(cloneCarts);
-        message.success(`Đã thêm "${book.mainText}" vào giỏ hàng thành công!`);
+            }
+        }catch (error) {
+            let errorMsg = "Không thể thêm sản phẩm vào giỏ hàng!";
+            //sử dụng hàm kiểm tra chuẩn của Axios để định kiểu cho error
+            if (axios.isAxiosError(error)) {
+                errorMsg = error.response?.data?.message || errorMsg;
+            }
+            message.error(errorMsg);
+            console.error("Lỗi gọi API giỏ hàng:", error);
+    }
     };
 
     return (
@@ -134,7 +131,8 @@ const Homepage: React.FC = () => {
                                             icon={<ShoppingCartOutlined/>}
                                             onClick={() => handleAddToCart(book)}
                                         >
-                                            Mua
+                                            {/* Kiểm tra xem cuốn sách này đã nằm trong giỏ hàng Context chưa */}
+                                            {carts.some(item => item.bookId._id === book._id) ? 'Mua tiếp' : 'Mua'}
                                         </Button>
                                     </Space>
                                 </div>

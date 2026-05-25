@@ -1,4 +1,4 @@
-import { fetchAccountAPI } from "@/services/api";
+import { fetchAccountAPI, fetchMyCartAPI } from "@/services/api.ts";
 import { createContext, useContext, useEffect, useState } from "react";
 import PacmanLoader from "react-spinners/PacmanLoader";
 
@@ -12,14 +12,6 @@ interface IAppContext {
 
   carts: ICartItem[];
   setCarts: React.Dispatch<React.SetStateAction<ICartItem[]>>;
-}
-
-export interface ICartItem {
-  id: string;
-  title: string;
-  price: number;
-  thumbnail: string;
-  quantity: number;
 }
 
 
@@ -55,6 +47,28 @@ export const AppProvider = (props: TProps) => {
 
     fetchAccount();
   }, []);
+
+  //đòng bộ giỏ hàng từ DB lên context
+  useEffect(() => {
+    const syncCart = async () => {
+      if (isAuthenticated) {
+        try {
+          const res = await fetchMyCartAPI();
+          if (res && res.data && res.data) {
+            // thêm mảng items từ MongoDB vào state toàn cục
+            setCarts(res.data.items || []);
+          }
+        } catch (error) {
+          console.error("Lỗi đồng bộ giỏ hàng từ DB:", error);
+        }
+      } else {
+        // nếu logout hoặc chưa login thì trả về giỏ rỗng
+        setCarts([]);
+      }
+    };
+
+    syncCart();
+  }, [isAuthenticated]); // khởi chạy lại mỗi khi trạng thái đăng nhập thay đổi
 
   return (
     <>
