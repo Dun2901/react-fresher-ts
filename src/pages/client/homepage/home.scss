@@ -25,7 +25,6 @@
     padding-left: 10px;
   }
 
-  // Định dáng card sách
   .book-card {
     transition: all 0.3s ease;
     border-radius: 8px;
@@ -58,7 +57,7 @@
     .book-title {
       font-size: 15px;
       font-weight: 600;
-      height: 44px; // Cố định chiều cao để không lệch card
+      height: 44px;
       overflow: hidden;
       display: -webkit-box;
       -webkit-line-clamp: 2;

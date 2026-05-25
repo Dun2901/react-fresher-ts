@@ -6,6 +6,7 @@ import BookPage from "pages/client/book";
 import AboutPage from "pages/client/about";
 import LoginPage from "pages/client/auth/login";
 import RegisterPage from "pages/client/auth/register";
+import OrderPage from "pages/client/order/orderPage.tsx";
 import "styles/global.scss";
 import HomePage from "pages/client/homepage/home.tsx";
 import { App, ConfigProvider } from "antd";
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: "order",
+        element: <OrderPage />
       },
       {
         path: "/book",

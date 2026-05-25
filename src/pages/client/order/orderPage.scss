@@ -1,0 +1,28 @@
+.order-page-container {
+  .cart-item-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .cart-summary-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-top: 3px solid #ff4d4f;
+  }
+}
+
+@media (max-width: 576px) {
+  .order-page-container {
+    .item-title {
+      font-size: 14px !important;
+    }
+    .ant-input-number {
+      width: 65px;
+    }
+  }
+}
