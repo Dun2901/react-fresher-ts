@@ -1,38 +1,62 @@
-import React from 'react';
-import { Row, Col, Card, Button, Tooltip, message, Space } from 'antd'; // 🛠️ Đã thêm Space và xóa Badge thừa
-import { ShoppingCartOutlined, EyeOutlined } from '@ant-design/icons';
+import React, {useEffect, useState} from 'react';
+import {Row, Col, Card, Button, Tooltip, message, Space, Spin, Pagination} from 'antd';
+import {ShoppingCartOutlined, EyeOutlined, LoadingOutlined} from '@ant-design/icons';
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import './home.scss';
+import { getBooksAPI } from "@/services/api.ts";
 
-// Định nghĩa cấu trúc dữ liệu Sách mẫu
-interface BookType {
-    id: string;
-    title: string;
-    author: string;
-    price: number;
-    thumbnail: string;
-    category: string;
-}
 
 const Homepage: React.FC = () => {
     // Lấy dữ liệu giỏ hàng và hàm cập nhật từ Context chung
-    const { carts, setCarts } = useCurrentApp();
+    const {carts, setCarts} = useCurrentApp();
+    const [listBook, setListBook] = useState<IBookTable[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    // Dữ liệu Sách giả lập (Mock Data) kèm link ảnh thật để test giao diện
-    const mockBooks: BookType[] = [
-        { id: 'M001', title: 'Học ReactJS Mới Nhất Trong 21 Ngày', author: 'Hỏi Dân !T', price: 185000, category: 'Công nghệ', thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=500&auto=format&fit=crop&q=60' },
-        { id: 'M002', title: 'Làm Chủ NestJS & Học Phần Cử Nhân', author: 'Eric Nguyễn', price: 299000, category: 'Công nghệ', thumbnail: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&auto=format&fit=crop&q=60' },
-        { id: 'M003', title: 'Tâm Lý Học Thành Công & Đột Phá', author: 'Carol S. Dweck', price: 145000, category: 'Kỹ năng', thumbnail: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500&auto=format&fit=crop&q=60' },
-        { id: 'M004', title: 'Đắc Nhân Tâm - Bí Quyết Thành Công', author: 'Dale Carnegie', price: 92000, category: 'Kỹ năng', thumbnail: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&auto=format&fit=crop&q=60' },
-        { id: 'M005', title: 'Node.js Cơ Bản Dành Cho Bản Thân', author: 'Hỏi Dân !T', price: 210000, category: 'Công nghệ', thumbnail: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&auto=format&fit=crop&q=60' },
-        { id: 'M006', title: 'Thiết Kế Cơ Sở Dữ Lượng Lớn (SQL)', author: 'Trần Văn B', price: 320000, category: 'Công nghệ', thumbnail: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=500&auto=format&fit=crop&q=60' },
-    ];
 
-    // Logic thêm sách vào giỏ hàng (Chạy offline thuần Frontend)
-    const handleAddToCart = (book: BookType) => {
+    //state quanr lý phân trang
+    const [current, setCurrent] = useState<number>(1);
+    const [pageSize, setPageSize] = useState<number>(8);
+    const [total, setTotal] = useState<number>(0);
+
+    //kích hoạt api
+    useEffect(() => {
+        const loadBooks = async () => {
+            setIsLoading(true);
+            try {
+                // tạo query
+                const query = `current=${current}&pageSize=${pageSize}&sort=-createdAt`;
+                const res = await getBooksAPI(query);
+                if (res && res.data && res.data) {
+                    setListBook(res.data.result || []);
+                    setTotal(res.data.meta.total || 0);
+                }
+            } catch (error) {
+                message.error("không thể kết nối với cơ sở dữ liệu");
+                console.error("Lỗi tải sách từ DB", error);
+            } finally {
+                setIsLoading(false);
+
+            }
+        };
+        loadBooks();
+
+    }, [current, pageSize]);//tự động gọi lai API khi user đổi trang hoac size hiển thị
+
+    //xử lý sự kiện khi người dùng click chuyển tranh
+    const handlePaginationChange = (page: number, pSize: number) => {
+        setCurrent(page);
+        if (pSize !== pageSize) {
+            setPageSize(pSize);
+            setCurrent(1);//reset về trang đầu tiên nếu đổi số lượng item
+
+        }
+    };
+
+    //thêm sách vào giỏ hàng, sử dụng id của MongoDB
+    const handleAddToCart = (book: IBookTable) => {
         const cloneCarts = [...carts];
         // Tìm xem sách đã được mua trước đó chưa
-        const findIndex = cloneCarts.findIndex(item => item.id === book.id);
+        const findIndex = cloneCarts.findIndex(item => item.id === book._id);
 
         if (findIndex > -1) {
             // Đã có trong giỏ -> Tăng số lượng lên 1
@@ -40,8 +64,8 @@ const Homepage: React.FC = () => {
         } else {
             // Chưa có trong giỏ -> Thêm phần tử mới
             cloneCarts.push({
-                id: book.id,
-                title: book.title,
+                id: book._id,
+                title: book.mainText,
                 price: book.price,
                 thumbnail: book.thumbnail,
                 quantity: 1
@@ -50,7 +74,7 @@ const Homepage: React.FC = () => {
 
         // Cập nhật lại State Global -> Header tự động nhảy số theo
         setCarts(cloneCarts);
-        message.success(`Đã thêm "${book.title}" vào giỏ hàng thành công!`);
+        message.success(`Đã thêm "${book.mainText}" vào giỏ hàng thành công!`);
     };
 
     return (
@@ -58,56 +82,84 @@ const Homepage: React.FC = () => {
 
             {/* Banner Quảng Cáo Khuyến Mãi */}
             <div className="shop-banner">
-                <h1>Sách Hay Mỗi Ngày – Học Tập Đột Phá 📚</h1>
+                <h1>Sách Hay Mỗi Ngày – Học Tập Đột Phá</h1>
                 <p>Giảm giá lên đến 30% cho các đầu sách công nghệ trong tuần này. Mua ngay kẻo lỡ!</p>
             </div>
 
             <h2 className="section-title">Danh sách sách mới nhất</h2>
 
-            {/* Grid hiển thị danh sách sách (Responsive tự động) */}
-            <Row gutter={[20, 24]}>
-                {mockBooks.map((book) => (
-                    <Col xs={24} sm={12} md={8} lg={6} key={book.id}>
-                        <Card
-                            className="book-card"
-                            hoverable
-                            cover={
-                                <div className="book-image-wrapper">
-                                    <img alt={book.title} src={book.thumbnail} />
-                                </div>
-                            }
-                        >
-                            <div className="book-title">{book.title}</div>
-                            <div className="book-author">Tác giả: {book.author}</div>
-
-                            <div className="book-meta">
-                                <div className="book-price">
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(book.price)}
-                                </div>
-
-                                {/* Cụm nút bấm mua hàng */}
-                                <Space>
-                                    <Tooltip title="Xem chi tiết">
-                                        <Button
-                                            shape="circle"
-                                            icon={<EyeOutlined />}
-                                            onClick={() => message.info('Tính năng xem chi tiết đang phát triển!')}
+            <Spin spinning={isLoading} indicator={<LoadingOutlined style={{fontSize: 24}} spin/>}>
+                <Row gutter={[20, 24]}>
+                    {listBook.map((book) => (
+                        <Col xs={24} sm={12} md={8} lg={6} key={book._id}>
+                            <Card
+                                className="book-card"
+                                hoverable
+                                cover={
+                                    <div className="book-image-wrapper">
+                                        {/* nối link để hiển thị ảnh từ thư mục upload của Backend server */}
+                                        <img
+                                            alt={book.mainText}
+                                            src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${book.thumbnail}`}
+                                            onError={(e) => {
+                                                //anh dự phòng nếu link ảnh từ DB bị lỗi
+                                                e.currentTarget.src = "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500";
+                                            }}
                                         />
-                                    </Tooltip>
-                                    <Button
-                                        type="primary"
-                                        icon={<ShoppingCartOutlined />}
-                                        onClick={() => handleAddToCart(book)}
-                                    >
-                                        Mua
-                                    </Button>
-                                </Space>
-                            </div>
-                        </Card>
-                    </Col>
-                ))}
-            </Row>
+                                    </div>
+                                }
+                            >
+                                <div className="book-title">{book.mainText}</div>
+                                <div className="book-author">Tác giả: {book.author}</div>
+
+                                <div className="book-meta">
+                                    <div className="book-price">
+                                        {new Intl.NumberFormat('vi-VN', {
+                                            style: 'currency',
+                                            currency: 'VND'
+                                        }).format(book.price)}
+                                    </div>
+
+                                    {/* Cụm nút bấm mua hàng */}
+                                    <Space>
+                                        <Tooltip title="Xem chi tiết">
+                                            <Button
+                                                shape="circle"
+                                                icon={<EyeOutlined/>}
+                                                onClick={() => message.info('Tính năng xem chi tiết đang phát triển!')}
+                                            />
+                                        </Tooltip>
+                                        <Button
+                                            type="primary"
+                                            icon={<ShoppingCartOutlined/>}
+                                            onClick={() => handleAddToCart(book)}
+                                        >
+                                            Mua
+                                        </Button>
+                                    </Space>
+                                </div>
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+                {/* Thanh điều hướng phân trang */}
+                {listBook.length > 0 && (
+                    <Row style={{marginTop: 40, justifyContent: 'center'}}>
+                        <Pagination
+                            current={current}
+                            pageSize={pageSize}
+                            total={total}
+                            responsive={true}
+                            showSizeChanger={true}
+                            pageSizeOptions={['4', '8', '12', '16']}
+                            onChange={handlePaginationChange}
+                            showTotal={(total) => `Có tổng ${total} cuốn sách `}
+                        />
+                    </Row>
+                )}
+            </Spin>
         </div>
+
     );
 };
 
