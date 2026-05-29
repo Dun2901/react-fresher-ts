@@ -54,7 +54,7 @@ export const AppProvider = (props: TProps) => {
       if (isAuthenticated) {
         try {
           const res = await fetchMyCartAPI();
-          if (res && res.data && res.data) {
+          if (res && res.data) {
             // thêm mảng items từ MongoDB vào state toàn cục
             setCarts(res.data.items || []);
           }

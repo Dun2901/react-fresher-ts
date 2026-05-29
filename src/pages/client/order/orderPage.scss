@@ -1,28 +1,207 @@
-.order-page-container {
-  .cart-item-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+$primary-color: #ff4d4f;
+$secondary-text: #8c8c8c;
+$border-color: #f0f0f0;
+$border-radius-base: 6px;
 
-    &:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.order-page-container {
+  padding: 24px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  // thanh điều hướng quay lại
+  .order-page-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    gap: 10px;
+
+    .back-btn {
+      font-size: 16px;
+    }
+
+    .header-title {
+      margin: 0 !important;
+      font-weight: 600;
     }
   }
 
-  .cart-summary-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    border-top: 3px solid #ff4d4f;
+  .ant-card {
+    border-radius: $border-radius-base;
+
+    .ant-card-head-title {
+      font-weight: 600;
+    }
+  }
+
+  .payment-method-group {
+    width: 100%;
+
+    // Đã đưa .payment-radio-item vào bên trong .payment-method-group đúng cấu trúc
+    .payment-radio-item {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      padding: 12px 0;
+
+      :global(.ant-radio + span) {
+        flex: 1;
+        width: 100%;
+        padding-left: 8px;
+      }
+
+      .payment-content-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+      }
+
+      .payment-title-row {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 11px;
+        width: 100%;
+      }
+
+      .radio-label-text {
+        font-size: 15px;
+        line-height: 1.4;
+      }
+
+      .vnpay-logo {
+        height: 35px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .payment-desc-text {
+        display: block;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .order-summary-card {
+    position: sticky;
+    top: 20px;
+
+    .cart-items-list {
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+      margin-bottom: 15px;
+
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #e0e0e0;
+        border-radius: 2px;
+      }
+
+      .cart-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+        justify-content: space-between;
+
+        &__left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 70%;
+
+          .book-img {
+            width: 45px;
+            height: 55px;
+            object-fit: cover;
+            border: 1px solid $border-color;
+            border-radius: 4px;
+            padding: 2px;
+          }
+
+          .book-info {
+            overflow: hidden;
+
+            .book-title {
+              font-size: 13px;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
+              display: block;
+            }
+
+            .book-qty {
+              font-size: 12px;
+            }
+          }
+        }
+
+        &__right {
+          text-align: right;
+          width: 30%;
+
+          .item-total-price {
+            font-size: 13px;
+          }
+        }
+      }
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+
+      .price-label {
+        color: $secondary-text;
+      }
+
+      .price-value {
+        font-weight: 500;
+      }
+    }
+
+    .final-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+
+      .total-label {
+        font-size: 16px;
+      }
+
+      .total-amount {
+        font-size: 24px;
+        color: $primary-color;
+      }
+    }
+
+    .submit-order-btn {
+      background-color: $primary-color;
+      border-color: $primary-color;
+      height: 50px;
+      font-weight: 600;
+      font-size: 16px;
+      border-radius: $border-radius-base;
+
+      &:hover, &:focus {
+        background-color: darken($primary-color, 5%) !important;
+        border-color: darken($primary-color, 5%) !important;
+      }
+    }
   }
 }
 
-@media (max-width: 576px) {
-  .order-page-container {
-    .item-title {
-      font-size: 14px !important;
-    }
-    .ant-input-number {
-      width: 65px;
-    }
+.order-status-wrapper {
+  padding: 60px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+
+  &--empty-cart {
+    padding: 50px 20px;
+    text-align: center;
   }
 }

@@ -26,3 +26,7 @@ dist-ssr
 .env.development
 .env.production
 .env
+
+#prettier
+.prettierignore
+.prettierrc

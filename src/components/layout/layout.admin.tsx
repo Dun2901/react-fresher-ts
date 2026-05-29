@@ -84,7 +84,7 @@ const LayoutAdmin = () => {
     },
     {
       label: <Link to="/admin/order">Manage Orders</Link>,
-      key: "/admin/order",
+      key: "/admin/cart",
       icon: <DollarCircleOutlined />,
     },
   ];

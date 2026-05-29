@@ -1,233 +1,266 @@
 import React, { useState } from 'react';
-import { Row, Col, InputNumber, Button, Divider, Empty, message, Card } from 'antd';
-import { DeleteOutlined, ShoppingCartOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Row, Col, Button, Divider, Card, Form, Input, Radio, Space, Typography, message, Result } from 'antd';
+import { ArrowLeftOutlined, CreditCardOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { useCurrentApp } from 'components/context/app.context.tsx';
-import { updateCartItemAPI, removeCartItemAPI } from '@/services/api.ts';
-import axios from 'axios';
-import './orderPage.scss';
 import { useNavigate } from 'react-router-dom';
+import "./orderPage.scss";
+
+const { Text, Title } = Typography;
+const { TextArea } = Input;
 
 const OrderPage: React.FC = () => {
-    const { carts, setCarts } = useCurrentApp();
-    const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
+    const { carts } = useCurrentApp();
     const navigate = useNavigate();
+    const [form] = Form.useForm();
 
-    // xử lý thay đổi số lượng
-    const handleQuantityChange = async (bookId: string, currentQty: number) => {
-        if (currentQty < 1) return;
+    const [isSuccess, setIsSuccess] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
 
-        setIsActionLoading(true);
-        try {
-            const res = await updateCartItemAPI(bookId, currentQty);
-            if (res && res.data) {
-                //cập nhật lại danh sách giỏ hàng mới từ DB trả về
-                setCarts(res.data.items || []);
-            }
-        } catch (error) {
-            let errorMsg = "Không thể cập nhật số lượng!";
-            if (axios.isAxiosError(error)) {
-                errorMsg = error.response?.data?.message || errorMsg;
-            }
-            message.error(errorMsg);
-        } finally {
-            setIsActionLoading(false);
-        }
-    };
-
-    // xử lý xóa sản phẩm khỏi giỏ hàng
-    const handleRemoveItem = async (bookId: string) => {
-        setIsActionLoading(true);
-        try {
-            const res = await removeCartItemAPI(bookId);
-            if (res && res.data) {
-                setCarts(res.data.items || []);
-                message.success("Đã xóa sản phẩm khỏi giỏ hàng!");
-            }
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error) {
-            message.error("Không thể xóa sản phẩm!");
-        } finally {
-            setIsActionLoading(false);
-        }
-    };
-
-    // tính tổng tiền trong giỏ
     const calculateTotalPrice = () => {
         return carts.reduce((total, item) => total + (item.quantity * item.priceAtAdd), 0);
     };
 
-    // hiển thị giỏ hàng trống
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(value);
+    };
+
+    interface IOrderFormValues {
+        fullName: string;
+        phone: string;
+        address: string;
+        paymentMethod: 'COD' | 'VNPAY';
+    }
+
+    const onFinishOrder = (values: IOrderFormValues) => {
+        setLoading(true);
+        const { paymentMethod } = values;
+
+        if (paymentMethod === 'VNPAY') {
+            message.loading("Đang kết nối và chuyển hướng sang cổng thanh toán VNPay...", 2);
+            setTimeout(() => {
+                setLoading(false);
+                window.location.href = "https://sandbox.vnpayment.vn/tryitnow/Home/CreateOrder";
+            }, 1800);
+        } else {
+            setTimeout(() => {
+                setLoading(false);
+                setIsSuccess(true);
+                message.success('Đặt hàng thành công!');
+            }, 1500);
+        }
+    };
+
+    // Giao diện thành công
+    if (isSuccess) {
+        return (
+            <div className="order-status-wrapper">
+                <Result
+                    status="success"
+                    title="Đặt Hàng Thành Công!"
+                    subTitle="Cảm ơn bạn đã mua sắm. Đơn hàng của bạn đã được hệ thống ghi nhận thành công."
+                    extra={[
+                        <Button type="primary" key="home" onClick={() => navigate('/')}>
+                            Tiếp tục mua sắm
+                        </Button>,
+                        <Button key="history" onClick={() => message.info('Tính năng xem lịch sử đơn hàng đang được phát triển!')}>
+                            Xem lịch sử đơn hàng
+                        </Button>,
+                    ]}
+                />
+            </div>
+        );
+    }
+
+    // Giao diện giỏ hàng trống
     if (carts.length === 0) {
         return (
-            <div className="order-page-empty" style={{ padding: '50px 20px', textAlign: 'center' }}>
-                <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description="Giỏ hàng của bạn đang trống không!"
+            <div className="order-status-wrapper order-status-wrapper--empty-cart">
+                <Result
+                    status="warning"
+                    title="Giỏ hàng của bạn đang trống"
+                    subTitle="Vui lòng chọn sản phẩm vào giỏ trước khi tiến hành đặt hàng."
+                    extra={
+                        <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/')}>
+                            Quay lại trang chủ mua sắm
+                        </Button>
+                    }
                 />
-                <Button type="link" icon={<ArrowLeftOutlined />}
-                        onClick={() => navigate('/')}
-                        style={{ marginTop: 20 }}>
-                    Tiếp tục mua sắm
-                </Button>
             </div>
         );
     }
 
     return (
-        <div className="order-page-container" style={{maxWidth: 1200, margin: '0 auto', padding: '20px 15px'}}>
-
-            <div style={{
-                display: 'flex',
-                justifyContent: 'flex-start',
-                alignItems: 'center',
-                marginBottom: 15,
-                flexWrap: 'wrap',
-                gap: '350px'
-            }}>
-
-                <h2 className="order-title" style={{marginBottom: 20}}>
-                    <ShoppingCartOutlined/> Giỏ Hàng ({carts.length} sản phẩm)
-                </h2>
-
-                <Button
-                    type="link"
-                    icon={<ArrowLeftOutlined />}
-                    onClick={() => navigate('/')}
-                    style={{ paddingRight: 0, color: '#3481ed', fontSize: 18, fontWeight: 600 }}
-                >
-                    Tiếp tục mua sắm
-                </Button>
+        <div className="order-page-container">
+            <div className="order-page-header">
+                <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} className="back-btn" />
+                <Title level={3} className="header-title">Thông tin đặt hàng</Title>
             </div>
 
-                    <Row gutter={[20, 20]}>
-                        {/* ─── bên trái: danh sách sản phẩm─────────────────── */}
-                        <Col xs={24} lg={17}>
+            <Form
+                form={form}
+                layout="vertical"
+                onFinish={onFinishOrder}
+                initialValues={{ paymentMethod: 'COD' }}
+            >
+                <Row gutter={[24, 24]}>
+                    {/* CỘT BÊN TRÁI:  nhập thông tin và chọn thanhoán */}
+                    <Col xs={24} lg={14}>
+                        <Space direction="vertical" size="large" style={{ display: 'flex' }}>
+
+                            {/* địa chỉ giao hàng */}
+                            <Card
+                                title={<span><EnvironmentOutlined style={{ color: '#ff4d4f', marginRight: 8 }} /> Thông tin nhận hàng</span>}
+                                bordered={true}
+                            >
+                                <Row gutter={16}>
+                                    <Col xs={24} sm={12}>
+                                        <Form.Item
+                                            label="Họ và tên người nhận"
+                                            name="fullName"
+                                            rules={[{ required: true, message: 'Họ tên không được để trống!' }]}
+                                        >
+                                            <Input placeholder="Nhập đầy đủ họ và tên" size="large" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} sm={12}>
+                                        <Form.Item
+                                            label="Số điện thoại"
+                                            name="phone"
+                                            rules={[
+                                                { required: true, message: 'Số điện thoại không được để trống!' },
+                                                { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải đúng 10 chữ số!' }
+                                            ]}
+                                        >
+                                            <Input placeholder="Nhập số điện thoại di động" size="large" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24}>
+                                        <Form.Item
+                                            label="Địa chỉ nhận hàng thực tế"
+                                            name="address"
+                                            rules={[{ required: true, message: 'Vui lòng cung cấp địa chỉ cụ thể!' }]}
+                                        >
+                                            <TextArea rows={3} placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..." size="large" />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                            </Card>
+
+                            {/* phương thức thanh toán */}
+                            <Card
+                                title={<span><CreditCardOutlined style={{ color: '#1677ff', marginRight: 8 }} /> Phương thức thanh toán</span>}
+                                bordered={true}
+                            >
+                                <Form.Item name="paymentMethod" noStyle>
+                                    <Radio.Group className="payment-method-group">
+                                        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+
+                                            {/*COD */}
+                                            <Radio value="COD" className="payment-radio-item">
+                                                <Space direction="vertical" size={0} style={{ marginLeft: 8 }}>
+                                                    <Text strong className="radio-label-text">Thanh toán khi nhận hàng (COD)</Text>
+                                                    <Text type="secondary">Nhận hàng thanh toán tiền mặt trực tiếp cho nhân viên giao hàng.</Text>
+                                                </Space>
+                                            </Radio>
+
+                                            <Divider style={{ margin: 0 }} />
+
+                                            {/*VNPay */}
+                                            <Radio value="VNPAY" className="payment-radio-item">
+                                                <div className="payment-content-wrapper">
+
+                                                    <div className="payment-title-row">
+                                                        <Text strong className="radio-label-text">
+                                                            Thanh toán qua cổng VNPay
+                                                        </Text>
+                                                        <img
+                                                            src="src/assets/img/vnpay.png"
+                                                            alt="VNPay"
+                                                            className="vnpay-logo"
+                                                        />
+                                                    </div>
+
+                                                    <Text type="secondary" className="payment-desc-text">
+                                                        Quét mã QR bằng ứng dụng Ngân hàng (Mobile Banking), ví điện tử hoặc thẻ ATM/Quốc tế.
+                                                    </Text>
+
+                                                </div>
+                                            </Radio>
+
+                                        </Space>
+                                    </Radio.Group>
+                                </Form.Item>
+                            </Card>
+                        </Space>
+                    </Col>
+
+                    {/*tóm tắt danh sách sản phẩm và tổng tiền */}
+                    <Col xs={24} lg={10}>
+                        <Card title="Chi tiết đơn hàng" className="order-summary-card">
+
+                            {/* list danh sách các cuốn sách */}
                             <div className="cart-items-list">
                                 {carts.map((item) => (
-                                    <Card
-                                        key={item.bookId._id}
-                                        className="cart-item-card"
-                                        style={{marginBottom: 15}}
-                                        bodyStyle={{padding: '15px'}}
-                                    >
-                                        <Row align="middle" gutter={[16, 16]}>
-                                            {/* anh sản phẩm */}
-                                            <Col xs={6} sm={4} style={{textAlign: 'center'}}>
-                                                <img
-                                                    src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item.bookId.thumbnail}`}
-                                                    alt={item.bookId.mainText}
-                                                    style={{width: '100%', maxHeight: 90, objectFit: 'contain'}}
-                                                />
-                                            </Col>
-
-                                            {/* thông tin sản phẩm */}
-                                            <Col xs={18} sm={10}>
-                                                <div className="item-title"
-                                                     style={{fontWeight: 600, fontSize: 15, marginBottom: 5}}>
+                                    <div key={item.bookId._id} className="cart-item">
+                                        <div className="cart-item__left">
+                                            <img
+                                                src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item.bookId.thumbnail}`}
+                                                alt={item.bookId.mainText}
+                                                className="book-img"
+                                            />
+                                            <div className="book-info">
+                                                <Text strong className="book-title">
                                                     {item.bookId.mainText}
-                                                </div>
-                                                <div className="item-price-unit"
-                                                     style={{color: '#8c8c8c', fontSize: 13}}>
-                                                    Đơn giá: {new Intl.NumberFormat('vi-VN', {
-                                                    style: 'currency',
-                                                    currency: 'VND'
-                                                }).format(item.priceAtAdd)}
-                                                </div>
-                                            </Col>
-
-                                            {/* nút tăng/giảm số lượng */}
-                                            <Col xs={12} sm={6} style={{textAlign: 'center'}}>
-                                                <InputNumber
-                                                    min={1}
-                                                    max={item.bookId.quantity} //không cho tăng vượt quá tồn kho trong DB
-                                                    value={item.quantity}
-                                                    disabled={isActionLoading}
-                                                    onChange={(value) => handleQuantityChange(item.bookId._id, value as number)}
-                                                />
-                                                <div style={{fontSize: 11, color: '#ff4d4f', marginTop: 4}}>
-                                                    (Còn kho: {item.bookId.quantity})
-                                                </div>
-                                            </Col>
-
-                                            {/* thành tiền và nút xóa */}
-                                            <Col xs={12} sm={4} style={{textAlign: 'right'}}>
-                                                <div className="item-total-price"
-                                                     style={{fontWeight: 600, color: '#ff4d4f', marginBottom: 10}}>
-                                                    {new Intl.NumberFormat('vi-VN', {
-                                                        style: 'currency',
-                                                        currency: 'VND'
-                                                    }).format(item.quantity * item.priceAtAdd)}
-                                                </div>
-                                                <Button
-                                                    type="text"
-                                                    danger
-                                                    icon={<DeleteOutlined/>}
-                                                    disabled={isActionLoading}
-                                                    onClick={() => handleRemoveItem(item.bookId._id)}
-                                                >
-                                                    Xóa
-                                                </Button>
-                                            </Col>
-                                        </Row>
-                                    </Card>
+                                                </Text>
+                                                <Text type="secondary" className="book-qty">Số lượng: {item.quantity}</Text>
+                                            </div>
+                                        </div>
+                                        <div className="cart-item__right">
+                                            <Text strong className="item-total-price">{formatCurrency(item.quantity * item.priceAtAdd)}</Text>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        </Col>
 
-                        {/* ─── bên phải: phần tóm tắt đơn hàng────────────────── */}
-                        <Col xs={24} lg={7}>
-                            <Card className="cart-summary-card" style={{position: 'sticky', top: 20}}>
-                                <div style={{fontSize: 16, fontWeight: 600, marginBottom: 15}}>Tóm tắt đơn hàng</div>
+                            <Divider style={{ margin: '12px 0' }} />
 
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 10}}>
-                                    <span style={{color: '#595959'}}>Tạm tính:</span>
-                                    <span>{new Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND'
-                                    }).format(calculateTotalPrice())}</span>
-                                </div>
+                            <div className="price-row">
+                                <Text className="price-label">Tạm tính:</Text>
+                                <Text className="price-value">{formatCurrency(calculateTotalPrice())}</Text>
+                            </div>
+                            <div className="price-row">
+                                <Text className="price-label">Phí vận chuyển:</Text>
+                                <Text type="success" strong>Miễn phí</Text>
+                            </div>
 
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 10}}>
-                                    <span style={{color: '#595959'}}>Phí vận chuyển:</span>
-                                    <span style={{color: '#52c41a'}}>Miễn phí</span>
-                                </div>
+                            <Divider style={{ margin: '12px 0' }} />
 
-                                <Divider style={{margin: '12px 0'}}/>
+                            <div className="final-total-row">
+                                <Text strong className="total-label">Tổng số tiền cần trả:</Text>
+                                <Text strong className="total-amount">
+                                    {formatCurrency(calculateTotalPrice())}
+                                </Text>
+                            </div>
 
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: 20
-                                }}>
-                                    <span style={{fontWeight: 600}}>Tổng tiền:</span>
-                                    <span style={{fontSize: 20, fontWeight: 700, color: '#ff4d4f'}}>
-                                {new Intl.NumberFormat('vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND'
-                                }).format(calculateTotalPrice())}
-                            </span>
-                                </div>
+                            <Button
+                                type="primary"
+                                size="large"
+                                htmlType="submit"
+                                block
+                                loading={loading}
+                                className="submit-order-btn"
+                            >
+                                Xác nhận đặt hàng
+                            </Button>
+                        </Card>
+                    </Col>
+                </Row>
+            </Form>
+        </div>
+    );
+};
 
-                                <Button
-                                    type="primary"
-                                    size="large"
-                                    block
-                                    style={{
-                                        backgroundColor: '#ff4d4f',
-                                        borderColor: '#ff4d4f',
-                                        height: 45,
-                                        fontWeight: 600
-                                    }}
-                                    onClick={() => message.info("Tính năng thanh toán/giao hàng sẽ làm ở bước tiếp theo!")}
-                                >
-                                    Đặt hàng ngay
-                                </Button>
-                            </Card>
-                        </Col>
-                    </Row>
-                </div>
-                );
-                };
-
-                export default OrderPage;
+export default OrderPage;

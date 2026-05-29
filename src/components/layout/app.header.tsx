@@ -81,7 +81,7 @@ const AppHeader = () => {
                 </div>
                 {carts.length > 0 ?
                     <div className='pop-cart-footer'>
-                        <button onClick={() => navigate('/order')}>Xem giỏ hàng</button>
+                        <button onClick={() => navigate('/cart')}>Xem giỏ hàng</button>
                     </div>
                     :
                     <Empty
@@ -142,7 +142,7 @@ const AppHeader = () => {
                   >
                     <FiShoppingCart className="icon-cart"
                                     style={{ fontSize: 22, cursor: "pointer" }}
-                                    onClick={() => navigate('/order')}
+                                    onClick={() => navigate('/cart')}
                     />
                   </Badge>
                 </Popover>
