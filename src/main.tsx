@@ -6,8 +6,10 @@ import BookPage from "pages/client/book";
 import AboutPage from "pages/client/about";
 import LoginPage from "pages/client/auth/login";
 import RegisterPage from "pages/client/auth/register";
+import CartPage from "pages/client/cart/cartPage.tsx";
+import OrderPage from "pages/client/order/orderPage.tsx";
 import "styles/global.scss";
-import HomePage from "pages/client/home";
+import HomePage from "pages/client/homepage/home.tsx";
 import { App, ConfigProvider } from "antd";
 import { AppProvider } from "components/context/app.context";
 import ProtectedRoute from "@/components/auth";
@@ -31,6 +33,16 @@ const router = createBrowserRouter([
         index: true,
         element: <HomePage />,
       },
+      {
+        path: "cart",
+        element: <CartPage />
+      },
+
+      {
+        path: "order",
+        element: <OrderPage/>
+      },
+
       {
         path: "/book",
         element: <BookPage />,

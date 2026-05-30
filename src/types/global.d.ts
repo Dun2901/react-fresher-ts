@@ -78,4 +78,27 @@ declare global {
   type HandleType = {
     breadcrumb: BreadcrumbItem | ((params: Record<string, string | undefined>) => BreadcrumbItem);
   };
+
+
+  interface ICartItem {
+    bookId: {
+      _id: string;
+      mainText: string;
+      thumbnail: string;
+      price: number;
+      quantity: number; // số lượng tồn kho của sách ở trong DB
+    };
+    quantity: number;   //số lượng sách mà người dùng đặt mua
+    priceAtAdd: number; // giá sách tại thời điểm bấm nút Mua
+  }
+
+  interface ICart {
+    _id: string;
+    userId: string;
+    items: ICartItem[];
+    totalItems: number; // tổng số lượng tất cả các cuốn sách trong giỏ
+    totalPrice: number; // tổng thành tiền của cả giỏ hàng
+    createdAt: string;
+    updatedAt: string;
+  }
 }

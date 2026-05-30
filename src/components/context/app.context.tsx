@@ -1,4 +1,4 @@
-import { fetchAccountAPI } from "@/services/api";
+import { fetchAccountAPI, fetchMyCartAPI } from "@/services/api.ts";
 import { createContext, useContext, useEffect, useState } from "react";
 import PacmanLoader from "react-spinners/PacmanLoader";
 
@@ -9,7 +9,11 @@ interface IAppContext {
   user: IUser | null;
   isAppLoading: boolean;
   setIsAppLoading: (v: boolean) => void;
+
+  carts: ICartItem[];
+  setCarts: React.Dispatch<React.SetStateAction<ICartItem[]>>;
 }
+
 
 const CurrentAppContext = createContext<IAppContext | null>(null);
 
@@ -21,6 +25,8 @@ export const AppProvider = (props: TProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<IUser | null>(null);
   const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
+  const [carts, setCarts] = useState<ICartItem[]>([]); // state lưu trữ danh sách giỏ hàng
+
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -42,6 +48,28 @@ export const AppProvider = (props: TProps) => {
     fetchAccount();
   }, []);
 
+  //đòng bộ giỏ hàng từ DB lên context
+  useEffect(() => {
+    const syncCart = async () => {
+      if (isAuthenticated) {
+        try {
+          const res = await fetchMyCartAPI();
+          if (res && res.data) {
+            // thêm mảng items từ MongoDB vào state toàn cục
+            setCarts(res.data.items || []);
+          }
+        } catch (error) {
+          console.error("Lỗi đồng bộ giỏ hàng từ DB:", error);
+        }
+      } else {
+        // nếu logout hoặc chưa login thì trả về giỏ rỗng
+        setCarts([]);
+      }
+    };
+
+    syncCart();
+  }, [isAuthenticated]); // khởi chạy lại mỗi khi trạng thái đăng nhập thay đổi
+
   return (
     <>
       {isAppLoading === false ? (
@@ -53,6 +81,9 @@ export const AppProvider = (props: TProps) => {
             setUser,
             isAppLoading,
             setIsAppLoading,
+
+            carts,
+            setCarts,
           }}
         >
           {props.children}

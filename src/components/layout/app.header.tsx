@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FaReact } from "react-icons/fa";
 import { FiShoppingCart } from "react-icons/fi";
 import { VscSearchFuzzy } from "react-icons/vsc";
-import { Divider, Badge, Drawer, Avatar, Popover } from "antd";
+import { Divider, Badge, Drawer, Avatar, Popover, Empty } from "antd";
 import { Dropdown, Space } from "antd";
 import { useNavigate } from "react-router";
 import "./app.header.scss";
@@ -14,12 +14,12 @@ import { getAvatarUrl } from "@/services/helper";
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
 
-  const { isAuthenticated, user, setUser, setIsAuthenticated } = useCurrentApp();
+  const { isAuthenticated, user, setUser, setIsAuthenticated, carts } = useCurrentApp();
 
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    //todo
+
     const res = await logoutAPI();
     if (res.data) {
       setUser(null);
@@ -56,32 +56,38 @@ const AppHeader = () => {
       key: "admin",
     });
   }
-
   const contentPopover = () => {
     return (
       <div className="pop-cart-body">
-        {/* <div className='pop-cart-content'>
-                    {carts?.map((book, index) => {
+         <div className='pop-cart-content' style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                    {carts?.map((item, index) => {
                         return (
-                            <div className='book' key={`book-${index}`}>
-                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${book?.detail?.thumbnail}`} />
-                                <div>{book?.detail?.mainText}</div>
-                                <div className='price'>
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(book?.detail?.price ?? 0)}
-                                </div>
+                            <div className='book' key={`pop-book-${index}`} style={{ display: 'flex', padding: '5px 0', alignItems: 'center', gap: '10px' }}>
+                                <img
+                                    src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item?.bookId?.thumbnail}`}
+                                    style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                                    alt={item?.bookId?.mainText}
+                                    />
+                              <div style={{ flex: 1, maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {item?.bookId?.mainText}
+                              </div>
+                              <div className='price' style={{ color: '#ff4d4f', fontWeight: '500' }}>
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item?.priceAtAdd ?? 0)}
+                              </div>
                             </div>
                         )
+
                     })}
                 </div>
                 {carts.length > 0 ?
                     <div className='pop-cart-footer'>
-                        <button onClick={() => navigate('/order')}>Xem giỏ hàng</button>
+                        <button onClick={() => navigate('/cart')}>Xem giỏ hàng</button>
                     </div>
                     :
                     <Empty
                         description="Không có sản phẩm trong giỏ hàng"
                     />
-                } */}
+                }
       </div>
     );
   };
@@ -122,19 +128,22 @@ const AppHeader = () => {
               <li className="navigation__item">
                 <Popover
                   className="popover-carts"
-                  placement="topRight"
+                  placement="bottomRight"
                   rootClassName="popover-carts"
                   title={"Sản phẩm mới thêm"}
                   content={contentPopover}
                   arrow={true}
                 >
                   <Badge
-                    // count={carts?.length ?? 0}
-                    count={10}
+                      count={carts?.length ?? 0}
                     size={"small"}
                     showZero
+                      style={{ cursor: "pointer" }}
                   >
-                    <FiShoppingCart className="icon-cart" />
+                    <FiShoppingCart className="icon-cart"
+                                    style={{ fontSize: 22, cursor: "pointer" }}
+                                    onClick={() => navigate('/cart')}
+                    />
                   </Badge>
                 </Popover>
               </li>

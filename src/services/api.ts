@@ -112,4 +112,31 @@ export const uploadAvatarAPI = (formData: FormData) => {
       folder_type: "avatar",
     },
   });
+
 };
+
+// ----------------------------------MODULE CART-----------------------------------
+// 1. lấy giỏ hàng cuả user đăng nhập
+export const fetchMyCartAPI= ()=>{
+  return axios.get<IBackendRes<ICart>>("/carts/me");
+};
+// 2. Thêm/cộng dồn số lượng item
+export const addItemToCartAPI = (bookId:string, quantity:number)=>{
+  return axios.post<IBackendRes<ICart>>("/carts/items", {bookId, quantity});
+};
+//3. cập nhaatj só lượng
+export const updateCartItemAPI = (bookId: string, quantity:number)=>{
+  return axios.patch<IBackendRes<ICart>>(`/carts/items/${bookId}`, {quantity});
+};
+//4. Xóa 1 sản phẩm
+export const removeCartItemAPI = (bookId: string)=>{
+  return axios.delete<IBackendRes<ICart>>(`/carts/items/${bookId}`);
+};
+//5. Xóa hết giỏ hàng nếu đặt hàng thành công
+export const clearCartAPI = () =>{
+  return axios.delete<IBackendRes<ICart>>("/carts/clear");
+
+}
+
+
+
