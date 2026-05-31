@@ -138,5 +138,42 @@ export const clearCartAPI = () =>{
 
 }
 
+//---------------------------------MODULE ORDER-------------------
+// 1. khách hàng bấm nút đặt hàng (Checkout)
+export const checkoutAPI = (data: ICheckoutDto) => {
+  return axios.post<IBackendRes<IOrder>>("/orders/checkout", data);
+};
+
+// 2. khách hàng lấy danh sách đơn hàng của mình
+export const getMyOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
+  let url = `/orders/my-orders?current=${currentPage}&pageSize=${limit}`;
+  if (queryStr) url += `&${queryStr}`;
+  return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
+};
+
+// 3. ddmin lấy toàn bộ đơn hàng của hệ thống
+export const getAllOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
+  let url = `/orders?current=${currentPage}&pageSize=${limit}`;
+  if (queryStr) url += `&${queryStr}`;
+  return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
+};
+
+// lấy chi tiết một đơn hàng theo ID cho cả ADMIN và USER
+export const getOrderByIdAPI = (id: string) => {
+  return axios.get<IBackendRes<IOrder>>(`/orders/${id}`);
+};
+
+// 5. admin cập nhật trạng thái đơn hàng (Duyệt, Ship, Hoàn thành, Hủy)
+export const updateOrderStatusAPI = (
+    id: string,
+    status: "PENDING" | "CONFIRMED" | "SHIPPING" | "COMPLETED" | "CANCELLED"
+) => {
+  return axios.patch<IBackendRes<IOrder>>(`/orders/${id}/status`, { status });
+};
+
+// 6. khách hàng tự yêu cầu hủy đơn hàng khi đơn đang ở trạng thái PENDING
+export const cancelOrderAPI = (id: string) => {
+  return axios.patch<IBackendRes<IOrder>>(`/orders/${id}/cancel`);
+};
 
 
