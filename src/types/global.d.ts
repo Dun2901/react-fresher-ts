@@ -65,9 +65,20 @@ declare global {
     price: number;
     sold: number;
     quantity: number;
-    category: string;
+    category: {
+      _id: string;
+      name: string;
+      slug?: string;
+    };
     createdAt: Date;
     updatedAt: Date;
+  }
+
+  interface ICategory {
+    _id: string;
+    name: string;
+    slug?: string;
+    description?: string;
   }
   // Router type
   type BreadcrumbItem = {
@@ -79,7 +90,6 @@ declare global {
     breadcrumb: BreadcrumbItem | ((params: Record<string, string | undefined>) => BreadcrumbItem);
   };
 
-
   interface ICartItem {
     bookId: {
       _id: string;
@@ -88,7 +98,7 @@ declare global {
       price: number;
       quantity: number; // số lượng tồn kho của sách ở trong DB
     };
-    quantity: number;   //số lượng sách mà người dùng đặt mua
+    quantity: number; //số lượng sách mà người dùng đặt mua
     priceAtAdd: number; // giá sách tại thời điểm bấm nút Mua
   }
 
@@ -135,12 +145,10 @@ declare global {
     updatedAt: string;
   }
 
-// DTO gửi lên khi đặt hàng
+  // DTO gửi lên khi đặt hàng
   interface ICheckoutDto {
     shippingAddress: IShippingAddress;
     paymentMethod: 'COD' | 'VNPAY';
     note?: string;
   }
-
-
 }

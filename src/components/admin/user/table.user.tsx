@@ -1,16 +1,15 @@
-import AppBreadcrumb from "@/components/share/breadcrumb";
-import { deleteUserAPI, getUsersAPI } from "@/services/api";
-import { dateRangeValidate } from "@/services/helper";
-import { PlusOutlined, TeamOutlined } from "@ant-design/icons";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
-import { ProTable } from "@ant-design/pro-components";
-import { App, Button, Popconfirm } from "antd";
-import { useRef, useState } from "react";
-import { AiOutlineEdit } from "react-icons/ai";
-import { MdDeleteOutline } from "react-icons/md";
-import { Link } from "react-router-dom";
-import CreateUser from "./create.user";
-import UpdateUser from "./update.user";
+import { deleteUserAPI, getUsersAPI } from '@/services/api';
+import { dateRangeValidate } from '@/services/helper';
+import { PlusOutlined } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { ProTable } from '@ant-design/pro-components';
+import { App, Button, Popconfirm } from 'antd';
+import { useRef, useState } from 'react';
+import { AiOutlineEdit } from 'react-icons/ai';
+import { MdDeleteOutline } from 'react-icons/md';
+import { Link } from 'react-router-dom';
+import CreateUser from './create.user';
+import UpdateUser from './update.user';
 
 type TSearch = {
   fullName: string;
@@ -41,11 +40,11 @@ const TableUser = () => {
     setIsDeleteUser(true);
     const res = await deleteUserAPI(id);
     if (res && res.data) {
-      message.success("Xóa User thành công!");
+      message.success('Xóa User thành công!');
       refreshTable();
     } else {
       notification.error({
-        message: "Có lỗi xảy ra",
+        message: 'Có lỗi xảy ra',
         description: Array.isArray(res.error.message) ? res.error.message[0] : res.error.message,
       });
     }
@@ -54,69 +53,68 @@ const TableUser = () => {
 
   const columns: ProColumns<IUserTable>[] = [
     {
-      dataIndex: "index",
-      valueType: "indexBorder",
+      dataIndex: 'index',
+      valueType: 'indexBorder',
       width: 48,
     },
     {
-      title: "_id",
-      dataIndex: "_id",
+      title: '_id',
+      dataIndex: '_id',
       hideInSearch: true,
       render(dom, entity, index, action, schema) {
         return <Link to={`/admin/user/${entity._id}`}>{entity._id}</Link>;
       },
     },
     {
-      title: "Full name",
-      dataIndex: "fullName",
+      title: 'Full name',
+      dataIndex: 'fullName',
     },
     {
-      title: "Email",
-      dataIndex: "email",
+      title: 'Email',
+      dataIndex: 'email',
       copyable: true,
     },
     {
-      title: "Created At",
-      dataIndex: "createdAt",
-      valueType: "date",
+      title: 'Created At',
+      dataIndex: 'createdAt',
+      valueType: 'date',
       sorter: true,
       hideInSearch: true,
     },
     {
-      title: "Created At",
-      dataIndex: "createdAtRange",
-      valueType: "dateRange",
+      title: 'Created At',
+      dataIndex: 'createdAtRange',
+      valueType: 'dateRange',
       hideInTable: true,
     },
     {
-      title: "Action",
+      title: 'Action',
       hideInSearch: true,
-      render(dom, entity, index, action, schema) {
+      width: 80,
+      render(dom, entity) {
         return (
-          <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <AiOutlineEdit
+              size={18}
               color="#f57800"
-              style={{ cursor: "pointer", marginRight: 15 }}
+              style={{ cursor: 'pointer' }}
               onClick={() => {
-                console.log(">>> check entity: ", entity);
                 setDataUpdate(entity);
                 setOpenModalUpdate(true);
               }}
             />
             <Popconfirm
               placement="leftTop"
-              title="Xác nhận xóa User"
-              description="Bạn có chắc muốn xóa User này?"
+              title="Xác nhận xóa sách"
+              description="Bạn có chắc muốn xóa sách này?"
               onConfirm={() => handleDeleteUser(entity._id)}
               okText="Xác nhận"
               cancelText="Hủy"
               okButtonProps={{ loading: isDeleteUser }}
             >
-              <span style={{ marginLeft: 20 }}>
-                <MdDeleteOutline color="#ff4d4f" style={{ cursor: "pointer" }} />
-              </span>
+              <MdDeleteOutline size={18} color="#ff4d4f" style={{ cursor: 'pointer' }} />
             </Popconfirm>
-          </>
+          </div>
         );
       },
     },
@@ -131,12 +129,12 @@ const TableUser = () => {
         request={async (params, sort, filter) => {
           console.log(params, sort, filter);
 
-          let query = "";
+          let query = '';
           if (params) {
             query += `current=${params.current}&pageSize=${params.pageSize}`;
             //đăng kí sau thì lên trước
             if (sort && sort.createdAt) {
-              query += `&sort=${sort.createdAt === "ascend" ? "createdAt" : "-createdAt"}`;
+              query += `&sort=${sort.createdAt === 'ascend' ? 'createdAt' : '-createdAt'}`;
             } else {
               query += `&sort=-createdAt`;
             }
@@ -175,7 +173,7 @@ const TableUser = () => {
           showTotal: (total, range) => {
             return (
               <div>
-                {" "}
+                {' '}
                 {range[0]}-{range[1]} on {total} rows
               </div>
             );
