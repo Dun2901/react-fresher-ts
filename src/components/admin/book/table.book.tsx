@@ -1,15 +1,15 @@
-import { deleteBookAPI, getBooksAPI } from "@/services/api";
-import { dateRangeValidate } from "@/services/helper";
-import { PlusOutlined } from "@ant-design/icons";
-import type { ActionType, ProColumns } from "@ant-design/pro-components";
-import { ProTable } from "@ant-design/pro-components";
-import { App, Button, Popconfirm } from "antd";
-import { useRef, useState } from "react";
-import { AiOutlineEdit } from "react-icons/ai";
-import { MdDeleteOutline } from "react-icons/md";
-import { Link } from "react-router-dom";
-import CreateBook from "./create.book";
-import UpdateBook from "./update.book";
+import { deleteBookAPI, getBooksAPI } from '@/services/api';
+import { dateRangeValidate } from '@/services/helper';
+import { PlusOutlined } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { ProTable } from '@ant-design/pro-components';
+import { App, Button, Popconfirm, Space } from 'antd';
+import { useRef, useState } from 'react';
+import { AiOutlineEdit } from 'react-icons/ai';
+import { MdDeleteOutline } from 'react-icons/md';
+import { Link } from 'react-router-dom';
+import CreateBook from './create.book';
+import UpdateBook from './update.book';
 
 type TSearch = {
   mainText: string;
@@ -41,11 +41,11 @@ const TableBook = () => {
     setIsDeleteBook(true);
     const res = await deleteBookAPI(id);
     if (res && res.data) {
-      message.success("Xóa sách thành công!");
+      message.success('Xóa sách thành công!');
       refreshTable();
     } else {
       notification.error({
-        message: "Có lỗi xảy ra",
+        message: 'Có lỗi xảy ra',
         description: Array.isArray(res.error.message) ? res.error.message[0] : res.error.message,
       });
     }
@@ -54,69 +54,73 @@ const TableBook = () => {
 
   const columns: ProColumns<IBookTable>[] = [
     {
-      dataIndex: "index",
-      valueType: "indexBorder",
+      dataIndex: 'index',
+      valueType: 'indexBorder',
       width: 48,
     },
     {
-      title: "_id",
-      dataIndex: "_id",
+      title: '_id',
+      dataIndex: '_id',
       hideInSearch: true,
       render(dom, entity, index, action, schema) {
-        return <Link to={`/admin/books/${entity._id}`}>{entity._id}</Link>;
+        return <Link to={`/admin/book/${entity._id}`}>{entity._id}</Link>;
       },
     },
     {
-      title: "Tên sách",
-      dataIndex: "mainText",
+      title: 'Tên sách',
+      dataIndex: 'mainText',
     },
     {
-      title: "Tác giả",
-      dataIndex: "author",
+      title: 'Tác giả',
+      dataIndex: 'author',
     },
     {
-      title: "Thể loại",
-      dataIndex: "category",
+      title: 'Thể loại',
+      dataIndex: 'category',
+      render: (_, record) => {
+        return record.category?.name ?? '';
+      },
     },
     {
-      title: "Giá",
-      dataIndex: "price",
+      title: 'Giá',
+      dataIndex: 'price',
       hideInSearch: true,
     },
     {
-      title: "Số lượng",
-      dataIndex: "quantity",
+      title: 'Số lượng',
+      dataIndex: 'quantity',
       hideInSearch: true,
     },
     {
-      title: "Đã bán",
-      dataIndex: "sold",
+      title: 'Đã bán',
+      dataIndex: 'sold',
       hideInSearch: true,
     },
     {
-      title: "Created At",
-      dataIndex: "createdAt",
-      valueType: "date",
+      title: 'Created At',
+      dataIndex: 'createdAt',
+      valueType: 'date',
       sorter: true,
       hideInSearch: true,
     },
     {
-      title: "Created At",
-      dataIndex: "createdAtRange",
-      valueType: "dateRange",
+      title: 'Created At',
+      dataIndex: 'createdAtRange',
+      valueType: 'dateRange',
       hideInTable: true,
     },
     {
-      title: "Action",
+      title: 'Action',
       hideInSearch: true,
-      render(dom, entity, index, action, schema) {
+      width: 80,
+      render(dom, entity) {
         return (
-          <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <AiOutlineEdit
+              size={18}
               color="#f57800"
-              style={{ cursor: "pointer", marginRight: 15 }}
+              style={{ cursor: 'pointer' }}
               onClick={() => {
-                console.log(">>> check entity: ", entity);
                 setDataUpdate(entity);
                 setOpenModalUpdate(true);
               }}
@@ -130,11 +134,9 @@ const TableBook = () => {
               cancelText="Hủy"
               okButtonProps={{ loading: isDeleteBook }}
             >
-              <span style={{ marginLeft: 20 }}>
-                <MdDeleteOutline color="#ff4d4f" style={{ cursor: "pointer" }} />
-              </span>
+              <MdDeleteOutline size={18} color="#ff4d4f" style={{ cursor: 'pointer' }} />
             </Popconfirm>
-          </>
+          </div>
         );
       },
     },
@@ -149,11 +151,11 @@ const TableBook = () => {
         request={async (params, sort, filter) => {
           console.log(params, sort, filter);
 
-          let query = "";
+          let query = '';
           if (params) {
             query += `current=${params.current}&pageSize=${params.pageSize}`;
             if (sort && sort.createdAt) {
-              query += `&sort=${sort.createdAt === "ascend" ? "createdAt" : "-createdAt"}`;
+              query += `&sort=${sort.createdAt === 'ascend' ? 'createdAt' : '-createdAt'}`;
             } else {
               query += `&sort=-createdAt`;
             }
@@ -195,7 +197,7 @@ const TableBook = () => {
           showTotal: (total, range) => {
             return (
               <div>
-                {" "}
+                {' '}
                 {range[0]}-{range[1]} on {total} rows
               </div>
             );
