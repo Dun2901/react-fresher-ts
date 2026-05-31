@@ -1,20 +1,45 @@
 import React, { useState } from 'react';
-import { Row, Col, Button, Divider, Card, Form, Input, Radio, Space, Typography, message, Result } from 'antd';
+import {
+    Row,
+    Col,
+    Button,
+    Divider,
+    Card,
+    Form,
+    Input,
+    Radio,
+    Space,
+    Typography,
+    message,
+    Result,
+    notification
+} from 'antd';
 import { ArrowLeftOutlined, CreditCardOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import { useNavigate } from 'react-router-dom';
+import { checkoutAPI } from '@/services/api';
 import "./orderPage.scss";
+
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
 
+interface IOrderFormValues {
+    fullName: string;
+    phone: string;
+    address: string;
+    paymentMethod: 'COD' | 'VNPAY';
+    note?: string;
+
+}
 const OrderPage: React.FC = () => {
-    const { carts } = useCurrentApp();
+    const { carts, setCarts } = useCurrentApp();
     const navigate = useNavigate();
     const [form] = Form.useForm();
 
     const [isSuccess, setIsSuccess] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
+    const [createdOrder, setCreatedOrder] = useState<IOrder | null>(null);
 
     const calculateTotalPrice = () => {
         return carts.reduce((total, item) => total + (item.quantity * item.priceAtAdd), 0);
@@ -27,40 +52,72 @@ const OrderPage: React.FC = () => {
         }).format(value);
     };
 
-    interface IOrderFormValues {
-        fullName: string;
-        phone: string;
-        address: string;
-        paymentMethod: 'COD' | 'VNPAY';
-    }
 
-    const onFinishOrder = (values: IOrderFormValues) => {
+    const onFinishOrder = async(values: IOrderFormValues)=>{
         setLoading(true);
-        const { paymentMethod } = values;
 
-        if (paymentMethod === 'VNPAY') {
-            message.loading("Đang kết nối và chuyển hướng sang cổng thanh toán VNPay...", 2);
-            setTimeout(() => {
-                setLoading(false);
-                window.location.href = "https://sandbox.vnpayment.vn/tryitnow/Home/CreateOrder";
-            }, 1800);
-        } else {
-            setTimeout(() => {
-                setLoading(false);
+        const payload: ICheckoutDto = {
+            shippingAddress: {
+                fullName: values.fullName,
+                phone: values.phone,
+                address: values.address
+            },
+            paymentMethod: values.paymentMethod,
+            note: values.note
+        };
+        try{
+            const res = await checkoutAPI(payload);
+            if (res && res.data) {
+                // trường hợp thanh toán ONLINE qua VNPAY
+                if (values.paymentMethod === 'VNPAY') {
+                    message.loading("Đang kết nối và chuyển hướng sang cổng thanh toán VNPay...", 2);
+                    // Giả sử Backend trả về thuộc tính paymentUrl trong data
+                    const paymentUrl = (res.data as any)?.paymentUrl;
+                    if (paymentUrl) {
+                        window.location.href = paymentUrl;
+                    } else {
+                        window.location.href = "https://sandbox.vnpayment.vn/tryitnow/Home/CreateOrder";
+                    }
+                    return;
+                }
+
+                // trường hợp thanh toán COD
+                message.success(res.message || 'Đặt hàng thành công!');
+                if (res.data) setCreatedOrder(res.data);
+                setCarts([]);
                 setIsSuccess(true);
-                message.success('Đặt hàng thành công!');
-            }, 1500);
+            }
+        } catch (error: any) {
+            // Trích xuất thông điệp lỗi chuẩn cấu trúc IBackendRes từ Backend
+            const errorMsg = error?.response?.data?.error?.message || 'Đã xảy ra lỗi trong quá trình xử lý đơn hàng!';
+            notification.error({
+                message: 'Đặt hàng thất bại',
+                description: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
+                placement: 'topRight'
+            });
+        } finally {
+            setLoading(false);
         }
     };
-
     // Giao diện thành công
-    if (isSuccess) {
+    if (isSuccess && createdOrder) {
         return (
-            <div className="order-status-wrapper">
+            <div className="order-status-wrapper" style={{ padding: '40px 20px', maxWidth: 650, margin: '0 auto' }}>
                 <Result
                     status="success"
                     title="Đặt Hàng Thành Công!"
-                    subTitle="Cảm ơn bạn đã mua sắm. Đơn hàng của bạn đã được hệ thống ghi nhận thành công."
+                    subTitle={
+                        <Space direction="vertical" style={{ width: '100%', marginTop: 10 }}>
+                            <Text>Cảm ơn bạn đã mua sắm. Đơn hàng của bạn đã được hệ thống ghi nhận thành công.</Text>
+                            {createdOrder && (
+                                <Card size="small" style={{ backgroundColor: '#fafafa', textAlign: 'left', marginTop: 15 }}>
+                                    <div style={{ marginBottom: 4 }}>Mã đơn hàng: <Text strong type="warning">{createdOrder._id}</Text></div>
+                                    <div style={{ marginBottom: 4 }}>Người nhận: <Text strong>{createdOrder.shippingAddress.fullName}</Text></div>
+                                    <div>Tổng tiền cần trả (COD): <Text strong type="danger">{formatCurrency(createdOrder.totalPrice)}</Text></div>
+                                </Card>
+                            )}
+                        </Space>
+                    }
                     extra={[
                         <Button type="primary" key="home" onClick={() => navigate('/')}>
                             Tiếp tục mua sắm
@@ -261,6 +318,6 @@ const OrderPage: React.FC = () => {
             </Form>
         </div>
     );
-};
+}
 
 export default OrderPage;

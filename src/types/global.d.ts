@@ -101,4 +101,46 @@ declare global {
     createdAt: string;
     updatedAt: string;
   }
+
+  // ------------ORDER----------------------
+
+  interface IOrderItem {
+    bookId: string;
+    bookName: string;
+    thumbnail: string;
+    quantity: number;
+    price: number;
+  }
+
+  interface IShippingAddress {
+    fullName: string;
+    phone: string;
+    address: string;
+  }
+
+  interface IOrder {
+    _id: string;
+    orderCode: string;
+    userId: string | { _id: string; fullName: string; email: string };
+    items: IOrderItem[];
+    shippingAddress: IShippingAddress;
+    totalPrice: number;
+    status: 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED';
+    paymentMethod: 'COD' | 'VNPAY';
+    paymentStatus: 'UNPAID' | 'PAID' | 'REFUNDED';
+    note?: string;
+    createdBy?: { _id: string; email: string };
+    updatedBy?: { _id: string; email: string };
+    createdAt: string;
+    updatedAt: string;
+  }
+
+// DTO gửi lên khi đặt hàng
+  interface ICheckoutDto {
+    shippingAddress: IShippingAddress;
+    paymentMethod: 'COD' | 'VNPAY';
+    note?: string;
+  }
+
+
 }
