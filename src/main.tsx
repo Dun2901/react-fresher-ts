@@ -23,6 +23,7 @@ import VerifyPage from 'pages/client/auth/verify';
 import DetailUserPage from 'pages/admin/detail.user';
 import { DollarCircleOutlined, ExceptionOutlined, TeamOutlined } from '@ant-design/icons';
 import DetailBookPage from './pages/admin/detail.book';
+import VnpayReturnPage from './pages/client/payments/vnpay.return';
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -42,6 +43,10 @@ const router = createBrowserRouter([
       {
         path: 'order',
         element: <OrderPage />,
+      },
+      {
+        path: 'payment/vnpay-return',
+        element: <VnpayReturnPage />,
       },
 
       {

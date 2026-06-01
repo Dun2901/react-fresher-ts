@@ -136,7 +136,7 @@ declare global {
     shippingAddress: IShippingAddress;
     totalPrice: number;
     status: 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED';
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentMethod: 'COD' | 'ONLINE';
     paymentStatus: 'UNPAID' | 'PAID' | 'REFUNDED';
     note?: string;
     createdBy?: { _id: string; email: string };
@@ -148,7 +148,7 @@ declare global {
   // DTO gửi lên khi đặt hàng
   interface ICheckoutDto {
     shippingAddress: IShippingAddress;
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentMethod: 'COD' | 'ONLINE';
     note?: string;
   }
 }

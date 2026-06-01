@@ -17,8 +17,9 @@ import {
 import { ArrowLeftOutlined, CreditCardOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import { useNavigate } from 'react-router-dom';
-import { checkoutAPI } from '@/services/api';
+import { checkoutAPI, createVnpayPaymentUrlAPI } from '@/services/api';
 import './orderPage.scss';
+import vnpayLogo from '@/assets/img/vnpay.png';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
@@ -27,7 +28,7 @@ interface IOrderFormValues {
   fullName: string;
   phone: string;
   address: string;
-  paymentMethod: 'COD' | 'VNPAY';
+  paymentMethod: 'COD' | 'ONLINE';
   note?: string;
 }
 const OrderPage: React.FC = () => {
@@ -64,30 +65,33 @@ const OrderPage: React.FC = () => {
     };
     try {
       const res = await checkoutAPI(payload);
+
       if (res && res.data) {
-        // trường hợp thanh toán ONLINE qua VNPAY
-        if (values.paymentMethod === 'VNPAY') {
+        if (values.paymentMethod === 'ONLINE' && res.data?._id) {
           message.loading('Đang kết nối và chuyển hướng sang cổng thanh toán VNPay...', 2);
-          // Giả sử Backend trả về thuộc tính paymentUrl trong data
-          const paymentUrl = (res.data as any)?.paymentUrl;
-          if (paymentUrl) {
-            window.location.href = paymentUrl;
-          } else {
-            window.location.href = 'https://sandbox.vnpayment.vn/tryitnow/Home/CreateOrder';
+
+          const paymentRes = await createVnpayPaymentUrlAPI(res.data._id);
+          const paymentUrl = paymentRes.data?.paymentUrl;
+
+          if (!paymentUrl) {
+            throw new Error('Không nhận được URL thanh toán VNPay');
           }
+
+          window.location.href = paymentUrl;
           return;
         }
 
-        // trường hợp thanh toán COD
         message.success(res.message || 'Đặt hàng thành công!');
         if (res.data) setCreatedOrder(res.data);
         setCarts([]);
         setIsSuccess(true);
       }
     } catch (error: any) {
-      // Trích xuất thông điệp lỗi chuẩn cấu trúc IBackendRes từ Backend
       const errorMsg =
-        error?.response?.data?.error?.message || 'Đã xảy ra lỗi trong quá trình xử lý đơn hàng!';
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        'Đã xảy ra lỗi trong quá trình xử lý đơn hàng!';
+
       notification.error({
         message: 'Đặt hàng thất bại',
         description: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
@@ -270,17 +274,13 @@ const OrderPage: React.FC = () => {
                       <Divider style={{ margin: 0 }} />
 
                       {/*VNPay */}
-                      <Radio value="VNPAY" className="payment-radio-item">
+                      <Radio value="ONLINE" className="payment-radio-item">
                         <div className="payment-content-wrapper">
                           <div className="payment-title-row">
                             <Text strong className="radio-label-text">
                               Thanh toán qua cổng VNPay
                             </Text>
-                            <img
-                              src="src/assets/img/vnpay.png"
-                              alt="VNPay"
-                              className="vnpay-logo"
-                            />
+                            <img src={vnpayLogo} alt="VNPay" className="vnpay-logo" />
                           </div>
 
                           <Text type="secondary" className="payment-desc-text">
