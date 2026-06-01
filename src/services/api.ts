@@ -257,3 +257,17 @@ export const updateOrderStatusAPI = (
 export const cancelOrderAPI = (id: string) => {
   return axios.patch<IBackendRes<IOrder>>(`/orders/${id}/cancel`);
 };
+
+// 7. tạo URL thanh toán VNPay
+export const createVnpayPaymentUrlAPI = (orderId: string) => {
+  return axios.post<IBackendRes<{ paymentUrl: string; orderCode: string }>>(
+    `/payments/vnpay/create-payment-url/${orderId}`,
+  );
+};
+
+// 8. verify kết quả thanh toán VNPay
+export const verifyVnpayReturnAPI = (queryString: string) => {
+  return axios.get<IBackendRes<{ success: boolean; message: string; orderCode?: string }>>(
+    `/payments/vnpay-return?${queryString}`,
+  );
+};
