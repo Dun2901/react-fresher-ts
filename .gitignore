@@ -14,7 +14,9 @@ dist-ssr
 
 # Editor directories and files
 .vscode/*
+!.vscode/settings.json
 !.vscode/extensions.json
+
 .idea
 .DS_Store
 *.suo
@@ -26,7 +28,3 @@ dist-ssr
 .env.development
 .env.production
 .env
-
-#prettier
-.prettierignore
-.prettierrc
