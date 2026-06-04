@@ -34,8 +34,8 @@ const AppHeader = () => {
       key: 'account',
     },
     {
-      label: <Link to="/orders">Lịch sử mua hàng</Link>,
-      key: 'history',
+      label: <Link to="/orders">Đơn hàng của tôi</Link>,
+      key: 'orders',
     },
     {
       label: (
@@ -214,7 +214,7 @@ const AppHeader = () => {
             setOpenDrawer(false);
           }}
         >
-          Lịch sử mua hàng
+          Đơn hàng của tôi
         </p>
         <Divider style={{ margin: '8px 0' }} />
         {user?.role === 'ADMIN' && (

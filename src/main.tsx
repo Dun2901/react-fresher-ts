@@ -24,8 +24,8 @@ import { DollarCircleOutlined, ExceptionOutlined, TeamOutlined } from '@ant-desi
 import DetailBookPage from './pages/admin/detail.book';
 import VnpayReturnPage from './pages/client/payments/vnpay.return';
 import CheckoutPage from './pages/client/checkout/checkout.page';
-import OrderHistoryPage from './pages/client/order/order.history';
-import OrderDetailPage from './pages/client/order/order.detail';
+import OrderDetailPage from './pages/client/order/detail/order.detail';
+import CurrentOrdersPage from './pages/client/order/current/current.order';
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -67,7 +67,7 @@ const router = createBrowserRouter([
         path: 'orders',
         element: (
           <ProtectedRoute>
-            <OrderHistoryPage />
+            <CurrentOrdersPage />
           </ProtectedRoute>
         ),
       },

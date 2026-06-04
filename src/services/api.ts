@@ -228,7 +228,7 @@ export const checkoutAPI = (data: ICheckoutDto) => {
 
 // 2. khách hàng lấy danh sách đơn hàng của mình
 export const getMyOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
-  let url = `/orders/my-orders?current=${currentPage}&pageSize=${limit}`;
+  let url = `/orders?current=${currentPage}&pageSize=${limit}`;
   if (queryStr) url += `&${queryStr}`;
   return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
 };
