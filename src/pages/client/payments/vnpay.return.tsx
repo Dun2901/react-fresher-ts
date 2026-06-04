@@ -46,8 +46,8 @@ const VnpayReturnPage = () => {
       title={result.message}
       subTitle={result.orderCode ? `Mã đơn hàng: ${result.orderCode}` : undefined}
       extra={[
-        <Button key="orders" type="primary" onClick={() => navigate('/order')}>
-          Về trang đặt hàng
+        <Button key="orders" type="primary" onClick={() => navigate('/orders')}>
+          Xem lịch sử đơn hàng
         </Button>,
         <Button key="home" onClick={() => navigate('/')}>
           Về trang chủ

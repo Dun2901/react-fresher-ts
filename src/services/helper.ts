@@ -1,6 +1,6 @@
-import dayjs from "dayjs";
+import dayjs from 'dayjs';
 
-export const FORMATE_DATE = "YYYY-MM-DD";
+export const FORMATE_DATE = 'YYYY-MM-DD';
 
 export const dateRangeValidate = (dateRange: any) => {
   if (!dateRange) return undefined;
@@ -14,7 +14,10 @@ export const dateRangeValidate = (dateRange: any) => {
 export const getAvatarUrl = (avatar?: string): string => {
   if (!avatar) return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/default-user.png`;
 
-  return avatar.startsWith("http")
+  return avatar.startsWith('http')
     ? avatar
     : `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${avatar}`;
 };
+
+export const formatCurrency = (value: number): string =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);

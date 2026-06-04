@@ -8,7 +8,7 @@ import './app.header.scss';
 import { Link } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context';
 import { logoutAPI } from '@/services/api';
-import { getAvatarUrl } from '@/services/helper';
+import { getAvatarUrl, formatCurrency } from '@/services/helper';
 
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -34,7 +34,7 @@ const AppHeader = () => {
       key: 'account',
     },
     {
-      label: <Link to="/history">Lịch sử mua hàng</Link>,
+      label: <Link to="/orders">Lịch sử mua hàng</Link>,
       key: 'history',
     },
     {
@@ -88,9 +88,7 @@ const AppHeader = () => {
               {item?.bookId?.mainText}
             </div>
             <div className="price" style={{ color: '#ff4d4f', fontWeight: '600' }}>
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
-                item?.priceAtAdd ?? 0,
-              )}
+              {formatCurrency(item?.priceAtAdd ?? 0)}
             </div>
           </div>
         ))}
@@ -212,7 +210,7 @@ const AppHeader = () => {
         <p
           style={{ padding: '8px 0', cursor: 'pointer' }}
           onClick={() => {
-            navigate('/history');
+            navigate('/orders');
             setOpenDrawer(false);
           }}
         >

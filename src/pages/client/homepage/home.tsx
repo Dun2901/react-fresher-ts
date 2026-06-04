@@ -6,7 +6,6 @@ import {
   Button,
   Tooltip,
   message,
-  Space,
   Spin,
   Pagination,
   Carousel,
@@ -26,6 +25,7 @@ import {
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import './home.scss';
 import { addItemToCartAPI, getBooksAPI } from '@/services/api.ts';
+import { formatCurrency } from '@/services/helper';
 import axios from 'axios';
 
 const { Sider, Content } = Layout;
@@ -252,18 +252,10 @@ const Homepage: React.FC = () => {
                       {/* Khối bọc chân card để đẩy thẳng hàng xuống đáy */}
                       <div className="book-card-footer">
                         <div className="price-section">
-                          <span className="current-price">
-                            {new Intl.NumberFormat('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND',
-                            }).format(book.price)}
-                          </span>
+                          <span className="current-price">{formatCurrency(book.price)}</span>
                           {discountPercent > 0 && (
                             <span className="old-price">
-                              {new Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(book.price * (1 + discountPercent / 100))}
+                              {formatCurrency(book.price * (1 + discountPercent / 100))}
                             </span>
                           )}
                         </div>
