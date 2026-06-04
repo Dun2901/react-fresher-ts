@@ -26,6 +26,7 @@ import VnpayReturnPage from './pages/client/payments/vnpay.return';
 import CheckoutPage from './pages/client/checkout/checkout.page';
 import OrderDetailPage from './pages/client/order/detail/order.detail';
 import CurrentOrdersPage from './pages/client/order/current/current.order';
+import OrderHistoryPage from './pages/client/order/history/order.history';
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -68,6 +69,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CurrentOrdersPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'orders/history',
+        element: (
+          <ProtectedRoute>
+            <OrderHistoryPage />
           </ProtectedRoute>
         ),
       },

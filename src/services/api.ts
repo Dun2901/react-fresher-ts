@@ -271,3 +271,16 @@ export const verifyVnpayReturnAPI = (queryString: string) => {
     `/payments/vnpay-return?${queryString}`,
   );
 };
+
+//---------------------------------MODULE HISTORY-------------------
+export const getMyHistoryOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
+  let url = `/history?current=${currentPage}&pageSize=${limit}`;
+
+  if (queryStr) url += `&${queryStr}`;
+
+  return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
+};
+
+export const getHistoryOrderByIdAPI = (id: string) => {
+  return axios.get<IBackendRes<IOrder>>(`/history/${id}`);
+};

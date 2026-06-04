@@ -38,6 +38,10 @@ const AppHeader = () => {
       key: 'orders',
     },
     {
+      label: <Link to="/orders/history">Lịch sử mua hàng</Link>,
+      key: 'order-history',
+    },
+    {
       label: (
         <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
           Đăng xuất
@@ -217,6 +221,17 @@ const AppHeader = () => {
           Đơn hàng của tôi
         </p>
         <Divider style={{ margin: '8px 0' }} />
+        <p
+          style={{ padding: '8px 0', cursor: 'pointer' }}
+          onClick={() => {
+            navigate('/orders/history');
+            setOpenDrawer(false);
+          }}
+        >
+          Lịch sử mua hàng
+        </p>
+        <Divider style={{ margin: '8px 0' }} />
+
         {user?.role === 'ADMIN' && (
           <>
             <p
