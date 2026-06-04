@@ -119,7 +119,7 @@ const CheckoutPage: React.FC = () => {
               Tiếp tục mua sắm
             </Button>,
             <Button key="history" onClick={() => navigate('/orders')}>
-              Xem lịch sử đơn hàng
+              Xem đơn hàng
             </Button>,
           ]}
         />

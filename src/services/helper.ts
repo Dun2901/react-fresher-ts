@@ -19,5 +19,13 @@ export const getAvatarUrl = (avatar?: string): string => {
     : `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${avatar}`;
 };
 
+export const getBookImageUrl = (thumbnail?: string): string => {
+  if (!thumbnail) return '';
+
+  return thumbnail.startsWith('http')
+    ? thumbnail
+    : `${import.meta.env.VITE_BACKEND_URL}/images/book/${thumbnail}`;
+};
+
 export const formatCurrency = (value: number): string =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);

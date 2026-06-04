@@ -228,7 +228,7 @@ export const checkoutAPI = (data: ICheckoutDto) => {
 
 // 2. khách hàng lấy danh sách đơn hàng của mình
 export const getMyOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
-  let url = `/orders/my-orders?current=${currentPage}&pageSize=${limit}`;
+  let url = `/orders?current=${currentPage}&pageSize=${limit}`;
   if (queryStr) url += `&${queryStr}`;
   return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
 };
@@ -270,4 +270,17 @@ export const verifyVnpayReturnAPI = (queryString: string) => {
   return axios.get<IBackendRes<{ success: boolean; message: string; orderCode?: string }>>(
     `/payments/vnpay-return?${queryString}`,
   );
+};
+
+//---------------------------------MODULE HISTORY-------------------
+export const getMyHistoryOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
+  let url = `/history?current=${currentPage}&pageSize=${limit}`;
+
+  if (queryStr) url += `&${queryStr}`;
+
+  return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
+};
+
+export const getHistoryOrderByIdAPI = (id: string) => {
+  return axios.get<IBackendRes<IOrder>>(`/history/${id}`);
 };

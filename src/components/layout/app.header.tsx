@@ -34,8 +34,12 @@ const AppHeader = () => {
       key: 'account',
     },
     {
-      label: <Link to="/orders">Lịch sử mua hàng</Link>,
-      key: 'history',
+      label: <Link to="/orders">Đơn hàng của tôi</Link>,
+      key: 'orders',
+    },
+    {
+      label: <Link to="/orders/history">Lịch sử mua hàng</Link>,
+      key: 'order-history',
     },
     {
       label: (
@@ -214,9 +218,20 @@ const AppHeader = () => {
             setOpenDrawer(false);
           }}
         >
+          Đơn hàng của tôi
+        </p>
+        <Divider style={{ margin: '8px 0' }} />
+        <p
+          style={{ padding: '8px 0', cursor: 'pointer' }}
+          onClick={() => {
+            navigate('/orders/history');
+            setOpenDrawer(false);
+          }}
+        >
           Lịch sử mua hàng
         </p>
         <Divider style={{ margin: '8px 0' }} />
+
         {user?.role === 'ADMIN' && (
           <>
             <p
