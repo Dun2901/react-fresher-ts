@@ -18,8 +18,9 @@ import { ArrowLeftOutlined, CreditCardOutlined, EnvironmentOutlined } from '@ant
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import { useNavigate } from 'react-router-dom';
 import { checkoutAPI, createVnpayPaymentUrlAPI } from '@/services/api';
-import './orderPage.scss';
+import './checkout.page.scss';
 import vnpayLogo from '@/assets/img/vnpay.png';
+import { formatCurrency } from '@/services/helper';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
@@ -31,7 +32,8 @@ interface IOrderFormValues {
   paymentMethod: 'COD' | 'ONLINE';
   note?: string;
 }
-const OrderPage: React.FC = () => {
+
+const CheckoutPage: React.FC = () => {
   const { carts, setCarts } = useCurrentApp();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -40,58 +42,34 @@ const OrderPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [createdOrder, setCreatedOrder] = useState<IOrder | null>(null);
 
-  const calculateTotalPrice = () => {
-    return carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(value);
-  };
+  const calculateTotalPrice = () =>
+    carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
 
   const onFinishOrder = async (values: IOrderFormValues) => {
     setLoading(true);
-
     const payload: ICheckoutDto = {
-      shippingAddress: {
-        fullName: values.fullName,
-        phone: values.phone,
-        address: values.address,
-      },
+      shippingAddress: { fullName: values.fullName, phone: values.phone, address: values.address },
       paymentMethod: values.paymentMethod,
       note: values.note,
     };
     try {
       const res = await checkoutAPI(payload);
-
-      if (res && res.data) {
-        if (values.paymentMethod === 'ONLINE' && res.data?._id) {
-          message.loading('Đang kết nối và chuyển hướng sang cổng thanh toán VNPay...', 2);
-
+      if (res?.data) {
+        if (values.paymentMethod === 'ONLINE' && res.data._id) {
+          message.loading('Đang chuyển sang cổng thanh toán VNPay...', 2);
           const paymentRes = await createVnpayPaymentUrlAPI(res.data._id);
           const paymentUrl = paymentRes.data?.paymentUrl;
-
-          if (!paymentUrl) {
-            throw new Error('Không nhận được URL thanh toán VNPay');
-          }
-
+          if (!paymentUrl) throw new Error('Không nhận được URL thanh toán VNPay');
           window.location.href = paymentUrl;
           return;
         }
-
         message.success(res.message || 'Đặt hàng thành công!');
-        if (res.data) setCreatedOrder(res.data);
+        setCreatedOrder(res.data);
         setCarts([]);
         setIsSuccess(true);
       }
     } catch (error: any) {
-      const errorMsg =
-        error?.response?.data?.error?.message ||
-        error?.message ||
-        'Đã xảy ra lỗi trong quá trình xử lý đơn hàng!';
-
+      const errorMsg = error?.response?.data?.error?.message || error?.message || 'Đã xảy ra lỗi!';
       notification.error({
         message: 'Đặt hàng thất bại',
         description: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
@@ -101,7 +79,7 @@ const OrderPage: React.FC = () => {
       setLoading(false);
     }
   };
-  // Giao diện thành công
+
   if (isSuccess && createdOrder) {
     return (
       <div
@@ -113,41 +91,34 @@ const OrderPage: React.FC = () => {
           title="Đặt Hàng Thành Công!"
           subTitle={
             <Space direction="vertical" style={{ width: '100%', marginTop: 10 }}>
-              <Text>
-                Cảm ơn bạn đã mua sắm. Đơn hàng của bạn đã được hệ thống ghi nhận thành công.
-              </Text>
-              {createdOrder && (
-                <Card
-                  size="small"
-                  style={{ backgroundColor: '#fafafa', textAlign: 'left', marginTop: 15 }}
-                >
-                  <div style={{ marginBottom: 4 }}>
-                    Mã đơn hàng:{' '}
-                    <Text strong type="warning">
-                      {createdOrder.orderCode}
-                    </Text>
-                  </div>
-                  <div style={{ marginBottom: 4 }}>
-                    Người nhận: <Text strong>{createdOrder.shippingAddress.fullName}</Text>
-                  </div>
-                  <div>
-                    Tổng tiền cần trả (COD):{' '}
-                    <Text strong type="danger">
-                      {formatCurrency(createdOrder.totalPrice)}
-                    </Text>
-                  </div>
-                </Card>
-              )}
+              <Text>Cảm ơn bạn đã mua sắm. Đơn hàng đã được ghi nhận thành công.</Text>
+              <Card
+                size="small"
+                style={{ backgroundColor: '#fafafa', textAlign: 'left', marginTop: 15 }}
+              >
+                <div style={{ marginBottom: 4 }}>
+                  Mã đơn hàng:{' '}
+                  <Text strong type="warning">
+                    {createdOrder.orderCode}
+                  </Text>
+                </div>
+                <div style={{ marginBottom: 4 }}>
+                  Người nhận: <Text strong>{createdOrder.shippingAddress.fullName}</Text>
+                </div>
+                <div>
+                  Tổng tiền cần trả:{' '}
+                  <Text strong type="danger">
+                    {formatCurrency(createdOrder.totalPrice)}
+                  </Text>
+                </div>
+              </Card>
             </Space>
           }
           extra={[
             <Button type="primary" key="home" onClick={() => navigate('/')}>
               Tiếp tục mua sắm
             </Button>,
-            <Button
-              key="history"
-              onClick={() => message.info('Tính năng xem lịch sử đơn hàng đang được phát triển!')}
-            >
+            <Button key="history" onClick={() => navigate('/orders')}>
               Xem lịch sử đơn hàng
             </Button>,
           ]}
@@ -156,17 +127,16 @@ const OrderPage: React.FC = () => {
     );
   }
 
-  // Giao diện giỏ hàng trống
   if (carts.length === 0) {
     return (
       <div className="order-status-wrapper order-status-wrapper--empty-cart">
         <Result
           status="warning"
           title="Giỏ hàng của bạn đang trống"
-          subTitle="Vui lòng chọn sản phẩm vào giỏ trước khi tiến hành đặt hàng."
+          subTitle="Vui lòng chọn sản phẩm trước khi đặt hàng."
           extra={
             <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/')}>
-              Quay lại trang chủ mua sắm
+              Quay lại trang chủ
             </Button>
           }
         />
@@ -195,18 +165,15 @@ const OrderPage: React.FC = () => {
         initialValues={{ paymentMethod: 'COD' }}
       >
         <Row gutter={[24, 24]}>
-          {/* CỘT BÊN TRÁI:  nhập thông tin và chọn thanhoán */}
           <Col xs={24} lg={14}>
             <Space direction="vertical" size="large" style={{ display: 'flex' }}>
-              {/* địa chỉ giao hàng */}
               <Card
                 title={
                   <span>
-                    <EnvironmentOutlined style={{ color: '#ff4d4f', marginRight: 8 }} /> Thông tin
-                    nhận hàng
+                    <EnvironmentOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
+                    Thông tin nhận hàng
                   </span>
                 }
-                bordered={true}
               >
                 <Row gutter={16}>
                   <Col xs={24} sm={12}>
@@ -227,18 +194,18 @@ const OrderPage: React.FC = () => {
                         { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải đúng 10 chữ số!' },
                       ]}
                     >
-                      <Input placeholder="Nhập số điện thoại di động" size="large" />
+                      <Input placeholder="Nhập số điện thoại" size="large" />
                     </Form.Item>
                   </Col>
                   <Col xs={24}>
                     <Form.Item
-                      label="Địa chỉ nhận hàng thực tế"
+                      label="Địa chỉ nhận hàng"
                       name="address"
-                      rules={[{ required: true, message: 'Vui lòng cung cấp địa chỉ cụ thể!' }]}
+                      rules={[{ required: true, message: 'Vui lòng nhập địa chỉ cụ thể!' }]}
                     >
                       <TextArea
                         rows={3}
-                        placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
+                        placeholder="Số nhà, tên đường, phường, quận, tỉnh..."
                         size="large"
                       />
                     </Form.Item>
@@ -246,46 +213,36 @@ const OrderPage: React.FC = () => {
                 </Row>
               </Card>
 
-              {/* phương thức thanh toán */}
               <Card
                 title={
                   <span>
-                    <CreditCardOutlined style={{ color: '#1677ff', marginRight: 8 }} /> Phương thức
-                    thanh toán
+                    <CreditCardOutlined style={{ color: '#1677ff', marginRight: 8 }} />
+                    Phương thức thanh toán
                   </span>
                 }
-                bordered={true}
               >
                 <Form.Item name="paymentMethod" noStyle>
                   <Radio.Group className="payment-method-group">
                     <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                      {/*COD */}
                       <Radio value="COD" className="payment-radio-item">
                         <Space direction="vertical" size={0} style={{ marginLeft: 8 }}>
                           <Text strong className="radio-label-text">
                             Thanh toán khi nhận hàng (COD)
                           </Text>
-                          <Text type="secondary">
-                            Nhận hàng thanh toán tiền mặt trực tiếp cho nhân viên giao hàng.
-                          </Text>
+                          <Text type="secondary">Trả tiền mặt trực tiếp khi nhận hàng.</Text>
                         </Space>
                       </Radio>
-
                       <Divider style={{ margin: 0 }} />
-
-                      {/*VNPay */}
                       <Radio value="ONLINE" className="payment-radio-item">
                         <div className="payment-content-wrapper">
                           <div className="payment-title-row">
                             <Text strong className="radio-label-text">
-                              Thanh toán qua cổng VNPay
+                              Thanh toán qua VNPay
                             </Text>
                             <img src={vnpayLogo} alt="VNPay" className="vnpay-logo" />
                           </div>
-
                           <Text type="secondary" className="payment-desc-text">
-                            Quét mã QR bằng ứng dụng Ngân hàng (Mobile Banking), ví điện tử hoặc thẻ
-                            ATM/Quốc tế.
+                            Quét mã QR bằng Mobile Banking, ví điện tử hoặc thẻ ATM.
                           </Text>
                         </div>
                       </Radio>
@@ -296,10 +253,8 @@ const OrderPage: React.FC = () => {
             </Space>
           </Col>
 
-          {/*tóm tắt danh sách sản phẩm và tổng tiền */}
           <Col xs={24} lg={10}>
             <Card title="Chi tiết đơn hàng" className="order-summary-card">
-              {/* list danh sách các cuốn sách */}
               <div className="cart-items-list">
                 {carts.map((item) => (
                   <div key={item.bookId._id} className="cart-item">
@@ -328,7 +283,6 @@ const OrderPage: React.FC = () => {
               </div>
 
               <Divider style={{ margin: '12px 0' }} />
-
               <div className="price-row">
                 <Text className="price-label">Tạm tính:</Text>
                 <Text className="price-value">{formatCurrency(calculateTotalPrice())}</Text>
@@ -339,12 +293,10 @@ const OrderPage: React.FC = () => {
                   Miễn phí
                 </Text>
               </div>
-
               <Divider style={{ margin: '12px 0' }} />
-
               <div className="final-total-row">
                 <Text strong className="total-label">
-                  Tổng số tiền cần trả:
+                  Tổng cần trả:
                 </Text>
                 <Text strong className="total-amount">
                   {formatCurrency(calculateTotalPrice())}
@@ -369,4 +321,4 @@ const OrderPage: React.FC = () => {
   );
 };
 
-export default OrderPage;
+export default CheckoutPage;

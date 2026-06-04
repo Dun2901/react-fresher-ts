@@ -7,7 +7,6 @@ import AboutPage from 'pages/client/about';
 import LoginPage from 'pages/client/auth/login';
 import RegisterPage from 'pages/client/auth/register';
 import CartPage from 'pages/client/cart/cartPage.tsx';
-import OrderPage from 'pages/client/order/orderPage.tsx';
 import 'styles/global.scss';
 import HomePage from 'pages/client/homepage/home.tsx';
 import { App, ConfigProvider } from 'antd';
@@ -24,6 +23,9 @@ import DetailUserPage from 'pages/admin/detail.user';
 import { DollarCircleOutlined, ExceptionOutlined, TeamOutlined } from '@ant-design/icons';
 import DetailBookPage from './pages/admin/detail.book';
 import VnpayReturnPage from './pages/client/payments/vnpay.return';
+import CheckoutPage from './pages/client/checkout/checkout.page';
+import OrderHistoryPage from './pages/client/order/order.history';
+import OrderDetailPage from './pages/client/order/order.detail';
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -36,20 +38,6 @@ const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: 'cart',
-        element: <CartPage />,
-      },
-
-      {
-        path: 'order',
-        element: <OrderPage />,
-      },
-      {
-        path: 'payment/vnpay-return',
-        element: <VnpayReturnPage />,
-      },
-
-      {
         path: '/book',
         element: <BookPage />,
       },
@@ -57,13 +45,44 @@ const router = createBrowserRouter([
         path: '/about',
         element: <AboutPage />,
       },
+
+      {
+        path: 'cart',
+        element: (
+          <ProtectedRoute>
+            <CartPage />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: '/checkout',
         element: (
           <ProtectedRoute>
-            <div>checkout page</div>
+            <CheckoutPage />
           </ProtectedRoute>
         ),
+      },
+
+      {
+        path: 'orders',
+        element: (
+          <ProtectedRoute>
+            <OrderHistoryPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'orders/:id',
+        element: (
+          <ProtectedRoute>
+            <OrderDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: 'payment/vnpay-return',
+        element: <VnpayReturnPage />,
       },
     ],
   },
