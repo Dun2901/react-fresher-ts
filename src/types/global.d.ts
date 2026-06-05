@@ -79,6 +79,13 @@ declare global {
     name: string;
     slug?: string;
     description?: string;
+
+    deleted?: boolean;
+    deletedAt?: Date;
+    deletedBy?: string;
+
+    createdAt?: Date;
+    updatedAt?: Date;
   }
   // Router type
   type BreadcrumbItem = {
