@@ -156,8 +156,25 @@ export const updateCategoryAPI = (
   return axios.patch<IBackendRes<ICategory>>(`/categories/${id}`, data);
 };
 
+/**
+ * Soft delete category.
+ */
 export const deleteCategoryAPI = (id: string) => {
-  return axios.delete<IBackendRes<ICategory>>(`/categories/${id}`);
+  return axios.delete<IBackendRes<{ message: string }>>(`/categories/${id}`);
+};
+
+/**
+ * Lấy danh sách category đã bị soft delete.
+ */
+export const getDeletedCategoriesAPI = () => {
+  return axios.get<IBackendRes<ICategory[]>>('/categories/deleted');
+};
+
+/**
+ * Khôi phục category đã bị soft delete.
+ */
+export const restoreCategoryAPI = (id: string) => {
+  return axios.patch<IBackendRes<{ message: string }>>(`/categories/${id}/restore`);
 };
 
 // ==================== MODULE UPLOAD FILE ====================

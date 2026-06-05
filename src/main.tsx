@@ -20,13 +20,19 @@ import LayoutAdmin from 'components/layout/layout.admin';
 import enUS from 'antd/locale/en_US';
 import VerifyPage from 'pages/client/auth/verify';
 import DetailUserPage from 'pages/admin/detail.user';
-import { DollarCircleOutlined, ExceptionOutlined, TeamOutlined } from '@ant-design/icons';
+import {
+  DollarCircleOutlined,
+  ExceptionOutlined,
+  TagsOutlined,
+  TeamOutlined,
+} from '@ant-design/icons';
 import DetailBookPage from './pages/admin/detail.book';
 import VnpayReturnPage from './pages/client/payments/vnpay.return';
 import CheckoutPage from './pages/client/checkout/checkout.page';
 import OrderDetailPage from './pages/client/order/detail/order.detail';
 import CurrentOrdersPage from './pages/client/order/current/current.order';
 import OrderHistoryPage from './pages/client/order/history/order.history';
+import ManageCategoryPage from './pages/admin/manage.category';
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -140,6 +146,23 @@ const router = createBrowserRouter([
           },
         ],
       },
+
+      {
+        path: 'category',
+        element: (
+          <ProtectedRoute>
+            <ManageCategoryPage />
+          </ProtectedRoute>
+        ),
+        handle: {
+          breadcrumb: {
+            label: 'Quản lý danh mục',
+            href: '/admin/category',
+            icon: <TagsOutlined />,
+          },
+        },
+      },
+
       {
         path: 'order',
         element: (
@@ -148,9 +171,13 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: {
-          breadcrumb: { label: 'Quản lý đơn hàng', icon: <DollarCircleOutlined /> },
+          breadcrumb: {
+            label: 'Quản lý đơn hàng',
+            icon: <DollarCircleOutlined />,
+          },
         },
       },
+
       {
         path: 'user',
         handle: {

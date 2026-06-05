@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   AppstoreOutlined,
   ExceptionOutlined,
@@ -8,24 +8,25 @@ import {
   DollarCircleOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-} from "@ant-design/icons";
-import { Layout, Menu, Dropdown, Space, Avatar } from "antd";
-import { Outlet, UIMatch, useLocation, useMatches } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { useCurrentApp } from "../context/app.context";
-import type { MenuProps } from "antd";
-import { logoutAPI } from "@/services/api";
-import { getAvatarUrl } from "@/services/helper";
-import AppBreadcrumb from "../share/breadcrumb";
-type MenuItem = Required<MenuProps>["items"][number];
+  TagsOutlined,
+} from '@ant-design/icons';
+import { Layout, Menu, Dropdown, Space, Avatar } from 'antd';
+import { Outlet, UIMatch, useLocation, useMatches } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useCurrentApp } from '../context/app.context';
+import type { MenuProps } from 'antd';
+import { logoutAPI } from '@/services/api';
+import { getAvatarUrl } from '@/services/helper';
+import AppBreadcrumb from '../share/breadcrumb';
+type MenuItem = Required<MenuProps>['items'][number];
 
 const { Content, Footer, Sider } = Layout;
 
 const LayoutAdmin = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const selectedKey = "/" + location.pathname.split("/").slice(1, 3).join("/");
-  const openKey = selectedKey.split("/")[2];
+  const selectedKey = '/' + location.pathname.split('/').slice(1, 3).join('/');
+  const openKey = selectedKey.split('/')[2];
 
   const { user, setUser, setIsAuthenticated, isAuthenticated } = useCurrentApp();
 
@@ -34,7 +35,7 @@ const LayoutAdmin = () => {
     .filter((match) => Boolean(match.handle?.breadcrumb))
     .map((match) => {
       const breadcrumb = match.handle.breadcrumb;
-      return typeof breadcrumb === "function" ? breadcrumb(match.params) : breadcrumb;
+      return typeof breadcrumb === 'function' ? breadcrumb(match.params) : breadcrumb;
     });
 
   const handleLogout = async () => {
@@ -43,48 +44,55 @@ const LayoutAdmin = () => {
     if (res.data) {
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem("access_token");
+      localStorage.removeItem('access_token');
     }
   };
 
   const items: MenuItem[] = [
     {
       label: <Link to="/admin">Dashboard</Link>,
-      key: "/admin",
+      key: '/admin',
       icon: <AppstoreOutlined />,
     },
     {
       label: <span>Manage Users</span>,
-      key: "user",
+      key: 'user',
       icon: <UserOutlined />,
       children: [
         {
           label: <Link to="/admin/user">CRUD</Link>,
-          key: "/admin/user",
+          key: '/admin/user',
           icon: <TeamOutlined />,
         },
-        // {
-        //     label: 'Files1',
-        //     key: 'file1',
-        //     icon: <TeamOutlined />,
-        // }
       ],
     },
     {
       label: <span>Manage Books</span>,
-      key: "book",
+      key: 'book',
       icon: <ExceptionOutlined />,
       children: [
         {
           label: <Link to="/admin/book">CRUD</Link>,
-          key: "/admin/book",
+          key: '/admin/book',
           icon: <ExceptionOutlined />,
         },
       ],
     },
     {
+      label: <span>Danh mục</span>,
+      key: 'category',
+      icon: <TagsOutlined />,
+      children: [
+        {
+          label: <Link to="/admin/category">Quản lý</Link>,
+          key: '/admin/category',
+          icon: <TagsOutlined />,
+        },
+      ],
+    },
+    {
       label: <Link to="/admin/order">Manage Orders</Link>,
-      key: "/admin/order",
+      key: '/admin/order',
       icon: <DollarCircleOutlined />,
     },
   ];
@@ -92,23 +100,23 @@ const LayoutAdmin = () => {
   const itemsDropdown = [
     {
       label: (
-        <label style={{ cursor: "pointer" }} onClick={() => alert("me")}>
+        <label style={{ cursor: 'pointer' }} onClick={() => alert('me')}>
           Quản lý tài khoản
         </label>
       ),
-      key: "account",
+      key: 'account',
     },
     {
-      label: <Link to={"/"}>Trang chủ</Link>,
-      key: "home",
+      label: <Link to={'/'}>Trang chủ</Link>,
+      key: 'home',
     },
     {
       label: (
-        <label style={{ cursor: "pointer" }} onClick={() => handleLogout()}>
+        <label style={{ cursor: 'pointer' }} onClick={() => handleLogout()}>
           Đăng xuất
         </label>
       ),
-      key: "logout",
+      key: 'logout',
     },
   ];
 
@@ -118,24 +126,24 @@ const LayoutAdmin = () => {
     return <Outlet />;
   }
 
-  const isAdminRoute = location.pathname.includes("admin");
+  const isAdminRoute = location.pathname.includes('admin');
   if (isAuthenticated === true && isAdminRoute === true) {
     const role = user?.role;
-    if (role === "USER") {
+    if (role === 'USER') {
       return <Outlet />;
     }
   }
 
   return (
     <>
-      <Layout style={{ minHeight: "100vh" }} className="layout-admin">
+      <Layout style={{ minHeight: '100vh' }} className="layout-admin">
         <Sider
           theme="light"
           collapsible
           collapsed={collapsed}
           onCollapse={(value) => setCollapsed(value)}
         >
-          <div style={{ height: 32, margin: 16, textAlign: "center" }}>Admin</div>
+          <div style={{ height: 32, margin: 16, textAlign: 'center' }}>Admin</div>
           <Menu
             selectedKeys={[selectedKey]}
             defaultOpenKeys={openKey ? [openKey] : []}
@@ -147,32 +155,32 @@ const LayoutAdmin = () => {
           <div
             className="admin-header"
             style={{
-              height: "50px",
-              borderBottom: "1px solid #ebebeb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 15px",
+              height: '50px',
+              borderBottom: '1px solid #ebebeb',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 15px',
             }}
           >
             <span>
               {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                className: "trigger",
+                className: 'trigger',
                 onClick: () => setCollapsed(!collapsed),
               })}
             </span>
-            <Dropdown menu={{ items: itemsDropdown }} trigger={["click"]}>
-              <Space style={{ cursor: "pointer" }}>
+            <Dropdown menu={{ items: itemsDropdown }} trigger={['click']}>
+              <Space style={{ cursor: 'pointer' }}>
                 <Avatar src={urlAvatar} />
                 {user?.fullName}
               </Space>
             </Dropdown>
           </div>
-          <Content style={{ padding: "15px" }}>
+          <Content style={{ padding: '15px' }}>
             {crumbs.length > 0 && <AppBreadcrumb items={crumbs} />}
             <Outlet />
           </Content>
-          <Footer style={{ padding: 0, textAlign: "center" }}>
+          <Footer style={{ padding: 0, textAlign: 'center' }}>
             React Test Fresher &copy; Hỏi Dân IT - Made with <HeartTwoTone />
           </Footer>
         </Layout>
