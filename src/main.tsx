@@ -33,6 +33,7 @@ import OrderDetailPage from './pages/client/order/detail/order.detail';
 import CurrentOrdersPage from './pages/client/order/current/current.order';
 import OrderHistoryPage from './pages/client/order/history/order.history';
 import ManageCategoryPage from './pages/admin/manage.category';
+import BookListPage from "pages/client/book/bookListPage";
 // import viVN from 'antd/locale/vi_VN';
 
 const router = createBrowserRouter([
@@ -46,7 +47,7 @@ const router = createBrowserRouter([
       },
       {
         path: '/book',
-        element: <BookPage />,
+        element: <BookListPage />,
       },
       {
         path: '/about',

@@ -1,10 +1,11 @@
+
+
 .homepage-shop {
   padding: 24px;
   max-width: 1340px;
   margin: 0 auto;
   background-color: #f5f7fa;
 
-  /* STYLING SLIDER CAROUSEL BANNER */
   .shop-carousel {
     border-radius: 14px;
     overflow: hidden;
@@ -59,144 +60,111 @@
     }
   }
 
-  /* STYLING BỐ CỤC CHIA CỘT LAYOUT */
-  .shop-main-layout {
-    .shop-sidebar-filter {
-      background: #ffffff !important;
-      border-radius: 10px;
-      padding: 20px 14px;
-      border: 1px solid #eef2f5;
-      height: fit-content;
-      position: sticky;
-      top: 80px;
+  .homepage-products-section {
+    margin-top: 40px;
+    margin-bottom: 40px;
 
-      .filter-header {
-        font-size: 14px;
+    .content-title-wrapper {
+      text-align: center;
+      margin-bottom: 28px;
+
+      .section-title {
+        font-size: 24px;
         font-weight: 700;
         color: #1f1f1f;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
 
-      .filter-group {
-        h4 {
-          font-size: 13px;
-          font-weight: 600;
-          color: #434343;
-          margin-bottom: 10px;
-        }
-
-        .vertical-checkbox-group {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-
-          .ant-checkbox-wrapper {
-            margin-left: 0 !important;
-            font-size: 12.5px;
-            color: #595959;
-          }
-        }
-
-        .price-range-label {
-          display: flex;
-          justify-content: space-between;
-          font-size: 11.5px;
-          color: #8c8c8c;
-          margin-top: 4px;
-        }
-
-        .rating-filter-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          margin-bottom: 6px;
-          cursor: pointer;
-          span {
-            font-size: 11.5px;
-            color: #8c8c8c;
-          }
-        }
+      .section-subtitle {
+        font-size: 13.5px;
+        color: #8c8c8c;
       }
     }
 
-    .shop-content-products {
-      padding-left: 20px;
+    .view-all-container {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
 
-      @media (max-width: 992px) {
-        padding-left: 0;
-      }
+      .btn-view-all {
+        height: 44px;
+        padding: 0 36px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 14px rgba(255, 77, 79, 0.25);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-      .section-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #262626;
-        margin-bottom: 16px;
-        border-left: 4px solid #1677ff;
-        padding-left: 10px;
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(255, 77, 79, 0.35);
+          opacity: 0.95;
+        }
       }
     }
   }
 
-  /* STYLING CARD SÁCH CAO CẤP - ĐÃ FIX LỆCH KHUNG */
   .book-card-premium {
     border-radius: 10px;
     overflow: hidden;
     border: 1px solid #eef2f5;
     background: #ffffff;
-    transition: all 0.3s ease;
-    height: 100%; // Đảm bảo các card cùng hàng cao bằng nhau
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
     display: flex;
     flex-direction: column;
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.07);
       border-color: #bae7ff;
     }
 
     .book-image-container {
-      height: 180px; // Cố định chiều cao khung ảnh
+      height: 190px;
       background: #fafafa;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 16px;
       border-bottom: 1px solid #f6f6f6;
+      overflow: hidden;
 
       img {
         max-height: 100%;
         max-width: 100%;
         object-fit: contain;
-        transition: transform 0.3s ease;
+        transition: transform 0.4s ease;
       }
     }
 
     &:hover .book-image-container img {
-      transform: scale(1.04);
+      transform: scale(1.05);
     }
 
     .book-meta-data {
-      padding: 4px 0 0 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      flex-grow: 1; // Kéo giãn vùng dữ liệu để đẩy footer xuống đáy
+      flex-grow: 1;
 
       .book-title-text {
-        font-size: 13px;
+        font-size: 13.5px;
         font-weight: 600;
         color: #262626;
-
-        // Tuyệt chiêu cố định chiều cao 2 dòng chống lệch hàng
         height: 36px;
         line-height: 18px;
-        margin-bottom: 4px;
-
+        margin-bottom: 6px;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
+        transition: color 0.2s ease;
 
         &:hover {
           color: #1677ff;
@@ -209,7 +177,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
       }
 
       .book-rating-sold {
@@ -217,10 +185,11 @@
         align-items: center;
         justify-content: space-between;
         margin-bottom: 12px;
-        height: 20px; // Cố định dòng rating
+        height: 20px;
 
         .ant-rate {
           color: #fadb14;
+          font-size: 11px;
         }
 
         .sold-count {
@@ -232,24 +201,23 @@
         }
       }
 
-      // Đẩy phần này xuống sát đáy card một cách hoàn hảo
       .book-card-footer {
         margin-top: auto;
         padding-top: 10px;
         border-top: 1px solid #f0f0f0;
         display: flex;
         justify-content: space-between;
-        align-items: center; // Căn giữa nút bấm và giá theo trục dọc
+        align-items: center;
 
         .price-section {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          min-height: 34px; // Giữ khoảng trống kể cả khi không có giá cũ
+          min-height: 34px;
 
           .current-price {
             color: #ff4d4f;
-            font-size: 14px;
+            font-size: 14.5px;
             font-weight: 700;
             line-height: 1.4;
           }
@@ -269,23 +237,33 @@
           .btn-view {
             border-color: #d9d9d9;
             color: #595959;
+            transition: all 0.2s ease;
             &:hover {
               color: #1677ff;
               border-color: #1677ff;
+              background-color: #e6f4ff;
             }
           }
 
           .btn-action-cart {
             font-size: 12px;
             font-weight: 500;
-            padding: 0 10px;
-            height: 28px;
-            min-width: 65px; // Giữ kích thước nút ổn định không bị bóp nghẹt
+            padding: 0 12px;
+            height: 30px;
+            min-width: 65px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
 
             &.btn-buy-more {
-              background-color: #ff4d4f;
-              border-color: #ff4d4f;
-              color: white;
+              background-color: #fff1f0;
+              border-color: #ffccc7;
+              color: #ff4d4f;
+
+              &:hover {
+                background-color: #ff4d4f;
+                border-color: #ff4d4f;
+                color: white;
+              }
             }
           }
         }
