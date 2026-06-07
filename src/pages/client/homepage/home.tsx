@@ -110,7 +110,6 @@ const Homepage: React.FC = () => {
               {listBook.map((book, index) => {
                 const hasDiscount = index % 2 === 0;
                 const discountPercent = hasDiscount ? (index % 4 === 0 ? 25 : 15) : 0;
-                const fakeSold = Math.floor((book.price % 149) + 21);
                 const fakeRate = index % 3 === 0 ? 5 : 4.5;
 
                 const innerCard = (
@@ -136,7 +135,7 @@ const Homepage: React.FC = () => {
 
                         <div className="book-rating-sold">
                           <Rate disabled allowHalf defaultValue={fakeRate} style={{ fontSize: 10 }} />
-                          <span className="sold-count">Đã bán {fakeSold}</span>
+                          <span className="sold-count">Đã bán {book.sold ?? 0}</span>
                         </div>
 
                         <div className="book-card-footer">

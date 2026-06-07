@@ -22,7 +22,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context.tsx';
-import { addItemToCartAPI, getBooksAPI } from '@/services/api.ts';
+import { addItemToCartAPI, getBooksAPI, getCategoriesAPI} from '@/services/api.ts';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import axios from 'axios';
 import './bookListPage.scss';
@@ -44,15 +44,31 @@ const BookListPage: React.FC = () => {
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
 
+    const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; value: string }[]>([]);
+
     useEffect(() => {
         const loadBooks = async () => {
             setIsLoading(true);
             try {
-                const query = `current=${current}&pageSize=${pageSize}&sort=-createdAt`;
+                let query = `current=${current}&pageSize=${pageSize}&sort=-createdAt`;
+
+                if (selectedCategories.length > 0) {
+                    const categoryQuery = selectedCategories.map(id => `category=${id}`).join('&');
+                    query += `&${categoryQuery}`;
+                }
+                //lọc khoảng giá
+                if (priceRange[0] > 0) query += `&price>=${priceRange[0]}`;
+                if (priceRange[1] < 500000) query += `&price<=${priceRange[1]}`;
+
+
                 const res = await getBooksAPI(query);
                 if (res && res.data) {
-                    setListBook(res.data.result || []);
-                    setTotal(res.data.meta.total || 0);
+                    if (res.data.result.length === 0 && res.data.meta.total > 0) {
+                        setCurrent(1);
+                    }else {
+                        setListBook(res.data.result || []);
+                        setTotal(res.data.meta.total || 0);
+                    }
                 }
             } catch (error) {
                 message.error('Không thể kết nối với cơ sở dữ liệu');
@@ -62,7 +78,39 @@ const BookListPage: React.FC = () => {
             }
         };
         loadBooks();
-    }, [current, pageSize]);
+    }, [current, pageSize, selectedCategories, priceRange]);
+
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const res = await getCategoriesAPI('current=1&pageSize=100');
+
+                if (res && res.data && res.data.result) {
+                    const dynamicCategories = res.data.result.map((cat: any) => {
+                        return {
+                            label: cat.name,
+                            value: cat._id,
+                        };
+                    });
+
+                    setCategoriesOptions(dynamicCategories);
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy danh mục từ hệ thống:', error);
+            }
+        };
+        loadCategories();
+    }, []);
+
+    // xử lý thay đổi checkbox danh mục
+    const handleCategoryChange = (checkedValues: any) => {
+        setSelectedCategories(checkedValues as string[]);
+    };
+
+    //xử lý thay đổi giá
+    const handlePriceChange = (value: [number, number]) => {
+        setPriceRange(value);
+    };
 
     const handlePaginationChange = (page: number, pSize: number) => {
         setCurrent(page);
@@ -88,17 +136,9 @@ const BookListPage: React.FC = () => {
         }
     };
 
-    const categoriesOptions = [
-        { label: 'Sách Công Nghệ', value: 'Tech' },
-        { label: 'Sách Kinh Tế - Kỹ Năng', value: 'Business' },
-        { label: 'Văn Học & Tiểu Thuyết', value: 'Literature' },
-        { label: 'Truyện Tranh & Manga', value: 'Comic' },
-    ];
-
     return (
         <div className="book-list-shop-page">
             <Layout className="shop-main-layout">
-                {/* SIDEBAR FILTER BÊN TRÁI */}
                 <Sider width={260} className="shop-sidebar-filter" breakpoint="lg" collapsedWidth="0" trigger={null}>
                     <div className="filter-header">
                         <ShoppingCartOutlined /> <span>BỘ LỌC TÌM KIẾM</span>
@@ -106,25 +146,25 @@ const BookListPage: React.FC = () => {
                     <Divider className="filter-divider-sm" />
 
                     <div className="filter-group">
-                        <h4>Danh Mục Sản Phẩm</h4>
+                        <h4>Danh mục sản phẩm</h4>
                         <Checkbox.Group
                             options={categoriesOptions}
                             value={selectedCategories}
-                            onChange={(checkedValues) => setSelectedCategories(checkedValues as string[])}
+                            onChange={handleCategoryChange}
                             className="vertical-checkbox-group"
                         />
                     </div>
                     <Divider className="filter-divider-md" />
 
                     <div className="filter-group">
-                        <h4>Khoảng Giá (VNĐ)</h4>
+                        <h4>Khoảng giá (VNĐ)</h4>
                         <Slider
                             range
                             min={0}
                             max={500000}
                             step={10000}
                             value={priceRange}
-                            onChange={(value) => setPriceRange(value as [number, number])}
+                            onChange={handlePriceChange}
                             tooltip={{ formatter: (v) => `${v?.toLocaleString('vi-VN')}đ` }}
                         />
                         <div className="price-range-label">
@@ -136,7 +176,7 @@ const BookListPage: React.FC = () => {
                     <Divider className="filter-divider-md" />
 
                     <div className="filter-group">
-                        <h4>Đánh Giá Từ Khách Hàng</h4>
+                        <h4>Đánh giá từ khách hàng</h4>
                         <div className="rating-filter-item"><Rate disabled defaultValue={5} /> <span>(Từ 5 sao)</span></div>
                         <div className="rating-filter-item"><Rate disabled defaultValue={4} /> <span>(Từ 4 sao)</span></div>
                         <div className="rating-filter-item"><Rate disabled defaultValue={3} /> <span>(Từ 3 sao)</span></div>
@@ -153,7 +193,6 @@ const BookListPage: React.FC = () => {
                             {listBook.map((book, index) => {
                                 const hasDiscount = index % 2 === 0;
                                 const discountPercent = hasDiscount ? (index % 4 === 0 ? 25 : 15) : 0;
-                                const fakeSold = Math.floor((book.price % 149) + 21);
                                 const fakeRate = index % 3 === 0 ? 5 : 4.5;
 
                                 const innerCard = (
@@ -178,7 +217,7 @@ const BookListPage: React.FC = () => {
                                             <div className="book-author-text">Tác giả: {book.author}</div>
                                             <div className="book-rating-sold">
                                                 <Rate disabled allowHalf defaultValue={fakeRate} />
-                                                <span className="sold-count">Đã bán {fakeSold}</span>
+                                                <span className="sold-count">Đã bán {book.sold ?? 0}</span>
                                             </div>
 
                                             <div className="book-card-footer">

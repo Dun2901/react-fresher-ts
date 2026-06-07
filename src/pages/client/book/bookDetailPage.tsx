@@ -1,4 +1,4 @@
-// src/pages/client/book/detail/index.tsx
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Row, Col, Rate, Button, InputNumber, Divider, Image, message, Spin } from 'antd';
@@ -102,7 +102,7 @@ const BookDetailPage: React.FC = () => {
                         <div className="rating-sold-row">
                             <Rate disabled defaultValue={4.5} allowHalf />
                             <Divider type="vertical" />
-                            <span className="sold-text">Đã bán 128</span>
+                            <span className="sold-text">Đã bán {bookData.sold ?? 0}</span>
                         </div>
 
                         <div className="price-block">
