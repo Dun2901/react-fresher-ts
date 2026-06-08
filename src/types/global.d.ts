@@ -158,4 +158,45 @@ declare global {
     paymentMethod: 'COD' | 'ONLINE';
     note?: string;
   }
+
+  // ------------DASHBOARD----------------------
+
+  interface IDashboardSummary {
+    totalUsers: number;
+    totalBooks: number;
+    totalOrders: number;
+    totalRevenue: number;
+    pendingOrders: number;
+    paidOrders: number;
+    completedOrders: number;
+    cancelledOrders: number;
+  }
+
+  interface IDashboardLatestOrder {
+    _id: string;
+    orderCode: string;
+    customerName: string;
+    customerEmail?: string;
+    totalPrice: number;
+    status: IOrder['status'];
+    paymentMethod: IOrder['paymentMethod'];
+    paymentStatus: IOrder['paymentStatus'];
+    createdAt: string;
+  }
+
+  interface IDashboardTopSellingBook {
+    _id: string;
+    mainText: string;
+    author?: string;
+    thumbnail?: string;
+    price: number;
+    sold: number;
+    quantity: number;
+  }
+
+  interface IDashboardRevenueChartItem {
+    label: string;
+    revenue: number;
+    orderCount: number;
+  }
 }
