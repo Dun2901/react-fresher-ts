@@ -11,12 +11,16 @@ export const dateRangeValidate = (dateRange: any) => {
   return [startDate, endDate];
 };
 
-export const getAvatarUrl = (avatar?: string): string => {
-  if (!avatar) return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/default-user.png`;
+export const getAvatarUrl = (avatar?: string) => {
+  if (!avatar) return undefined;
 
-  return avatar.startsWith('http')
-    ? avatar
-    : `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${avatar}`;
+  const isExternalUrl = avatar.startsWith('http://') || avatar.startsWith('https://');
+
+  if (isExternalUrl) {
+    return avatar;
+  }
+
+  return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${avatar}`;
 };
 
 export const getBookImageUrl = (thumbnail?: string): string => {
