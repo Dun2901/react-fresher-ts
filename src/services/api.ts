@@ -301,3 +301,25 @@ export const getMyHistoryOrdersAPI = (currentPage: number, limit: number, queryS
 export const getHistoryOrderByIdAPI = (id: string) => {
   return axios.get<IBackendRes<IOrder>>(`/history/${id}`);
 };
+
+//---------------------------------MODULE DASHBOARD-------------------
+
+export const getDashboardSummaryAPI = () => {
+  return axios.get<IBackendRes<IDashboardSummary>>('/dashboard/summary');
+};
+
+export const getLatestOrdersDashboardAPI = (limit = 5) => {
+  return axios.get<IBackendRes<IDashboardLatestOrder[]>>(`/dashboard/latest-orders?limit=${limit}`);
+};
+
+export const getTopSellingBooksDashboardAPI = (limit = 5) => {
+  return axios.get<IBackendRes<IDashboardTopSellingBook[]>>(
+    `/dashboard/top-selling-books?limit=${limit}`,
+  );
+};
+
+export const getRevenueChartDashboardAPI = (type: 'day' | 'month' = 'month') => {
+  return axios.get<IBackendRes<IDashboardRevenueChartItem[]>>(
+    `/dashboard/revenue-chart?type=${type}`,
+  );
+};
