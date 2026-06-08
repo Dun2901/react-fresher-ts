@@ -26,11 +26,7 @@ const AppHeader = () => {
 
   const items = [
     {
-      label: (
-        <span onClick={() => alert('me')} style={{ cursor: 'pointer' }}>
-          Quản lý tài khoản
-        </span>
-      ),
+      label: <Link to="/profile">Quản lý tài khoản</Link>,
       key: 'account',
     },
     {
@@ -209,6 +205,17 @@ const AppHeader = () => {
           }}
         >
           Trang chủ
+        </p>
+        <Divider style={{ margin: '8px 0' }} />
+
+        <p
+          style={{ padding: '8px 0', cursor: 'pointer' }}
+          onClick={() => {
+            navigate('/profile');
+            setOpenDrawer(false);
+          }}
+        >
+          Quản lý tài khoản
         </p>
         <Divider style={{ margin: '8px 0' }} />
         <p

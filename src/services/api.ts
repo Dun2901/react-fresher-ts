@@ -63,6 +63,13 @@ export const resetPasswordAPI = (
   });
 };
 
+export const changePasswordAPI = (oldPassword: string, newPassword: string) => {
+  return axios.patch<IBackendRes<string>>('/auth/change-password', {
+    oldPassword,
+    newPassword,
+  });
+};
+
 // ==================== MODULE USER ====================
 export const getUsersAPI = (query: string) => {
   const urlBackend = `/users?${query}`;
@@ -89,6 +96,18 @@ export const updateUserAPI = (id: string, fullName: string, phone: string, avata
 
 export const deleteUserAPI = (id: string) => {
   return axios.delete<IBackendRes<IRegister>>(`/users/${id}`);
+};
+
+export const getProfileAPI = () => {
+  return axios.get<IBackendRes<IUser>>('/users/profile');
+};
+
+export const updateProfileAPI = (fullName: string, phone: string, avatar?: string) => {
+  return axios.patch<IBackendRes<IUser>>('/users/profile', {
+    fullName,
+    phone,
+    avatar,
+  });
 };
 
 // ==================== MODULE BOOK ====================

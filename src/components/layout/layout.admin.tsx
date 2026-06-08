@@ -99,11 +99,7 @@ const LayoutAdmin = () => {
 
   const itemsDropdown = [
     {
-      label: (
-        <label style={{ cursor: 'pointer' }} onClick={() => alert('me')}>
-          Quản lý tài khoản
-        </label>
-      ),
+      label: <Link to="/profile">Quản lý tài khoản</Link>,
       key: 'account',
     },
     {

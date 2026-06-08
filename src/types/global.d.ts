@@ -41,6 +41,8 @@ declare global {
     fullName: string;
     role: string;
     avatar: string;
+    accountType?: string;
+    isActive?: boolean;
   }
 
   interface IFetchAccount {
