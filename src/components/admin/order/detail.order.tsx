@@ -1,12 +1,22 @@
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  CreditCardOutlined,
+  EnvironmentOutlined,
+  ShoppingOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { getOrderByIdAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import {
   App,
+  Avatar,
+  Card,
   Descriptions,
   Divider,
   Drawer,
   Empty,
-  Image,
+  Grid,
   Spin,
   Table,
   Tag,
@@ -15,8 +25,10 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useMemo, useState } from 'react';
+import './detail.order.scss';
 
 const { Text, Title } = Typography;
+const { useBreakpoint } = Grid;
 
 type OrderStatus = IOrder['status'];
 type PaymentStatus = IOrder['paymentStatus'];
@@ -81,7 +93,7 @@ const paymentStatusMap: Record<
 
 const paymentMethodMap: Record<PaymentMethod, string> = {
   COD: 'Thanh toán khi nhận hàng',
-  ONLINE: 'Thanh toán online',
+  ONLINE: 'VNPay',
 };
 
 const statusFlow: OrderStatus[] = ['PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED'];
@@ -98,7 +110,28 @@ const formatDateTime = (date?: string) => {
   }).format(new Date(date));
 };
 
+const getErrorDescription = (error: any, fallback: string) => {
+  const responseMessage =
+    error?.response?.data?.error?.message ||
+    error?.response?.data?.message ||
+    error?.error?.message ||
+    error?.message;
+
+  if (Array.isArray(responseMessage)) {
+    return responseMessage[0] || fallback;
+  }
+
+  return responseMessage || fallback;
+};
+
+const getTotalBooks = (order: IOrder) => {
+  return order.items?.reduce((total, item) => total + item.quantity, 0) || 0;
+};
+
 const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [order, setOrder] = useState<IOrder | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -124,6 +157,11 @@ const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
             ? res.error.message[0]
             : res.error?.message || 'Có lỗi xảy ra.',
         });
+      } catch (error: any) {
+        notification.error({
+          message: 'Không thể lấy chi tiết đơn hàng',
+          description: getErrorDescription(error, 'Đã xảy ra lỗi khi tải chi tiết đơn hàng.'),
+        });
       } finally {
         setIsLoading(false);
       }
@@ -131,6 +169,12 @@ const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
 
     fetchOrderDetail();
   }, [open, orderId, refreshKey, notification]);
+
+  useEffect(() => {
+    if (!open) {
+      setOrder(null);
+    }
+  }, [open]);
 
   const customerInfo = useMemo(() => {
     if (!order) {
@@ -161,9 +205,8 @@ const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
         {
           color: 'blue',
           children: (
-            <div>
+            <div className="admin-order-detail__timeline-item">
               <Text strong>Đơn hàng đã được tạo</Text>
-              <br />
               <Text type="secondary">{formatDateTime(order.createdAt)}</Text>
             </div>
           ),
@@ -171,9 +214,8 @@ const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
         {
           color: 'red',
           children: (
-            <div>
+            <div className="admin-order-detail__timeline-item">
               <Text strong>Đơn hàng đã bị hủy</Text>
-              <br />
               <Text type="secondary">{formatDateTime(order.updatedAt)}</Text>
             </div>
           ),
@@ -190,24 +232,16 @@ const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
       return {
         color: isReached ? 'green' : 'gray',
         children: (
-          <div>
+          <div className="admin-order-detail__timeline-item">
             <Text strong={isCurrent} type={isReached ? undefined : 'secondary'}>
               {orderStatusMap[status].text}
             </Text>
 
             {status === 'PENDING' && (
-              <>
-                <br />
-                <Text type="secondary">{formatDateTime(order.createdAt)}</Text>
-              </>
+              <Text type="secondary">{formatDateTime(order.createdAt)}</Text>
             )}
 
-            {isCurrent && status !== 'PENDING' && (
-              <>
-                <br />
-                <Text type="secondary">Trạng thái hiện tại</Text>
-              </>
-            )}
+            {isCurrent && status !== 'PENDING' && <Text type="secondary">Trạng thái hiện tại</Text>}
           </div>
         ),
       };
@@ -220,26 +254,25 @@ const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
       dataIndex: 'bookName',
       key: 'bookName',
       render: (_, item) => (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            minWidth: 220,
-          }}
-        >
-          <Image
-            width={52}
-            height={68}
+        <div className="admin-order-detail__product">
+          <Avatar
+            shape="square"
+            size={56}
             src={getBookImageUrl(item.thumbnail)}
-            fallback="https://placehold.co/52x68?text=Book"
-            style={{
-              objectFit: 'cover',
-              borderRadius: 6,
-            }}
-          />
+            className="admin-order-detail__product-image"
+          >
+            <ShoppingOutlined />
+          </Avatar>
 
-          <Text strong>{item.bookName}</Text>
+          <div className="admin-order-detail__product-info">
+            <Text strong className="admin-order-detail__product-name">
+              {item.bookName}
+            </Text>
+
+            <Text type="secondary" className="admin-order-detail__product-id">
+              Mã sách: {item.bookId}
+            </Text>
+          </div>
         </div>
       ),
     },
@@ -257,145 +290,180 @@ const DetailOrder = ({ open, orderId, refreshKey, onClose }: IProps) => {
       key: 'quantity',
       width: 100,
       align: 'center',
+      render: (quantity: number) => `x${quantity}`,
     },
     {
       title: 'Thành tiền',
       key: 'total',
       width: 150,
       align: 'right',
-      render: (_, item) => <Text strong>{formatCurrency(item.price * item.quantity)}</Text>,
+      render: (_, item) => (
+        <Text strong className="admin-order-detail__price">
+          {formatCurrency(item.price * item.quantity)}
+        </Text>
+      ),
     },
   ];
+
+  const totalBooks = order ? getTotalBooks(order) : 0;
 
   return (
     <Drawer
       title={order ? `Chi tiết đơn hàng ${order.orderCode}` : 'Chi tiết đơn hàng'}
       open={open}
-      width={900}
+      width={isMobile ? '100%' : 920}
       onClose={onClose}
+      className="admin-order-detail"
+      destroyOnClose
     >
       <Spin spinning={isLoading}>
         {!order ? (
           <Empty description="Không có thông tin đơn hàng" />
         ) : (
-          <>
-            <Descriptions
-              bordered
-              column={{
-                xs: 1,
-                sm: 1,
-                md: 2,
-              }}
-            >
-              <Descriptions.Item label="Mã đơn hàng">
-                <Text strong copyable>
-                  {order.orderCode}
-                </Text>
-              </Descriptions.Item>
+          <div className="admin-order-detail__content">
+            <div className="admin-order-detail__summary-grid">
+              <Card className="admin-order-detail__summary-card">
+                <div className="admin-order-detail__summary-icon admin-order-detail__summary-icon--order">
+                  <ShoppingOutlined />
+                </div>
 
-              <Descriptions.Item label="Ngày tạo">
-                {formatDateTime(order.createdAt)}
-              </Descriptions.Item>
+                <div>
+                  <Text type="secondary">Mã đơn hàng</Text>
+                  <Text strong copyable className="admin-order-detail__summary-value">
+                    {order.orderCode}
+                  </Text>
+                </div>
+              </Card>
 
-              <Descriptions.Item label="Khách hàng">{customerInfo.fullName}</Descriptions.Item>
+              <Card className="admin-order-detail__summary-card">
+                <div className="admin-order-detail__summary-icon admin-order-detail__summary-icon--status">
+                  {order.status === 'CANCELLED' ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
+                </div>
 
-              <Descriptions.Item label="Email">{customerInfo.email}</Descriptions.Item>
+                <div>
+                  <Text type="secondary">Trạng thái</Text>
+                  <Tag
+                    color={orderStatusMap[order.status].color}
+                    className="admin-order-detail__tag"
+                  >
+                    {orderStatusMap[order.status].text}
+                  </Tag>
+                </div>
+              </Card>
 
-              <Descriptions.Item label="Trạng thái đơn hàng">
-                <Tag color={orderStatusMap[order.status].color}>
-                  {orderStatusMap[order.status].text}
-                </Tag>
-              </Descriptions.Item>
+              <Card className="admin-order-detail__summary-card">
+                <div className="admin-order-detail__summary-icon admin-order-detail__summary-icon--money">
+                  <CreditCardOutlined />
+                </div>
 
-              <Descriptions.Item label="Trạng thái thanh toán">
-                <Tag color={paymentStatusMap[order.paymentStatus].color}>
-                  {paymentStatusMap[order.paymentStatus].text}
-                </Tag>
-              </Descriptions.Item>
+                <div>
+                  <Text type="secondary">Tổng thanh toán</Text>
+                  <Text strong className="admin-order-detail__summary-price">
+                    {formatCurrency(order.totalPrice)}
+                  </Text>
+                </div>
+              </Card>
+            </div>
 
-              <Descriptions.Item label="Phương thức thanh toán" span={2}>
-                {paymentMethodMap[order.paymentMethod]}
-              </Descriptions.Item>
-            </Descriptions>
+            <Card className="admin-order-detail__section-card">
+              <Title level={5} className="admin-order-detail__section-title">
+                Thông tin đơn hàng
+              </Title>
 
-            <Divider />
-
-            <Title level={5}>Địa chỉ nhận hàng</Title>
-
-            <Descriptions bordered column={1}>
-              <Descriptions.Item label="Người nhận">
-                {order.shippingAddress?.fullName || '---'}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Số điện thoại">
-                {order.shippingAddress?.phone || '---'}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Địa chỉ">
-                {order.shippingAddress?.address || '---'}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Ghi chú">
-                {order.note || 'Không có ghi chú'}
-              </Descriptions.Item>
-            </Descriptions>
-
-            <Divider />
-
-            <Title level={5}>Danh sách sản phẩm</Title>
-
-            <Table<IOrderItem>
-              rowKey={(item) => item.bookId}
-              columns={itemColumns}
-              dataSource={order.items}
-              pagination={false}
-              scroll={{ x: 700 }}
-            />
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                marginTop: 20,
-              }}
-            >
-              <div
-                style={{
-                  minWidth: 300,
-                  padding: 16,
-                  border: '1px solid #f0f0f0',
-                  borderRadius: 8,
-                  background: '#fafafa',
+              <Descriptions
+                bordered
+                size="small"
+                column={{
+                  xs: 1,
+                  sm: 1,
+                  md: 2,
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text strong>Tổng tiền đơn hàng:</Text>
+                <Descriptions.Item label="Ngày tạo">
+                  {formatDateTime(order.createdAt)}
+                </Descriptions.Item>
 
-                  <Text
-                    strong
-                    style={{
-                      fontSize: 18,
-                      color: '#cf1322',
-                    }}
-                  >
+                <Descriptions.Item label="Cập nhật lần cuối">
+                  {formatDateTime(order.updatedAt)}
+                </Descriptions.Item>
+
+                <Descriptions.Item label="Khách hàng">{customerInfo.fullName}</Descriptions.Item>
+
+                <Descriptions.Item label="Email">{customerInfo.email}</Descriptions.Item>
+
+                <Descriptions.Item label="Phương thức thanh toán">
+                  {paymentMethodMap[order.paymentMethod]}
+                </Descriptions.Item>
+
+                <Descriptions.Item label="Trạng thái thanh toán">
+                  <Tag color={paymentStatusMap[order.paymentStatus].color}>
+                    {paymentStatusMap[order.paymentStatus].text}
+                  </Tag>
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Card className="admin-order-detail__section-card">
+              <Title level={5} className="admin-order-detail__section-title">
+                <EnvironmentOutlined /> Địa chỉ nhận hàng
+              </Title>
+
+              <Descriptions bordered size="small" column={1}>
+                <Descriptions.Item label="Người nhận">
+                  {order.shippingAddress?.fullName || '---'}
+                </Descriptions.Item>
+
+                <Descriptions.Item label="Số điện thoại">
+                  {order.shippingAddress?.phone || '---'}
+                </Descriptions.Item>
+
+                <Descriptions.Item label="Địa chỉ">
+                  {order.shippingAddress?.address || '---'}
+                </Descriptions.Item>
+
+                <Descriptions.Item label="Ghi chú">
+                  {order.note || 'Không có ghi chú'}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Card className="admin-order-detail__section-card">
+              <div className="admin-order-detail__section-heading">
+                <Title level={5} className="admin-order-detail__section-title">
+                  Danh sách sản phẩm
+                </Title>
+
+                <Text type="secondary">{totalBooks} cuốn sách</Text>
+              </div>
+
+              <Table<IOrderItem>
+                rowKey={(item, index) => `${item.bookId}-${index}`}
+                columns={itemColumns}
+                dataSource={order.items}
+                pagination={false}
+                scroll={{ x: 760 }}
+                className="admin-order-detail__product-table"
+              />
+
+              <div className="admin-order-detail__total-box">
+                <div className="admin-order-detail__total-row">
+                  <Text strong>Tổng tiền đơn hàng</Text>
+
+                  <Text strong className="admin-order-detail__total-price">
                     {formatCurrency(order.totalPrice)}
                   </Text>
                 </div>
               </div>
-            </div>
+            </Card>
 
-            <Divider />
+            <Card className="admin-order-detail__section-card">
+              <Title level={5} className="admin-order-detail__section-title">
+                <UserOutlined /> Tiến trình đơn hàng
+              </Title>
 
-            <Title level={5}>Tiến trình đơn hàng</Title>
-
-            <Timeline items={timelineItems} />
-          </>
+              <Timeline items={timelineItems} />
+            </Card>
+          </div>
         )}
       </Spin>
     </Drawer>

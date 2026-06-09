@@ -3,13 +3,12 @@ import {
   Avatar,
   Button,
   Card,
-  Descriptions,
   Empty,
   Grid,
   List,
   Popconfirm,
+  Skeleton,
   Space,
-  Spin,
   Steps,
   Table,
   Tag,
@@ -22,48 +21,73 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   CreditCardOutlined,
+  HistoryOutlined,
   ReloadOutlined,
   ShoppingOutlined,
   TruckOutlined,
   UserOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import { cancelOrderAPI, getOrderByIdAPI } from '@/services/api';
+import {
+  cancelOrderAPI,
+  createVnpayPaymentUrlAPI,
+  getHistoryOrderByIdAPI,
+  getOrderByIdAPI,
+} from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './order.detail.scss';
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
 
-const orderStatusMap = {
+const orderStatusMap: Record<
+  IOrder['status'],
+  {
+    text: string;
+    color: string;
+    message: string;
+    tone: 'warning' | 'info' | 'processing' | 'success' | 'error';
+  }
+> = {
   PENDING: {
     text: 'Chờ xác nhận',
     color: 'gold',
+    message: 'Đơn hàng đang chờ admin xác nhận.',
+    tone: 'warning',
   },
   CONFIRMED: {
     text: 'Đã xác nhận',
     color: 'blue',
+    message: 'Đơn hàng đã được xác nhận và đang chuẩn bị giao.',
+    tone: 'info',
   },
   SHIPPING: {
     text: 'Đang giao',
     color: 'processing',
+    message: 'Đơn hàng đang được giao đến bạn.',
+    tone: 'processing',
   },
   COMPLETED: {
     text: 'Hoàn thành',
     color: 'success',
+    message: 'Đơn hàng đã hoàn thành. Cảm ơn bạn đã mua sách tại BookStore.',
+    tone: 'success',
   },
   CANCELLED: {
     text: 'Đã hủy',
     color: 'error',
+    message: 'Đơn hàng đã được hủy và không còn tiếp tục xử lý.',
+    tone: 'error',
   },
 };
 
-const paymentMethodMap = {
+const paymentMethodMap: Record<IOrder['paymentMethod'], string> = {
   COD: 'Thanh toán khi nhận hàng',
   ONLINE: 'VNPay',
 };
 
-const paymentStatusMap = {
+const paymentStatusMap: Record<IOrder['paymentStatus'], { text: string; color: string }> = {
   UNPAID: {
     text: 'Chưa thanh toán',
     color: 'warning',
@@ -93,7 +117,7 @@ const orderStepItems = [
   },
 ];
 
-const orderStepIndexMap = {
+const orderStepIndexMap: Partial<Record<IOrder['status'], number>> = {
   PENDING: 0,
   CONFIRMED: 1,
   SHIPPING: 2,
@@ -112,47 +136,81 @@ const formatDateTime = (date?: string) => {
   }).format(new Date(date));
 };
 
-const getOrderItemsCount = (order?: IOrder) => {
-  return order?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0;
+const getErrorMessage = (error: any, fallbackMessage: string) => {
+  const responseMessage =
+    error?.response?.data?.error?.message ||
+    error?.response?.data?.message ||
+    error?.error?.message ||
+    error?.message;
+
+  if (Array.isArray(responseMessage)) {
+    return responseMessage[0] || fallbackMessage;
+  }
+
+  return responseMessage || fallbackMessage;
 };
 
-const getReceiverInfo = (order?: IOrder) => {
-  const shippingAddress = (order as any)?.shippingAddress;
+const getOrderItems = (order?: IOrder) => {
+  return order?.items ?? [];
+};
 
-  return {
-    name: shippingAddress?.fullName || '---',
-    phone: shippingAddress?.phone || '---',
-    address: shippingAddress?.address || '---',
-  };
+const getOrderItemsCount = (order?: IOrder) => {
+  return getOrderItems(order).reduce((total, item) => total + item.quantity, 0);
+};
+
+const getItemsSubtotal = (order?: IOrder) => {
+  return getOrderItems(order).reduce((total, item) => total + item.price * item.quantity, 0);
 };
 
 const getShippingFee = (order?: IOrder) => {
-  const orderData = order as any;
+  if (!order) return 0;
 
-  return orderData?.shippingFee ?? 0;
+  const orderData = order as IOrder & { shippingFee?: number };
+  const subtotal = getItemsSubtotal(order);
+
+  if (typeof orderData.shippingFee === 'number') {
+    return orderData.shippingFee;
+  }
+
+  return Math.max(order.totalPrice - subtotal, 0);
+};
+
+const getReceiverInfo = (order?: IOrder) => {
+  const orderData = order as
+    | (IOrder & {
+        receiverName?: string;
+        receiverPhone?: string;
+        receiverAddress?: string;
+      })
+    | undefined;
+
+  return {
+    name: order?.shippingAddress?.fullName || orderData?.receiverName || '---',
+    phone: order?.shippingAddress?.phone || orderData?.receiverPhone || '---',
+    address: order?.shippingAddress?.address || orderData?.receiverAddress || '---',
+  };
 };
 
 const getOrderStepCurrent = (status?: IOrder['status']) => {
   if (!status || status === 'CANCELLED') return 0;
 
-  return orderStepIndexMap[status as keyof typeof orderStepIndexMap] ?? 0;
+  return orderStepIndexMap[status] ?? 0;
 };
 
-const getNextStatusText = (status?: IOrder['status']) => {
-  switch (status) {
-    case 'PENDING':
-      return 'Đơn hàng đang chờ admin xác nhận.';
-    case 'CONFIRMED':
-      return 'Đơn hàng đã được xác nhận và đang chờ giao.';
-    case 'SHIPPING':
-      return 'Đơn hàng đang được giao đến bạn.';
-    case 'COMPLETED':
-      return 'Đơn hàng đã hoàn thành.';
-    case 'CANCELLED':
-      return 'Đơn hàng đã bị hủy.';
-    default:
-      return '';
-  }
+const isHistoryStatus = (status?: IOrder['status']) => {
+  return status === 'COMPLETED' || status === 'CANCELLED';
+};
+
+const canCancelOrder = (order?: IOrder | null) => {
+  return order?.status === 'PENDING';
+};
+
+const canRepayOrder = (order?: IOrder | null) => {
+  return (
+    order?.status === 'PENDING' &&
+    order.paymentMethod === 'ONLINE' &&
+    order.paymentStatus === 'UNPAID'
+  );
 };
 
 const OrderDetailPage = () => {
@@ -164,10 +222,21 @@ const OrderDetailPage = () => {
   const [order, setOrder] = useState<IOrder | null>(null);
   const [loading, setLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [payingLoading, setPayingLoading] = useState(false);
 
   const receiverInfo = useMemo(() => getReceiverInfo(order ?? undefined), [order]);
   const totalItems = useMemo(() => getOrderItemsCount(order ?? undefined), [order]);
+  const itemsSubtotal = useMemo(() => getItemsSubtotal(order ?? undefined), [order]);
   const shippingFee = useMemo(() => getShippingFee(order ?? undefined), [order]);
+  const orderItems = useMemo(() => getOrderItems(order ?? undefined), [order]);
+
+  const statusInfo = order ? orderStatusMap[order.status] : undefined;
+  const paymentStatusInfo = order ? paymentStatusMap[order.paymentStatus] : undefined;
+  const showCancelButton = canCancelOrder(order);
+  const showRepayButton = canRepayOrder(order);
+  const showMobileStickyActions = isMobile && !!order && (showCancelButton || showRepayButton);
+
+  const backPath = isHistoryStatus(order?.status) ? '/orders/history' : '/orders';
 
   const fetchOrderDetail = async () => {
     if (!id) return;
@@ -175,16 +244,30 @@ const OrderDetailPage = () => {
     setLoading(true);
 
     try {
-      const res = await getOrderByIdAPI(id);
+      let detail: IOrder | null = null;
 
-      setOrder(res.data ?? null);
+      try {
+        const res = await getOrderByIdAPI(id);
+
+        if (res.error) {
+          throw res;
+        }
+
+        detail = res.data ?? null;
+      } catch {
+        const historyRes = await getHistoryOrderByIdAPI(id);
+
+        if (historyRes.error) {
+          throw historyRes;
+        }
+
+        detail = historyRes.data ?? null;
+      }
+
+      setOrder(detail);
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        'Không thể tải chi tiết đơn hàng';
-
-      message.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      setOrder(null);
+      message.error(getErrorMessage(error, 'Không thể tải chi tiết đơn hàng'));
     } finally {
       setLoading(false);
     }
@@ -201,22 +284,39 @@ const OrderDetailPage = () => {
       message.success(res.message || 'Hủy đơn hàng thành công');
       await fetchOrderDetail();
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        'Không thể hủy đơn hàng';
-
-      message.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      message.error(getErrorMessage(error, 'Không thể hủy đơn hàng'));
     } finally {
       setCancelLoading(false);
     }
   };
 
+  const handleRepayOrder = async () => {
+    if (!order?._id) return;
+
+    setPayingLoading(true);
+
+    try {
+      const res = await createVnpayPaymentUrlAPI(order._id);
+      const paymentUrl = res.data?.paymentUrl;
+
+      if (!paymentUrl) {
+        throw new Error('Không nhận được URL thanh toán VNPay');
+      }
+
+      message.loading('Đang chuyển sang cổng thanh toán VNPay...', 2);
+      window.location.href = paymentUrl;
+    } catch (error: any) {
+      message.error(getErrorMessage(error, 'Không thể tạo lại link thanh toán'));
+      setPayingLoading(false);
+    }
+  };
+
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     fetchOrderDetail();
   }, [id]);
 
-  const columns: ColumnsType<IOrder['items'][number]> = [
+  const columns: ColumnsType<IOrderItem> = [
     {
       title: 'Sản phẩm',
       key: 'product',
@@ -275,7 +375,9 @@ const OrderDetailPage = () => {
   if (loading && !order) {
     return (
       <div className="order-detail order-detail--loading">
-        <Spin size="large" />
+        <Card className="order-detail__shell">
+          <Skeleton active paragraph={{ rows: 8 }} />
+        </Card>
       </div>
     );
   }
@@ -283,32 +385,35 @@ const OrderDetailPage = () => {
   if (!order) {
     return (
       <div className="order-detail">
-        <Card className="order-detail__card">
+        <Card className="order-detail__shell order-detail__empty-card">
           <Empty description="Không tìm thấy đơn hàng" />
-          <div className="order-detail__empty-action">
-            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-              Quay lại
-            </Button>
-          </div>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
+            Về đơn hàng của tôi
+          </Button>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="order-detail">
-      <Card className="order-detail__card">
+    <div className={`order-detail ${showMobileStickyActions ? 'order-detail--has-sticky' : ''}`}>
+      <Card className="order-detail__shell">
         <div className="order-detail__header">
-          <div>
-            <Space className="order-detail__breadcrumb" size={8}>
-              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+          <div className="order-detail__header-left">
+            <Space className="order-detail__breadcrumb" size={8} wrap>
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(backPath)}>
                 Quay lại
               </Button>
 
               {!isMobile && (
                 <>
-                  <Button onClick={() => navigate('/orders')}>Đơn hàng của tôi</Button>
-                  <Button onClick={() => navigate('/orders/history')}>Lịch sử mua hàng</Button>
+                  <Button icon={<TruckOutlined />} onClick={() => navigate('/orders')}>
+                    Đơn đang xử lý
+                  </Button>
+
+                  <Button icon={<HistoryOutlined />} onClick={() => navigate('/orders/history')}>
+                    Lịch sử mua hàng
+                  </Button>
                 </>
               )}
             </Space>
@@ -318,7 +423,7 @@ const OrderDetailPage = () => {
                 <ShoppingOutlined />
               </div>
 
-              <div>
+              <div className="order-detail__heading-content">
                 <Title level={3} className="order-detail__title">
                   Chi tiết đơn hàng
                 </Title>
@@ -330,12 +435,23 @@ const OrderDetailPage = () => {
             </div>
           </div>
 
-          <Space className="order-detail__header-actions">
+          <Space className="order-detail__header-actions" wrap>
             <Button icon={<ReloadOutlined />} onClick={fetchOrderDetail} loading={loading}>
               Tải lại
             </Button>
 
-            {order.status === 'PENDING' && (
+            {!isMobile && showRepayButton && (
+              <Button
+                type="primary"
+                icon={<CreditCardOutlined />}
+                loading={payingLoading}
+                onClick={handleRepayOrder}
+              >
+                Thanh toán lại
+              </Button>
+            )}
+
+            {!isMobile && showCancelButton && (
               <Popconfirm
                 title="Hủy đơn hàng"
                 description="Bạn có chắc muốn hủy đơn hàng này không?"
@@ -352,27 +468,32 @@ const OrderDetailPage = () => {
           </Space>
         </div>
 
-        <div className="order-detail__status-card">
-          {isMobile ? (
-            <div className="order-detail__mobile-status-box">
-              <div className="order-detail__mobile-status-top">
-                {order.status === 'CANCELLED' ? (
-                  <CloseCircleOutlined className="order-detail__mobile-status-icon order-detail__mobile-status-icon--cancelled" />
-                ) : (
-                  <CheckCircleOutlined className="order-detail__mobile-status-icon" />
-                )}
+        <div className={`order-detail__status-card order-detail__status-card--${statusInfo?.tone}`}>
+          <div className="order-detail__status-main">
+            {order.status === 'CANCELLED' ? (
+              <CloseCircleOutlined className="order-detail__status-icon order-detail__status-icon--cancelled" />
+            ) : (
+              <CheckCircleOutlined className="order-detail__status-icon" />
+            )}
 
-                <div>
-                  <Text strong className="order-detail__mobile-status-title">
-                    {orderStatusMap[order.status]?.text}
-                  </Text>
-                  <Text type="secondary" className="order-detail__mobile-status-desc">
-                    {getNextStatusText(order.status)}
-                  </Text>
-                </div>
+            <div className="order-detail__status-content">
+              <div className="order-detail__status-title-row">
+                <Text strong className="order-detail__status-title">
+                  {statusInfo?.text}
+                </Text>
+
+                <Tag color={statusInfo?.color} className="order-detail__tag">
+                  {statusInfo?.text}
+                </Tag>
               </div>
 
-              {order.status !== 'CANCELLED' && (
+              <Text className="order-detail__status-desc">{statusInfo?.message}</Text>
+            </div>
+          </div>
+
+          {order.status !== 'CANCELLED' && (
+            <>
+              {isMobile ? (
                 <div className="order-detail__mobile-progress">
                   {orderStepItems.map((step, index) => (
                     <div
@@ -388,232 +509,172 @@ const OrderDetailPage = () => {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <Steps
+                  current={getOrderStepCurrent(order.status)}
+                  items={orderStepItems}
+                  className="order-detail__steps"
+                />
               )}
-            </div>
-          ) : order.status === 'CANCELLED' ? (
-            <div className="order-detail__cancelled">
-              <CloseCircleOutlined />
-              <div>
-                <Text strong>Đơn hàng đã hủy</Text>
-                <Text type="secondary">Đơn hàng này đã được hủy và không tiếp tục xử lý.</Text>
-              </div>
-            </div>
-          ) : (
-            <Steps current={getOrderStepCurrent(order.status)} items={orderStepItems} />
+            </>
           )}
         </div>
 
-        {isMobile ? (
-          <div className="order-detail__mobile-info">
-            <Card className="order-detail__section-card">
-              <div className="order-detail__section-title">
-                <ShoppingOutlined />
-                <span>Thông tin đơn hàng</span>
+        <div className="order-detail__info-grid">
+          <Card className="order-detail__section-card">
+            <div className="order-detail__section-heading">
+              <UserOutlined />
+              <span>Thông tin người nhận</span>
+            </div>
+
+            <div className="order-detail__info-list">
+              <div className="order-detail__info-row">
+                <Text type="secondary">Họ tên</Text>
+                <Text strong>{receiverInfo.name}</Text>
               </div>
 
-              <div className="order-detail__info-list">
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Mã đơn</Text>
-                  <Text strong>{order.orderCode}</Text>
-                </div>
-
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Ngày đặt</Text>
-                  <Text>{formatDateTime(order.createdAt)}</Text>
-                </div>
-
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Trạng thái</Text>
-                  <Tag color={orderStatusMap[order.status]?.color}>
-                    {orderStatusMap[order.status]?.text}
-                  </Tag>
-                </div>
-
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Sản phẩm</Text>
-                  <Text>{totalItems} sản phẩm</Text>
-                </div>
-
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Tổng tiền</Text>
-                  <Text strong className="order-detail__price">
-                    {formatCurrency(order.totalPrice)}
-                  </Text>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="order-detail__section-card">
-              <div className="order-detail__section-title">
-                <CreditCardOutlined />
-                <span>Thanh toán</span>
+              <div className="order-detail__info-row">
+                <Text type="secondary">Số điện thoại</Text>
+                <Text strong>{receiverInfo.phone}</Text>
               </div>
 
-              <div className="order-detail__info-list">
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Phương thức</Text>
-                  <Text>{paymentMethodMap[order.paymentMethod]}</Text>
-                </div>
-
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Trạng thái</Text>
-                  <Tag color={paymentStatusMap[order.paymentStatus]?.color}>
-                    {paymentStatusMap[order.paymentStatus]?.text}
-                  </Tag>
-                </div>
+              <div className="order-detail__info-row order-detail__info-row--address">
+                <Text type="secondary">Địa chỉ</Text>
+                <Text>{receiverInfo.address}</Text>
               </div>
-            </Card>
+            </div>
+          </Card>
 
-            <Card className="order-detail__section-card">
-              <div className="order-detail__section-title">
-                <UserOutlined />
-                <span>Người nhận</span>
+          <Card className="order-detail__section-card">
+            <div className="order-detail__section-heading">
+              <CreditCardOutlined />
+              <span>Thông tin thanh toán</span>
+            </div>
+
+            <div className="order-detail__info-list">
+              <div className="order-detail__info-row">
+                <Text type="secondary">Phương thức</Text>
+                <Text strong>{paymentMethodMap[order.paymentMethod]}</Text>
               </div>
 
-              <div className="order-detail__info-list">
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Họ tên</Text>
-                  <Text>{receiverInfo.name}</Text>
-                </div>
-
-                <div className="order-detail__info-row">
-                  <Text type="secondary">Số điện thoại</Text>
-                  <Text>{receiverInfo.phone}</Text>
-                </div>
-
-                <div className="order-detail__info-row order-detail__info-row--address">
-                  <Text type="secondary">Địa chỉ</Text>
-                  <Text>{receiverInfo.address}</Text>
-                </div>
-              </div>
-            </Card>
-          </div>
-        ) : (
-          <div className="order-detail__grid">
-            <Card className="order-detail__section-card">
-              <div className="order-detail__section-title">
-                <ShoppingOutlined />
-                <span>Thông tin đơn hàng</span>
+              <div className="order-detail__info-row">
+                <Text type="secondary">Trạng thái</Text>
+                <Tag color={paymentStatusInfo?.color} className="order-detail__tag">
+                  {paymentStatusInfo?.text}
+                </Tag>
               </div>
 
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="Mã đơn hàng">
-                  <Text strong>{order.orderCode}</Text>
-                </Descriptions.Item>
+              <div className="order-detail__info-row">
+                <Text type="secondary">Ngày đặt</Text>
+                <Text>{formatDateTime(order.createdAt)}</Text>
+              </div>
+            </div>
+          </Card>
 
-                <Descriptions.Item label="Ngày đặt">
-                  {formatDateTime(order.createdAt)}
-                </Descriptions.Item>
+          <Card className="order-detail__section-card order-detail__summary-card">
+            <div className="order-detail__section-heading">
+              <WalletOutlined />
+              <span>Tóm tắt đơn hàng</span>
+            </div>
 
-                <Descriptions.Item label="Trạng thái đơn">
-                  <Tag color={orderStatusMap[order.status]?.color}>
-                    {orderStatusMap[order.status]?.text}
-                  </Tag>
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Tổng số sản phẩm">
-                  {totalItems} sản phẩm
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Tổng tiền">
-                  <Text strong className="order-detail__price">
-                    {formatCurrency(order.totalPrice)}
-                  </Text>
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Phí vận chuyển">
-                  {formatCurrency(shippingFee)}
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-
-            <Card className="order-detail__section-card">
-              <div className="order-detail__section-title">
-                <CreditCardOutlined />
-                <span>Thanh toán</span>
+            <div className="order-detail__info-list">
+              <div className="order-detail__info-row">
+                <Text type="secondary">Số lượng sách</Text>
+                <Text strong>{totalItems} cuốn</Text>
               </div>
 
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="Phương thức">
-                  {paymentMethodMap[order.paymentMethod]}
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Trạng thái">
-                  <Tag color={paymentStatusMap[order.paymentStatus]?.color}>
-                    {paymentStatusMap[order.paymentStatus]?.text}
-                  </Tag>
-                </Descriptions.Item>
-              </Descriptions>
-
-              <div className="order-detail__section-title order-detail__section-title--receiver">
-                <UserOutlined />
-                <span>Người nhận</span>
+              <div className="order-detail__info-row">
+                <Text type="secondary">Tạm tính</Text>
+                <Text>{formatCurrency(itemsSubtotal)}</Text>
               </div>
 
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="Họ tên">{receiverInfo.name}</Descriptions.Item>
-                <Descriptions.Item label="Số điện thoại">{receiverInfo.phone}</Descriptions.Item>
-                <Descriptions.Item label="Địa chỉ">{receiverInfo.address}</Descriptions.Item>
-              </Descriptions>
-            </Card>
-          </div>
-        )}
+              <div className="order-detail__info-row">
+                <Text type="secondary">Phí vận chuyển</Text>
+                <Text>{formatCurrency(shippingFee)}</Text>
+              </div>
+
+              <div className="order-detail__info-row order-detail__info-row--total">
+                <Text strong>Tổng thanh toán</Text>
+                <Text strong className="order-detail__total-price">
+                  {formatCurrency(order.totalPrice)}
+                </Text>
+              </div>
+            </div>
+          </Card>
+        </div>
 
         <Card className="order-detail__section-card order-detail__items-card">
-          <div className="order-detail__section-title">
-            <TruckOutlined />
-            <span>Danh sách sách đã mua</span>
+          <div className="order-detail__items-header">
+            <div className="order-detail__section-heading">
+              <TruckOutlined />
+              <span>Danh sách sách đã mua</span>
+            </div>
+
+            <Text type="secondary" className="order-detail__items-count">
+              {totalItems} cuốn sách
+            </Text>
           </div>
 
           {isMobile ? (
             <List
-              dataSource={order.items}
+              dataSource={orderItems}
               locale={{
                 emptyText: <Empty description="Không có sản phẩm trong đơn hàng" />,
               }}
-              renderItem={(item) => (
-                <Card className="order-detail__mobile-item-card">
-                  <div className="order-detail__mobile-product">
-                    <Avatar
-                      shape="square"
-                      size={58}
-                      src={getBookImageUrl(item.thumbnail)}
-                      className="order-detail__product-image"
-                    >
-                      <ShoppingOutlined />
-                    </Avatar>
+              renderItem={(item, index) => (
+                <List.Item className="order-detail__mobile-list-item">
+                  <Card className="order-detail__mobile-item-card">
+                    <div className="order-detail__mobile-product">
+                      <Avatar
+                        shape="square"
+                        size={62}
+                        src={getBookImageUrl(item.thumbnail)}
+                        className="order-detail__mobile-product-image"
+                      >
+                        <ShoppingOutlined />
+                      </Avatar>
 
-                    <div className="order-detail__mobile-product-info">
-                      <Text strong className="order-detail__mobile-name">
-                        {item.bookName}
-                      </Text>
+                      <div className="order-detail__mobile-product-info">
+                        <Text strong className="order-detail__mobile-name">
+                          {item.bookName}
+                        </Text>
 
-                      <Text type="secondary" className="order-detail__mobile-meta">
-                        {formatCurrency(item.price)} x {item.quantity}
-                      </Text>
+                        <Text type="secondary" className="order-detail__mobile-code">
+                          Mã sách: {item.bookId}
+                        </Text>
 
-                      <Text strong className="order-detail__price">
-                        {formatCurrency(item.price * item.quantity)}
-                      </Text>
+                        <div className="order-detail__mobile-product-bottom">
+                          <Text type="secondary">x{item.quantity}</Text>
+
+                          <Text className="order-detail__mobile-item-price">
+                            {formatCurrency(item.price)}
+                          </Text>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </Card>
+
+                    <div className="order-detail__mobile-subtotal">
+                      <span>Thành tiền</span>
+                      <b>{formatCurrency(item.price * item.quantity)}</b>
+                    </div>
+                  </Card>
+                </List.Item>
               )}
             />
           ) : (
             <Table
-              rowKey={(record) => record.bookId}
+              rowKey={(record, index) => `${record.bookId}-${index}`}
               columns={columns}
-              dataSource={order.items}
+              dataSource={orderItems}
               pagination={false}
               className="order-detail__items-table"
             />
           )}
 
-          <div className="order-detail__summary">
+          <div className="order-detail__payment-summary">
             <div className="order-detail__summary-row">
               <Text type="secondary">Tạm tính</Text>
-              <Text>{formatCurrency(order.totalPrice - shippingFee)}</Text>
+              <Text>{formatCurrency(itemsSubtotal)}</Text>
             </div>
 
             <div className="order-detail__summary-row">
@@ -623,13 +684,42 @@ const OrderDetailPage = () => {
 
             <div className="order-detail__summary-row order-detail__summary-row--total">
               <Text strong>Tổng thanh toán</Text>
-              <Text strong className="order-detail__price">
-                {formatCurrency(order.totalPrice)}
-              </Text>
+              <Text strong>{formatCurrency(order.totalPrice)}</Text>
             </div>
           </div>
         </Card>
       </Card>
+
+      {showMobileStickyActions && (
+        <div className="order-detail__mobile-sticky-actions">
+          {showCancelButton && (
+            <Popconfirm
+              title="Hủy đơn hàng"
+              description="Bạn có chắc muốn hủy đơn hàng này không?"
+              okText="Hủy đơn"
+              cancelText="Không"
+              okButtonProps={{ danger: true }}
+              onConfirm={handleCancelOrder}
+            >
+              <Button danger block icon={<CloseCircleOutlined />} loading={cancelLoading}>
+                Hủy đơn
+              </Button>
+            </Popconfirm>
+          )}
+
+          {showRepayButton && (
+            <Button
+              type="primary"
+              block
+              icon={<CreditCardOutlined />}
+              loading={payingLoading}
+              onClick={handleRepayOrder}
+            >
+              Thanh toán lại
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

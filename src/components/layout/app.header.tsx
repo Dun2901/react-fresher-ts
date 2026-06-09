@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaReact } from 'react-icons/fa';
+import { ReadOutlined } from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
 import { SearchOutlined } from '@ant-design/icons';
 import { Divider, Badge, Drawer, Avatar, Popover, Empty, Input, Dropdown, Space } from 'antd';
@@ -12,6 +12,7 @@ import { getAvatarUrl, formatCurrency } from '@/services/helper';
 
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [openCartPopover, setOpenCartPopover] = useState(false);
   const { isAuthenticated, user, setUser, setIsAuthenticated, carts } = useCurrentApp();
   const navigate = useNavigate();
 
@@ -54,58 +55,29 @@ const AppHeader = () => {
     });
   }
 
-  // Giao diện thu gọn danh sách giỏ hàng khi rê chuột vào icon Cart
   const contentPopover = () => (
     <div className="pop-cart-body">
-      <div className="pop-cart-content" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+      <div className="pop-cart-content">
         {carts?.map((item, index) => (
-          <div
-            className="book"
-            key={`pop-book-${index}`}
-            style={{
-              display: 'flex',
-              padding: '8px 0',
-              alignItems: 'center',
-              gap: '12px',
-              borderBottom: '1px solid #f0f0f0',
-            }}
-          >
+          <div className="pop-cart-book" key={`pop-book-${index}`}>
             <img
               src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item?.bookId?.thumbnail}`}
-              style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '4px' }}
+              className="pop-cart-book__img"
               alt={item?.bookId?.mainText}
             />
-            <div
-              style={{
-                flex: 1,
-                maxWidth: '150px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                fontSize: '13px',
-              }}
-            >
-              {item?.bookId?.mainText}
-            </div>
-            <div className="price" style={{ color: '#ff4d4f', fontWeight: '600' }}>
-              {formatCurrency(item?.priceAtAdd ?? 0)}
-            </div>
+            <div className="pop-cart-book__name">{item?.bookId?.mainText}</div>
+            <div className="pop-cart-book__price">{formatCurrency(item?.priceAtAdd ?? 0)}</div>
           </div>
         ))}
       </div>
       {carts && carts.length > 0 ? (
-        <div className="pop-cart-footer" style={{ marginTop: '12px', textAlign: 'right' }}>
+        <div className="pop-cart-footer">
           <button
-            style={{
-              background: '#1677ff',
-              color: '#fff',
-              border: 'none',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontWeight: 500,
+            className="pop-cart-footer__btn"
+            onClick={() => {
+              setOpenCartPopover(false);
+              navigate('/cart');
             }}
-            onClick={() => navigate('/cart')}
           >
             Xem giỏ hàng
           </button>
@@ -120,52 +92,53 @@ const AppHeader = () => {
     <>
       <div className="header-container-premium">
         <header className="page-header-navbar">
-          {/* KHỐI TRÁI: LOGO & MENU MOBILE */}
+          {/* KHỐI TRÁI */}
           <div className="navbar-left">
             <div className="navbar-toggle-btn" onClick={() => setOpenDrawer(true)}>
               ☰
             </div>
             <div className="logo-brand" onClick={() => navigate('/')}>
-              <FaReact className="rotate icon-react" />
-              <span className="logo-brand-text">Hỏi Dân !T</span>
+              <ReadOutlined className="icon-book" />
+              <span className="logo-brand-text">BookStore</span>
             </div>
           </div>
 
-          {/* KHỐI GIỮA: THANH TÌM KIẾM ĐÃ FIX LỆCH ICON */}
+          {/* KHỐI GIỮA */}
           <div className="navbar-center">
             <Input
               className="search-bar-input"
-              placeholder="Bạn tìm gì hôm nay..."
+              placeholder="Bạn tìm sách gì hôm nay..."
               prefix={<SearchOutlined style={{ color: '#bfbfbf', fontSize: '16px' }} />}
               allowClear
             />
           </div>
 
-          {/* KHỐI PHẢI: GIỎ HÀNG & USER ACCOUNT */}
+          {/* KHỐI PHẢI */}
           <div className="navbar-right">
             <nav className="navigation-actions">
-              {/* Giỏ hàng */}
               <div className="action-item-cart">
                 <Popover
                   placement="bottomRight"
                   title={<span style={{ fontWeight: 600 }}>Sản phẩm mới thêm</span>}
                   content={contentPopover}
                   arrow={true}
+                  trigger="click"
+                  open={openCartPopover}
+                  onOpenChange={setOpenCartPopover}
                 >
                   <Badge
                     count={carts?.length ?? 0}
-                    size={'small'}
+                    size="small"
                     showZero
                     style={{ cursor: 'pointer' }}
                   >
-                    <FiShoppingCart className="icon-cart-svg" onClick={() => navigate('/cart')} />
+                    <FiShoppingCart className="icon-cart-svg" />
                   </Badge>
                 </Popover>
               </div>
 
               <Divider type="vertical" className="desktop-divider" />
 
-              {/* Thông tin tài khoản */}
               <div className="action-item-user">
                 {!isAuthenticated ? (
                   <span className="login-trigger-text" onClick={() => navigate('/login')}>
@@ -190,7 +163,7 @@ const AppHeader = () => {
         </header>
       </div>
 
-      {/* Drawer menu cho thiết bị di động */}
+      {/* Drawer menu mobile */}
       <Drawer
         title="Danh mục chức năng"
         placement="left"
@@ -198,7 +171,7 @@ const AppHeader = () => {
         open={openDrawer}
       >
         <p
-          style={{ padding: '8px 0', cursor: 'pointer' }}
+          className="drawer-nav-item"
           onClick={() => {
             navigate('/');
             setOpenDrawer(false);
@@ -206,10 +179,10 @@ const AppHeader = () => {
         >
           Trang chủ
         </p>
-        <Divider style={{ margin: '8px 0' }} />
+        <Divider className="drawer-divider" />
 
         <p
-          style={{ padding: '8px 0', cursor: 'pointer' }}
+          className="drawer-nav-item"
           onClick={() => {
             navigate('/profile');
             setOpenDrawer(false);
@@ -217,9 +190,10 @@ const AppHeader = () => {
         >
           Quản lý tài khoản
         </p>
-        <Divider style={{ margin: '8px 0' }} />
+        <Divider className="drawer-divider" />
+
         <p
-          style={{ padding: '8px 0', cursor: 'pointer' }}
+          className="drawer-nav-item"
           onClick={() => {
             navigate('/orders');
             setOpenDrawer(false);
@@ -227,9 +201,10 @@ const AppHeader = () => {
         >
           Đơn hàng của tôi
         </p>
-        <Divider style={{ margin: '8px 0' }} />
+        <Divider className="drawer-divider" />
+
         <p
-          style={{ padding: '8px 0', cursor: 'pointer' }}
+          className="drawer-nav-item"
           onClick={() => {
             navigate('/orders/history');
             setOpenDrawer(false);
@@ -237,12 +212,12 @@ const AppHeader = () => {
         >
           Lịch sử mua hàng
         </p>
-        <Divider style={{ margin: '8px 0' }} />
+        <Divider className="drawer-divider" />
 
         {user?.role === 'ADMIN' && (
           <>
             <p
-              style={{ padding: '8px 0', cursor: 'pointer', color: '#1677ff' }}
+              className="drawer-nav-item drawer-nav-item--admin"
               onClick={() => {
                 navigate('/admin');
                 setOpenDrawer(false);
@@ -250,13 +225,11 @@ const AppHeader = () => {
             >
               Trang quản trị Admin
             </p>
-            <Divider style={{ margin: '8px 0' }} />
+            <Divider className="drawer-divider" />
           </>
         )}
-        <p
-          onClick={handleLogout}
-          style={{ padding: '8px 0', color: '#ff4d4f', cursor: 'pointer', fontWeight: 600 }}
-        >
+
+        <p className="drawer-nav-item drawer-nav-item--logout" onClick={handleLogout}>
           Đăng xuất
         </p>
       </Drawer>

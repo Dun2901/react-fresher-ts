@@ -110,24 +110,18 @@ const DashBoardPage = () => {
 
   const latestOrderColumns: ColumnsType<IDashboardLatestOrder> = [
     {
-      title: 'Mã đơn',
+      title: 'Đơn hàng',
       dataIndex: 'orderCode',
       key: 'orderCode',
-      width: 210,
-      render: (orderCode: string) => (
-        <span className="admin-dashboard__order-code">{orderCode}</span>
-      ),
-    },
-    {
-      title: 'Khách hàng',
-      dataIndex: 'customerName',
-      key: 'customerName',
-      width: 230,
-      render: (_, record) => (
-        <div className="admin-dashboard__customer">
-          <span className="admin-dashboard__customer-name">
-            {record.customerName || 'Không rõ'}
-          </span>
+      width: 300,
+      render: (orderCode: string, record) => (
+        <div className="admin-dashboard__order-cell">
+          <span className="admin-dashboard__order-code">{orderCode}</span>
+
+          <div className="admin-dashboard__order-meta">
+            <span>{record.customerName || 'Không rõ'}</span>
+            <span>{dayjs(record.createdAt).format('DD/MM/YYYY HH:mm')}</span>
+          </div>
 
           {record.customerEmail && (
             <span className="admin-dashboard__customer-email">{record.customerEmail}</span>
@@ -149,30 +143,34 @@ const DashBoardPage = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 150,
-      align: 'center',
-      render: (status: OrderStatus) => (
-        <Tag color={orderStatusMap[status]?.color}>{orderStatusMap[status]?.text || status}</Tag>
-      ),
-    },
-    {
-      title: 'Thanh toán',
-      dataIndex: 'paymentStatus',
-      key: 'paymentStatus',
-      width: 160,
-      align: 'center',
-      render: (paymentStatus: PaymentStatus) => (
-        <Tag color={paymentStatusMap[paymentStatus]?.color}>
-          {paymentStatusMap[paymentStatus]?.text || paymentStatus}
-        </Tag>
+      width: 240,
+      render: (_, record) => (
+        <div className="admin-dashboard__status-cell">
+          <div className="admin-dashboard__status-row">
+            <Text type="secondary">Đơn hàng</Text>
+            <Tag color={orderStatusMap[record.status]?.color}>
+              {orderStatusMap[record.status]?.text || record.status}
+            </Tag>
+          </div>
+
+          <div className="admin-dashboard__status-row">
+            <Text type="secondary">Thanh toán</Text>
+            <Tag color={paymentStatusMap[record.paymentStatus]?.color}>
+              {paymentStatusMap[record.paymentStatus]?.text || record.paymentStatus}
+            </Tag>
+          </div>
+        </div>
       ),
     },
     {
       title: 'Ngày tạo',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      width: 170,
-      render: (createdAt: string) => dayjs(createdAt).format('DD/MM/YYYY HH:mm'),
+      width: 150,
+      render: (createdAt: string) => (
+        <span className="admin-dashboard__date">{dayjs(createdAt).format('DD/MM/YYYY')}</span>
+      ),
+      responsive: ['lg'],
     },
   ];
 
@@ -181,6 +179,7 @@ const DashBoardPage = () => {
       title: 'Tên sách',
       dataIndex: 'mainText',
       key: 'mainText',
+      width: 280,
       render: (mainText: string, record) => (
         <div>
           <div className="admin-dashboard__book-name">{mainText}</div>
@@ -193,7 +192,7 @@ const DashBoardPage = () => {
       title: 'Giá',
       dataIndex: 'price',
       key: 'price',
-      width: 150,
+      width: 160,
       align: 'right',
       render: (price: number) => (
         <span className="admin-dashboard__book-price">{formatCurrency(price)}</span>
@@ -203,7 +202,7 @@ const DashBoardPage = () => {
       title: 'Đã bán',
       dataIndex: 'sold',
       key: 'sold',
-      width: 120,
+      width: 110,
       align: 'center',
       render: (sold: number) => <Tag color="blue">{sold}</Tag>,
     },
@@ -211,7 +210,7 @@ const DashBoardPage = () => {
       title: 'Tồn kho',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 120,
+      width: 110,
       align: 'center',
       render: (quantity: number) => <Tag color={quantity > 0 ? 'green' : 'red'}>{quantity}</Tag>,
     },
@@ -224,6 +223,7 @@ const DashBoardPage = () => {
           <Title level={3} className="admin-dashboard__title">
             Dashboard
           </Title>
+
           <Text className="admin-dashboard__subtitle">
             Tổng quan doanh thu, đơn hàng, sách và người dùng.
           </Text>
@@ -259,8 +259,8 @@ const DashBoardPage = () => {
         )}
 
         <Skeleton loading={loading && !summary} active paragraph={{ rows: 4 }}>
-          <Row gutter={[16, 16]} className="admin-dashboard__stats">
-            <Col xs={24} sm={12} xl={6}>
+          <Row gutter={[12, 12]} className="admin-dashboard__stats">
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Tổng người dùng"
@@ -270,7 +270,7 @@ const DashBoardPage = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Tổng sách"
@@ -280,7 +280,7 @@ const DashBoardPage = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Tổng đơn hàng"
@@ -290,7 +290,7 @@ const DashBoardPage = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Tổng doanh thu"
@@ -301,7 +301,7 @@ const DashBoardPage = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Đơn chờ xác nhận"
@@ -312,7 +312,7 @@ const DashBoardPage = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Đơn đã thanh toán"
@@ -323,7 +323,7 @@ const DashBoardPage = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Đơn hoàn thành"
@@ -334,7 +334,7 @@ const DashBoardPage = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} xl={6}>
+            <Col xs={24} md={12} xl={6}>
               <Card className="admin-dashboard__stat-card">
                 <Statistic
                   title="Đơn đã hủy"
@@ -359,7 +359,8 @@ const DashBoardPage = () => {
             columns={latestOrderColumns}
             dataSource={latestOrders}
             pagination={false}
-            scroll={{ x: 1070 }}
+            tableLayout="fixed"
+            scroll={{ x: 860 }}
             locale={{
               emptyText: (
                 <div className="admin-dashboard__empty">
@@ -382,7 +383,8 @@ const DashBoardPage = () => {
             columns={topBookColumns}
             dataSource={topSellingBooks}
             pagination={false}
-            scroll={{ x: 700 }}
+            tableLayout="fixed"
+            scroll={{ x: 660 }}
             locale={{
               emptyText: (
                 <div className="admin-dashboard__empty">

@@ -1,160 +1,211 @@
-import type { FormProps } from "antd";
-import { Button, Divider, Form, Input, App } from "antd";
-import { useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import "./verify.scss";
-import { resendCodeAPI, verifyAPI } from "@/services/api";
-import { MailOutlined, WarningOutlined } from "@ant-design/icons";
+import type { FormProps } from 'antd';
+import { App, Button, Divider, Form, Input, Typography } from 'antd';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import './verify.scss';
+import { resendCodeAPI, verifyAPI } from '@/services/api';
+import {
+  CheckCircleOutlined,
+  HomeOutlined,
+  MailOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 
 type FieldType = {
   codeId: string;
 };
 
+const { Text, Title } = Typography;
+
+const getErrorMessage = (res: any, fallbackMessage: string) => {
+  const responseMessage = res?.error?.message || res?.message;
+
+  if (Array.isArray(responseMessage)) {
+    return responseMessage[0] || fallbackMessage;
+  }
+
+  return responseMessage || fallbackMessage;
+};
+
+const normalizeVerificationCode = (code: string) => {
+  return code.replace(/\s/g, '').trim();
+};
+
 const VerifyPage = () => {
-  const { message } = App.useApp();
+  const { message, notification } = App.useApp();
   const navigate = useNavigate();
   const { id } = useParams();
-  const { state } = useLocation();
+  const location = useLocation();
+
+  const email = (location.state as { email?: string } | null)?.email;
+
   const [isSubmit, setIsSubmit] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
   const startCountdown = () => {
     setCountdown(10);
+
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
   };
 
   const handleResend = async () => {
-    setIsResending(true);
-    const res = await resendCodeAPI(state.email);
+    if (!email) {
+      notification.warning({
+        message: 'Không tìm thấy email',
+        description: 'Vui lòng quay lại trang đăng ký để nhận lại mã xác thực.',
+      });
+      return;
+    }
 
-    if (res && res.data) {
-      message.success("Đã gửi lại mã xác thực! Kiểm tra email của bạn.");
+    setIsResending(true);
+
+    const res = await resendCodeAPI(email);
+
+    if (res?.data) {
+      message.success('Đã gửi lại mã xác thực. Vui lòng kiểm tra email của bạn.');
       startCountdown();
     } else {
-      message.error(res.message ?? "Gửi lại mã thất bại, thử lại sau.");
+      message.error(getErrorMessage(res, 'Gửi lại mã thất bại, vui lòng thử lại sau.'));
     }
+
     setIsResending(false);
   };
 
-  const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
-    setIsSubmit(true);
-    const { codeId } = values;
-    const res = await verifyAPI(id!, codeId);
+  const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
+    if (!id) return;
 
-    if (res && res.data) {
-      // Success
-      message.success("Kích hoạt tài khoản thành công! Vui lòng đăng nhập.");
-      navigate("/login");
+    const codeId = normalizeVerificationCode(values.codeId);
+
+    setIsSubmit(true);
+
+    const res = await verifyAPI(id, codeId);
+
+    if (res?.data) {
+      message.success('Kích hoạt tài khoản thành công! Vui lòng đăng nhập.');
+      navigate('/login');
     } else {
-      // Error
-      message.error(res.message ?? "Mã xác thực không hợp lệ hoặc đã hết hạn.");
+      message.error(getErrorMessage(res, 'Mã xác thực không hợp lệ hoặc đã hết hạn.'));
     }
+
     setIsSubmit(false);
   };
 
+  if (!id) {
+    return (
+      <div className="verify-page">
+        <section className="verify-page__card verify-page__card--invalid">
+          <div className="verify-page__status-icon verify-page__status-icon--warning">
+            <WarningOutlined />
+          </div>
+
+          <Title level={2}>Truy cập không hợp lệ</Title>
+
+          <Text>
+            Bạn cần đăng ký tài khoản trước khi kích hoạt. Vui lòng quay lại trang đăng ký để tiếp
+            tục.
+          </Text>
+
+          <div className="verify-page__invalid-actions">
+            <Button type="primary" size="large" onClick={() => navigate('/register')}>
+              Đăng ký ngay
+            </Button>
+
+            <Button size="large" onClick={() => navigate('/login')}>
+              Đăng nhập
+            </Button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <>
-      {!id ? (
-        // ← Không có _id → hiện trang cảnh báo
-        <div className="verify-page">
-          <main className="main">
-            <div className="container">
-              <section className="wrapper" style={{ textAlign: "center" }}>
-                <WarningOutlined style={{ fontSize: "3rem", color: "#faad14" }} />
-                <h2 className="text text-large" style={{ marginTop: "1rem" }}>
-                  Truy cập không hợp lệ
-                </h2>
-                <p
-                  className="text text-normal"
-                  style={{ color: "#80868b", margin: "0.75rem 0 1.5rem" }}
-                >
-                  Bạn cần đăng ký tài khoản trước khi kích hoạt.
-                </p>
-                <Button type="primary" size="large" onClick={() => navigate("/register")}>
-                  Đăng ký ngay
-                </Button>
-                <div style={{ marginTop: "1rem" }}>
-                  Đã có tài khoản? <Link to="/login"> Đăng nhập</Link>
-                </div>
-              </section>
-            </div>
-          </main>
+    <div className="verify-page">
+      <section className="verify-page__card">
+        <div className="verify-page__status-icon">
+          <SafetyCertificateOutlined />
         </div>
-      ) : (
-        <div className="verify-page">
-          <main className="main">
-            <div className="container">
-              <section className="wrapper">
-                {/* Header */}
-                <div className="heading">
-                  <h2 className="text text-large">Kích Hoạt Tài Khoản</h2>
-                  <Divider />
-                </div>
 
-                {/* Email info */}
-                <div className="email-info">
-                  <MailOutlined className="email-icon" />
-                  <div>
-                    <p className="email-label">Mã xác thực đã được gửi tới</p>
-                    <p className="email-value">{state?.email}</p>
-                  </div>
-                </div>
-
-                {/* Form */}
-                <Form name="form-verify" onFinish={onFinish} autoComplete="off">
-                  <Form.Item<FieldType>
-                    labelCol={{ span: 24 }}
-                    label="Mã xác thực"
-                    name="codeId"
-                    rules={[{ required: true, message: "Vui lòng nhập mã xác thực!" }]}
-                  >
-                    <Input placeholder="Nhập mã từ email..." />
-                  </Form.Item>
-
-                  <Form.Item label={null}>
-                    <Button type="primary" htmlType="submit" loading={isSubmit}>
-                      Xác nhận
-                    </Button>
-                  </Form.Item>
-                </Form>
-
-                {/* Resend code */}
-                <div className="resend-wrapper">
-                  <span className="text text-normal">Không nhận được mã?</span>
-                  <Button
-                    type="link"
-                    onClick={handleResend}
-                    loading={isResending}
-                    disabled={countdown > 0}
-                    style={{ paddingLeft: 4 }}
-                    iconPosition="end"
-                  >
-                    {countdown > 0 ? `Gửi lại sau (${countdown}s)` : "Gửi lại mã"}
-                  </Button>
-                </div>
-                <Divider />
-                {/* Footer links */}
-                <p className="text text-normal" style={{ textAlign: "center" }}>
-                  <Link to="/">← Quay lại trang chủ</Link>
-                </p>
-                <p className="text text-normal" style={{ textAlign: "center" }}>
-                  Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-                </p>
-              </section>
-            </div>
-          </main>
+        <div className="verify-page__header">
+          <Title level={2}>Kích hoạt tài khoản</Title>
+          <Text>Nhập mã xác thực đã được gửi tới email của bạn.</Text>
         </div>
-      )}
-    </>
+
+        <div className="verify-page__email-box">
+          <MailOutlined />
+
+          <div>
+            <span>Mã xác thực đã được gửi tới</span>
+            <b>{email || 'Email đăng ký của bạn'}</b>
+          </div>
+        </div>
+
+        <Form<FieldType>
+          name="form-verify"
+          layout="vertical"
+          onFinish={onFinish}
+          autoComplete="off"
+          requiredMark={false}
+          className="verify-page__form"
+        >
+          <Form.Item<FieldType>
+            label="Mã xác thực"
+            name="codeId"
+            rules={[{ required: true, message: 'Vui lòng nhập mã xác thực!' }]}
+          >
+            <Input size="large" placeholder="Dán mã xác thực từ email" maxLength={64} autoFocus />
+          </Form.Item>
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isSubmit}
+            size="large"
+            block
+            icon={<CheckCircleOutlined />}
+            className="verify-page__submit-btn"
+          >
+            Xác nhận kích hoạt
+          </Button>
+        </Form>
+
+        <div className="verify-page__resend">
+          <Text>Không nhận được mã?</Text>
+
+          <Button
+            type="link"
+            onClick={handleResend}
+            loading={isResending}
+            disabled={countdown > 0}
+            icon={<ReloadOutlined />}
+          >
+            {countdown > 0 ? `Gửi lại sau ${countdown}s` : 'Gửi lại mã'}
+          </Button>
+        </div>
+
+        <Divider />
+
+        <div className="verify-page__links">
+          <Link to="/">
+            <HomeOutlined /> Về trang chủ
+          </Link>
+
+          <Link to="/login">Đăng nhập</Link>
+        </div>
+      </section>
+    </div>
   );
 };
 

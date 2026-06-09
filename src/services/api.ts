@@ -33,9 +33,8 @@ export const logoutAPI = () => {
   return axios.post<IBackendRes<IRegister>>(urlBackend);
 };
 
-export const verifyAPI = (id: string, codeId: string) => {
-  const urlBackend = '/auth/verify-code';
-  return axios.post<IBackendRes<IUser>>(urlBackend, { id, codeId });
+export const verifyAPI = (_id: string, codeId: string) => {
+  return axios.post('/auth/verify-code', { _id, codeId });
 };
 
 export const resendCodeAPI = (email: string) => {

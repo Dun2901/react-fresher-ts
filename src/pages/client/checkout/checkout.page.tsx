@@ -1,28 +1,42 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Row,
-  Col,
+  Alert,
   Button,
-  Divider,
   Card,
+  Col,
+  Divider,
+  Empty,
   Form,
   Input,
-  Radio,
-  Space,
-  Typography,
   message,
-  Result,
   notification,
+  Radio,
+  Result,
+  Row,
+  Spin,
+  Tag,
 } from 'antd';
-import { ArrowLeftOutlined, CreditCardOutlined, EnvironmentOutlined } from '@ant-design/icons';
-import { useCurrentApp } from 'components/context/app.context.tsx';
+import {
+  ArrowLeftOutlined,
+  CheckCircleOutlined,
+  CreditCardOutlined,
+  EnvironmentOutlined,
+  HomeOutlined,
+  LoadingOutlined,
+  PhoneOutlined,
+  ShoppingCartOutlined,
+  UserOutlined,
+  WalletOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { checkoutAPI, createVnpayPaymentUrlAPI } from '@/services/api';
-import './checkout.page.scss';
-import vnpayLogo from '@/assets/img/vnpay.png';
-import { formatCurrency } from '@/services/helper';
 
-const { Text, Title } = Typography;
+import { useCurrentApp } from 'components/context/app.context.tsx';
+import { checkoutAPI, createVnpayPaymentUrlAPI } from '@/services/api';
+import { formatCurrency, getBookImageUrl } from '@/services/helper';
+import vnpayLogo from '@/assets/img/vnpay.png';
+import './checkout.page.scss';
+
 const { TextArea } = Input;
 
 interface IOrderFormValues {
@@ -36,43 +50,98 @@ interface IOrderFormValues {
 const CheckoutPage: React.FC = () => {
   const { carts, setCarts } = useCurrentApp();
   const navigate = useNavigate();
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<IOrderFormValues>();
 
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isRedirectingPayment, setIsRedirectingPayment] = useState<boolean>(false);
   const [createdOrder, setCreatedOrder] = useState<IOrder | null>(null);
 
-  const calculateTotalPrice = () =>
-    carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
+
+  const totalItems = useMemo(() => {
+    return carts.reduce((total, item) => total + item.quantity, 0);
+  }, [carts]);
+
+  const totalPrice = useMemo(() => {
+    return carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
+  }, [carts]);
+
+  const stockWarningItems = useMemo(() => {
+    return carts.filter(
+      (item) => item.quantity > item.bookId.quantity || item.bookId.quantity <= 0,
+    );
+  }, [carts]);
+
+  const hasStockWarning = stockWarningItems.length > 0;
+
+  const getCheckoutErrorMessage = (error: any) => {
+    const responseMessage = error?.response?.data?.message || error?.response?.data?.error?.message;
+
+    if (Array.isArray(responseMessage)) {
+      return responseMessage[0] || 'Đã xảy ra lỗi!';
+    }
+
+    return responseMessage || error?.message || 'Đã xảy ra lỗi!';
+  };
 
   const onFinishOrder = async (values: IOrderFormValues) => {
+    if (hasStockWarning) {
+      notification.warning({
+        message: 'Không thể đặt hàng',
+        description: 'Vui lòng quay lại giỏ hàng và cập nhật số lượng theo tồn kho hiện tại.',
+        placement: 'topRight',
+      });
+      return;
+    }
+
     setLoading(true);
+
     const payload: ICheckoutDto = {
-      shippingAddress: { fullName: values.fullName, phone: values.phone, address: values.address },
+      shippingAddress: {
+        fullName: values.fullName,
+        phone: values.phone,
+        address: values.address,
+      },
       paymentMethod: values.paymentMethod,
       note: values.note,
     };
+
     try {
       const res = await checkoutAPI(payload);
-      if (res?.data) {
-        if (values.paymentMethod === 'ONLINE' && res.data._id) {
-          message.loading('Đang chuyển sang cổng thanh toán VNPay...', 2);
-          const paymentRes = await createVnpayPaymentUrlAPI(res.data._id);
-          const paymentUrl = paymentRes.data?.paymentUrl;
-          if (!paymentUrl) throw new Error('Không nhận được URL thanh toán VNPay');
-          window.location.href = paymentUrl;
-          return;
-        }
-        message.success(res.message || 'Đặt hàng thành công!');
-        setCreatedOrder(res.data);
-        setCarts([]);
-        setIsSuccess(true);
+      const order = res?.data;
+
+      if (!order) {
+        throw new Error('Không nhận được thông tin đơn hàng');
       }
+
+      if (values.paymentMethod === 'ONLINE' && order._id) {
+        setIsRedirectingPayment(true);
+        message.loading('Đang chuyển sang cổng thanh toán VNPay...', 2);
+
+        const paymentRes = await createVnpayPaymentUrlAPI(order._id);
+        const paymentUrl = paymentRes?.data?.paymentUrl;
+
+        if (!paymentUrl) {
+          throw new Error('Không nhận được URL thanh toán VNPay');
+        }
+
+        window.location.href = paymentUrl;
+        return;
+      }
+
+      message.success(res.message || 'Đặt hàng thành công!');
+      setCreatedOrder(order);
+      setCarts([]);
+      setIsSuccess(true);
     } catch (error: any) {
-      const errorMsg = error?.response?.data?.error?.message || error?.message || 'Đã xảy ra lỗi!';
+      setIsRedirectingPayment(false);
+
       notification.error({
         message: 'Đặt hàng thất bại',
-        description: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
+        description: getCheckoutErrorMessage(error),
         placement: 'topRight',
       });
     } finally {
@@ -80,111 +149,166 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  if (isSuccess && createdOrder) {
+  if (isRedirectingPayment) {
     return (
-      <div
-        className="order-status-wrapper"
-        style={{ padding: '40px 20px', maxWidth: 650, margin: '0 auto' }}
-      >
-        <Result
-          status="success"
-          title="Đặt Hàng Thành Công!"
-          subTitle={
-            <Space direction="vertical" style={{ width: '100%', marginTop: 10 }}>
-              <Text>Cảm ơn bạn đã mua sắm. Đơn hàng đã được ghi nhận thành công.</Text>
-              <Card
-                size="small"
-                style={{ backgroundColor: '#fafafa', textAlign: 'left', marginTop: 15 }}
-              >
-                <div style={{ marginBottom: 4 }}>
-                  Mã đơn hàng:{' '}
-                  <Text strong type="warning">
-                    {createdOrder.orderCode}
-                  </Text>
-                </div>
-                <div style={{ marginBottom: 4 }}>
-                  Người nhận: <Text strong>{createdOrder.shippingAddress.fullName}</Text>
-                </div>
-                <div>
-                  Tổng tiền cần trả:{' '}
-                  <Text strong type="danger">
-                    {formatCurrency(createdOrder.totalPrice)}
-                  </Text>
-                </div>
-              </Card>
-            </Space>
-          }
-          extra={[
-            <Button type="primary" key="home" onClick={() => navigate('/')}>
-              Tiếp tục mua sắm
-            </Button>,
-            <Button key="history" onClick={() => navigate('/orders')}>
-              Xem đơn hàng
-            </Button>,
-          ]}
-        />
+      <div className="checkout-status-page">
+        <div className="checkout-status-card">
+          <Spin indicator={<LoadingOutlined className="checkout-status-card__loading" spin />} />
+
+          <Result
+            status="info"
+            title="Đang chuyển sang cổng thanh toán VNPay"
+            subTitle="Vui lòng không tắt trình duyệt hoặc quay lại trong lúc hệ thống đang chuyển hướng."
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (isSuccess && createdOrder) {
+    const isCodOrder = createdOrder.paymentMethod === 'COD';
+
+    return (
+      <div className="checkout-status-page">
+        <div className="checkout-success-card">
+          <Result
+            status="success"
+            title="Đặt hàng thành công!"
+            subTitle="Cảm ơn bạn đã mua sắm. Đơn hàng đã được ghi nhận thành công."
+            extra={[
+              <Button type="primary" key="book" onClick={() => navigate('/book')}>
+                Tiếp tục mua sắm
+              </Button>,
+              <Button key="orders" onClick={() => navigate('/orders')}>
+                Xem đơn hàng
+              </Button>,
+            ]}
+          />
+
+          <div className="success-order-box">
+            <div className="success-order-row">
+              <span>Mã đơn hàng</span>
+              <b>{createdOrder.orderCode}</b>
+            </div>
+
+            <div className="success-order-row">
+              <span>Người nhận</span>
+              <b>{createdOrder.shippingAddress.fullName}</b>
+            </div>
+
+            <div className="success-order-row">
+              <span>Thanh toán</span>
+              <b>{isCodOrder ? 'Thanh toán khi nhận hàng' : 'Thanh toán online'}</b>
+            </div>
+
+            <div className="success-order-row success-order-row--total">
+              <span>{isCodOrder ? 'Cần trả khi nhận hàng' : 'Tổng tiền đơn hàng'}</span>
+              <b>{formatCurrency(createdOrder.totalPrice)}</b>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (carts.length === 0) {
     return (
-      <div className="order-status-wrapper order-status-wrapper--empty-cart">
-        <Result
-          status="warning"
-          title="Giỏ hàng của bạn đang trống"
-          subTitle="Vui lòng chọn sản phẩm trước khi đặt hàng."
-          extra={
-            <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/')}>
-              Quay lại trang chủ
-            </Button>
-          }
-        />
+      <div className="checkout-status-page">
+        <div className="checkout-empty-card">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <div className="checkout-empty-text">
+                <h3>Giỏ hàng của bạn đang trống</h3>
+                <p>Vui lòng chọn sản phẩm trước khi đặt hàng.</p>
+              </div>
+            }
+          />
+
+          <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/book')}>
+            Quay lại mua sách
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="order-page-container">
-      <div className="order-page-header">
-        <Button
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate(-1)}
-          className="back-btn"
-        />
-        <Title level={3} className="header-title">
-          Thông tin đặt hàng
-        </Title>
+    <div className="checkout-page">
+      <div className="checkout-header">
+        <button type="button" className="checkout-header__back" onClick={() => navigate('/cart')}>
+          <ArrowLeftOutlined />
+          <span>Quay lại giỏ hàng</span>
+        </button>
+
+        <div className="checkout-header__content">
+          <h2>Thông tin đặt hàng</h2>
+          <p>Kiểm tra thông tin nhận hàng và phương thức thanh toán trước khi xác nhận.</p>
+        </div>
       </div>
+
+      {hasStockWarning && (
+        <Alert
+          type="warning"
+          showIcon
+          icon={<WarningOutlined />}
+          className="checkout-stock-alert"
+          message="Một số sản phẩm đã vượt quá số lượng tồn kho"
+          description={
+            <div className="checkout-stock-alert__content">
+              {stockWarningItems.map((item) => (
+                <div key={item.bookId._id}>
+                  <b>{item.bookId.mainText}</b>: đang chọn {item.quantity}, kho hiện còn{' '}
+                  {item.bookId.quantity}
+                </div>
+              ))}
+
+              <Button
+                type="link"
+                className="checkout-stock-alert__link"
+                onClick={() => navigate('/cart')}
+              >
+                Quay lại giỏ hàng để cập nhật
+              </Button>
+            </div>
+          }
+        />
+      )}
 
       <Form
         form={form}
         layout="vertical"
         onFinish={onFinishOrder}
         initialValues={{ paymentMethod: 'COD' }}
+        className="checkout-form"
       >
-        <Row gutter={[24, 24]}>
-          <Col xs={24} lg={14}>
-            <Space direction="vertical" size="large" style={{ display: 'flex' }}>
+        <Row gutter={[20, 20]} className="checkout-main-row">
+          <Col xs={24} lg={15}>
+            <div className="checkout-left-column">
               <Card
+                className="checkout-card"
                 title={
-                  <span>
-                    <EnvironmentOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
-                    Thông tin nhận hàng
-                  </span>
+                  <div className="checkout-card-title">
+                    <EnvironmentOutlined />
+                    <span>Thông tin nhận hàng</span>
+                  </div>
                 }
               >
-                <Row gutter={16}>
+                <Row gutter={[14, 0]}>
                   <Col xs={24} sm={12}>
                     <Form.Item
-                      label="Họ và tên người nhận"
+                      label="Người nhận"
                       name="fullName"
                       rules={[{ required: true, message: 'Họ tên không được để trống!' }]}
                     >
-                      <Input placeholder="Nhập đầy đủ họ và tên" size="large" />
+                      <Input
+                        prefix={<UserOutlined />}
+                        placeholder="Nhập đầy đủ họ và tên"
+                        size="large"
+                      />
                     </Form.Item>
                   </Col>
+
                   <Col xs={24} sm={12}>
                     <Form.Item
                       label="Số điện thoại"
@@ -194,9 +318,14 @@ const CheckoutPage: React.FC = () => {
                         { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải đúng 10 chữ số!' },
                       ]}
                     >
-                      <Input placeholder="Nhập số điện thoại" size="large" />
+                      <Input
+                        prefix={<PhoneOutlined />}
+                        placeholder="Nhập số điện thoại"
+                        size="large"
+                      />
                     </Form.Item>
                   </Col>
+
                   <Col xs={24}>
                     <Form.Item
                       label="Địa chỉ nhận hàng"
@@ -205,102 +334,122 @@ const CheckoutPage: React.FC = () => {
                     >
                       <TextArea
                         rows={3}
-                        placeholder="Số nhà, tên đường, phường, quận, tỉnh..."
+                        placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành..."
                         size="large"
                       />
+                    </Form.Item>
+                  </Col>
+
+                  <Col xs={24}>
+                    <Form.Item label="Ghi chú" name="note">
+                      <TextArea rows={2} placeholder="Ghi chú thêm cho đơn hàng nếu có..." />
                     </Form.Item>
                   </Col>
                 </Row>
               </Card>
 
               <Card
+                className="checkout-card"
                 title={
-                  <span>
-                    <CreditCardOutlined style={{ color: '#1677ff', marginRight: 8 }} />
-                    Phương thức thanh toán
-                  </span>
+                  <div className="checkout-card-title">
+                    <CreditCardOutlined />
+                    <span>Phương thức thanh toán</span>
+                  </div>
                 }
               >
                 <Form.Item name="paymentMethod" noStyle>
                   <Radio.Group className="payment-method-group">
-                    <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                      <Radio value="COD" className="payment-radio-item">
-                        <Space direction="vertical" size={0} style={{ marginLeft: 8 }}>
-                          <Text strong className="radio-label-text">
-                            Thanh toán khi nhận hàng (COD)
-                          </Text>
-                          <Text type="secondary">Trả tiền mặt trực tiếp khi nhận hàng.</Text>
-                        </Space>
-                      </Radio>
-                      <Divider style={{ margin: 0 }} />
-                      <Radio value="ONLINE" className="payment-radio-item">
-                        <div className="payment-content-wrapper">
-                          <div className="payment-title-row">
-                            <Text strong className="radio-label-text">
-                              Thanh toán qua VNPay
-                            </Text>
-                            <img src={vnpayLogo} alt="VNPay" className="vnpay-logo" />
-                          </div>
-                          <Text type="secondary" className="payment-desc-text">
-                            Quét mã QR bằng Mobile Banking, ví điện tử hoặc thẻ ATM.
-                          </Text>
-                        </div>
-                      </Radio>
-                    </Space>
+                    <label className="payment-option">
+                      <Radio value="COD" />
+
+                      <div className="payment-option__icon payment-option__icon--cod">
+                        <WalletOutlined />
+                      </div>
+
+                      <div className="payment-option__content">
+                        <div className="payment-option__title">Thanh toán khi nhận hàng</div>
+                        <p>Trả tiền mặt trực tiếp khi nhận được sách.</p>
+                      </div>
+                    </label>
+
+                    <label className="payment-option">
+                      <Radio value="ONLINE" />
+
+                      <div className="payment-option__icon payment-option__icon--vnpay">
+                        <img src={vnpayLogo} alt="VNPay" />
+                      </div>
+
+                      <div className="payment-option__content">
+                        <div className="payment-option__title">Thanh toán qua VNPay</div>
+                        <p>Quét mã QR bằng Mobile Banking, ví điện tử hoặc thẻ ATM.</p>
+                      </div>
+                    </label>
                   </Radio.Group>
                 </Form.Item>
               </Card>
-            </Space>
+            </div>
           </Col>
 
-          <Col xs={24} lg={10}>
-            <Card title="Chi tiết đơn hàng" className="order-summary-card">
-              <div className="cart-items-list">
-                {carts.map((item) => (
-                  <div key={item.bookId._id} className="cart-item">
-                    <div className="cart-item__left">
-                      <img
-                        src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item.bookId.thumbnail}`}
-                        alt={item.bookId.mainText}
-                        className="book-img"
-                      />
-                      <div className="book-info">
-                        <Text strong className="book-title">
-                          {item.bookId.mainText}
-                        </Text>
-                        <Text type="secondary" className="book-qty">
-                          Số lượng: {item.quantity}
-                        </Text>
+          <Col xs={24} lg={9}>
+            <Card title="Chi tiết đơn hàng" className="checkout-summary-card">
+              <div className="checkout-cart-list">
+                {carts.map((item) => {
+                  const isOverStock =
+                    item.quantity > item.bookId.quantity || item.bookId.quantity <= 0;
+
+                  return (
+                    <div key={item.bookId._id} className="checkout-cart-item">
+                      <div className="checkout-cart-item__image">
+                        <img
+                          src={getBookImageUrl(item.bookId.thumbnail)}
+                          alt={item.bookId.mainText}
+                        />
+                      </div>
+
+                      <div className="checkout-cart-item__info">
+                        <h4>{item.bookId.mainText}</h4>
+
+                        <div className="checkout-cart-item__meta">
+                          <span>Số lượng: {item.quantity}</span>
+                          {isOverStock && <Tag color="warning">Cần cập nhật</Tag>}
+                        </div>
+                      </div>
+
+                      <div className="checkout-cart-item__price">
+                        {formatCurrency(item.quantity * item.priceAtAdd)}
                       </div>
                     </div>
-                    <div className="cart-item__right">
-                      <Text strong className="item-total-price">
-                        {formatCurrency(item.quantity * item.priceAtAdd)}
-                      </Text>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              <Divider style={{ margin: '12px 0' }} />
-              <div className="price-row">
-                <Text className="price-label">Tạm tính:</Text>
-                <Text className="price-value">{formatCurrency(calculateTotalPrice())}</Text>
+              <Divider className="checkout-summary-divider" />
+
+              <div className="checkout-price-row">
+                <span>Số sản phẩm</span>
+                <b>{carts.length}</b>
               </div>
-              <div className="price-row">
-                <Text className="price-label">Phí vận chuyển:</Text>
-                <Text type="success" strong>
-                  Miễn phí
-                </Text>
+
+              <div className="checkout-price-row">
+                <span>Tổng số lượng</span>
+                <b>{totalItems}</b>
               </div>
-              <Divider style={{ margin: '12px 0' }} />
-              <div className="final-total-row">
-                <Text strong className="total-label">
-                  Tổng cần trả:
-                </Text>
-                <Text strong className="total-amount">
-                  {formatCurrency(calculateTotalPrice())}
-                </Text>
+
+              <div className="checkout-price-row">
+                <span>Tạm tính</span>
+                <b>{formatCurrency(totalPrice)}</b>
+              </div>
+
+              <div className="checkout-price-row">
+                <span>Phí vận chuyển</span>
+                <b className="checkout-free-text">Miễn phí</b>
+              </div>
+
+              <Divider className="checkout-summary-divider" />
+
+              <div className="checkout-total-row">
+                <span>Tổng cần trả</span>
+                <b>{formatCurrency(totalPrice)}</b>
               </div>
 
               <Button
@@ -309,13 +458,31 @@ const CheckoutPage: React.FC = () => {
                 htmlType="submit"
                 block
                 loading={loading}
-                className="submit-order-btn"
+                disabled={hasStockWarning || isRedirectingPayment}
+                className="checkout-submit-btn"
               >
                 Xác nhận đặt hàng
               </Button>
             </Card>
           </Col>
         </Row>
+
+        <div className="mobile-checkout-bar">
+          <div className="mobile-checkout-bar__price">
+            <span>Tổng cần trả</span>
+            <b>{formatCurrency(totalPrice)}</b>
+          </div>
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            disabled={hasStockWarning || isRedirectingPayment}
+            className="mobile-checkout-bar__btn"
+          >
+            Đặt hàng
+          </Button>
+        </div>
       </Form>
     </div>
   );

@@ -1,0 +1,349 @@
+.admin-order-table {
+  padding: 4px;
+
+  &__pro-table {
+    .ant-pro-card {
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .ant-pro-card-body {
+      padding-inline: 16px;
+    }
+
+    .ant-pro-table-search {
+      margin-bottom: 14px;
+      border-radius: 14px;
+    }
+
+    .ant-table {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .ant-table-container {
+      overflow-x: hidden !important;
+    }
+
+    .ant-table-content {
+      overflow-x: hidden !important;
+    }
+
+    .ant-table-thead > tr > th {
+      background: #fafafa;
+      color: #262626;
+      font-size: 13px;
+      font-weight: 800;
+
+      &::before {
+        display: none;
+      }
+    }
+
+    .ant-table-tbody > tr > td {
+      vertical-align: middle;
+    }
+
+    .ant-table-tbody > tr:hover > td {
+      background: #fbfffb;
+    }
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    > div:last-child {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      > span:first-child {
+        color: #262626;
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      > span:last-child {
+        color: #8c8c8c;
+        font-size: 12px;
+        font-weight: 500;
+      }
+    }
+  }
+
+  &__title-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #f0f7ff;
+    color: #1677ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  &__order-cell {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  &__order-code {
+    max-width: 100%;
+    color: #1677ff !important;
+    font-size: 13px;
+    font-weight: 800;
+    word-break: break-word;
+  }
+
+  &__order-meta {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    color: #8c8c8c;
+    font-size: 12px;
+
+    span {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span + span {
+      position: relative;
+      padding-left: 8px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 3px;
+        height: 3px;
+        border-radius: 999px;
+        background: #bfbfbf;
+        transform: translateY(-50%);
+      }
+    }
+  }
+
+  &__customer-email {
+    max-width: 320px;
+    color: #8c8c8c;
+    font-size: 12px;
+  }
+
+  &__price {
+    color: #ee4d2d !important;
+    font-size: 14px;
+    font-weight: 900 !important;
+    white-space: nowrap;
+  }
+
+  &__status-cell {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  &__status-row {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    > span:first-child {
+      flex-shrink: 0;
+      color: #8c8c8c;
+      font-size: 12px;
+    }
+
+    > span:last-child {
+      min-width: 0;
+      text-align: right;
+      font-size: 12px;
+    }
+  }
+
+  &__tag {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline-end: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__action-dropdown {
+    height: 30px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-order-table {
+    padding: 0;
+
+    &__pro-table {
+      .ant-pro-card {
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .ant-pro-card-body {
+        padding-inline: 8px;
+      }
+
+      .ant-pro-table-search {
+        margin: 0 0 8px;
+        border-radius: 10px;
+
+        .ant-pro-query-filter {
+          padding: 12px 10px 4px;
+        }
+      }
+
+      .ant-pro-table-list-toolbar {
+        padding-inline: 8px;
+      }
+
+      .ant-pro-table-list-toolbar-container {
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .ant-pro-table-list-toolbar-left {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .ant-table {
+        font-size: 12px;
+      }
+
+      .ant-table-thead > tr > th {
+        padding: 10px 7px;
+        font-size: 12px;
+      }
+
+      .ant-table-tbody > tr > td {
+        padding: 10px 7px;
+      }
+
+      .ant-pagination {
+        margin: 12px 0;
+        justify-content: center;
+      }
+
+      .ant-pagination-total-text {
+        width: 100%;
+        margin-bottom: 6px;
+        text-align: center;
+      }
+    }
+
+    &__title {
+      gap: 8px;
+
+      > div:last-child {
+        > span:first-child {
+          font-size: 14px;
+        }
+
+        > span:last-child {
+          max-width: 210px;
+          font-size: 11px;
+          line-height: 1.35;
+        }
+      }
+    }
+
+    &__title-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    &__order-code {
+      font-size: 12px;
+    }
+
+    &__order-meta {
+      gap: 6px;
+      font-size: 10.5px;
+
+      span {
+        max-width: 120px;
+      }
+    }
+
+    &__customer-email {
+      max-width: 180px;
+      font-size: 10.5px;
+    }
+
+    &__price {
+      font-size: 12px;
+    }
+
+    &__status-row {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 3px;
+
+      > span:first-child {
+        font-size: 10.5px;
+      }
+
+      > span:last-child {
+        text-align: left;
+      }
+    }
+
+    &__tag {
+      padding: 2px 6px;
+      font-size: 10.5px;
+    }
+
+    &__action-dropdown {
+      height: 28px;
+      padding: 0 7px;
+      font-size: 11px;
+    }
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-order-table {
+    &__pro-table {
+      .ant-pro-table-list-toolbar-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .ant-pro-table-list-toolbar-right {
+        justify-content: flex-start;
+      }
+    }
+
+    &__title {
+      width: 100%;
+    }
+  }
+}

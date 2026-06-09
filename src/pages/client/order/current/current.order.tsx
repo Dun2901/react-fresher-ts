@@ -1,64 +1,76 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Avatar,
   Button,
   Card,
+  Dropdown,
   Empty,
   Grid,
   List,
   Popconfirm,
-  Space,
   Table,
   Tag,
   Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import type { MenuProps } from 'antd';
 import {
   CloseCircleOutlined,
+  CreditCardOutlined,
+  DownOutlined,
   EyeOutlined,
   ReloadOutlined,
   ShoppingOutlined,
+  TruckOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { cancelOrderAPI, getMyOrdersAPI } from '@/services/api';
+import { cancelOrderAPI, createVnpayPaymentUrlAPI, getMyOrdersAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './current.order.scss';
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
 
-const CURRENT_ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'SHIPPING'];
+const CURRENT_ORDER_STATUSES: IOrder['status'][] = ['PENDING', 'CONFIRMED', 'SHIPPING'];
 
-const orderStatusMap = {
+const DEFAULT_PAGE_SIZE = 5;
+const PAGE_SIZE_OPTIONS = [2, 3, 5, 10];
+
+const orderStatusMap: Record<IOrder['status'], { text: string; color: string; message: string }> = {
   PENDING: {
     text: 'Chờ xác nhận',
     color: 'gold',
+    message: 'Đơn hàng đang chờ admin xác nhận.',
   },
   CONFIRMED: {
     text: 'Đã xác nhận',
     color: 'blue',
+    message: 'Đơn hàng đã được xác nhận và đang chuẩn bị giao.',
   },
   SHIPPING: {
     text: 'Đang giao',
     color: 'processing',
+    message: 'Đơn hàng đang được giao đến bạn.',
   },
   COMPLETED: {
     text: 'Hoàn thành',
     color: 'success',
+    message: 'Đơn hàng đã hoàn thành.',
   },
   CANCELLED: {
     text: 'Đã hủy',
     color: 'error',
+    message: 'Đơn hàng đã bị hủy.',
   },
 };
 
-const paymentMethodMap = {
-  COD: 'COD',
+const paymentMethodMap: Record<IOrder['paymentMethod'], string> = {
+  COD: 'Thanh toán khi nhận hàng',
   ONLINE: 'VNPay',
 };
 
-const paymentStatusMap = {
+const paymentStatusMap: Record<IOrder['paymentStatus'], { text: string; color: string }> = {
   UNPAID: {
     text: 'Chưa thanh toán',
     color: 'warning',
@@ -74,7 +86,9 @@ const paymentStatusMap = {
 };
 
 const formatDateTime = (date?: string) => {
-  if (!date) return '';
+  if (!date) {
+    return '---';
+  }
 
   return new Intl.DateTimeFormat('vi-VN', {
     hour: '2-digit',
@@ -99,14 +113,56 @@ const getRemainItemsCount = (order: IOrder, limit = 2) => {
   return totalTypes > limit ? totalTypes - limit : 0;
 };
 
+const canRepayOrder = (order: IOrder) => {
+  return (
+    order.status === 'PENDING' &&
+    order.paymentMethod === 'ONLINE' &&
+    order.paymentStatus === 'UNPAID'
+  );
+};
+
+const getErrorMessage = (error: any, fallbackMessage: string) => {
+  const responseMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
+
+  if (Array.isArray(responseMessage)) {
+    return responseMessage[0] || fallbackMessage;
+  }
+
+  return responseMessage || error?.message || fallbackMessage;
+};
+
 const CurrentOrderPage = () => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
+  const pageTopRef = useRef<HTMLDivElement | null>(null);
+
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [cancelLoadingId, setCancelLoadingId] = useState('');
+  const [payingOrderId, setPayingOrderId] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  const pageSizeMenuItems: MenuProps['items'] = PAGE_SIZE_OPTIONS.map((size) => ({
+    key: String(size),
+    label: `${size} đơn / trang`,
+  }));
+
+  const scrollToPageTop = () => {
+    requestAnimationFrame(() => {
+      const topPosition = pageTopRef.current
+        ? pageTopRef.current.getBoundingClientRect().top + window.scrollY - 76
+        : 0;
+
+      window.scrollTo({
+        top: Math.max(topPosition, 0),
+        left: 0,
+        behavior: 'auto',
+      });
+    });
+  };
 
   const fetchCurrentOrders = async () => {
     setLoading(true);
@@ -120,13 +176,9 @@ const CurrentOrderPage = () => {
       );
 
       setOrders(currentOrders);
+      setCurrentPage(1);
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        'Không thể tải danh sách đơn hàng';
-
-      message.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      message.error(getErrorMessage(error, 'Không thể tải danh sách đơn hàng'));
     } finally {
       setLoading(false);
     }
@@ -140,19 +192,51 @@ const CurrentOrderPage = () => {
 
       message.success(res.message || 'Hủy đơn hàng thành công');
       await fetchCurrentOrders();
+      scrollToPageTop();
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        'Không thể hủy đơn hàng';
-
-      message.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      message.error(getErrorMessage(error, 'Không thể hủy đơn hàng'));
     } finally {
       setCancelLoadingId('');
     }
   };
 
+  const handleRepayOrder = async (orderId: string) => {
+    setPayingOrderId(orderId);
+
+    try {
+      const res = await createVnpayPaymentUrlAPI(orderId);
+      const paymentUrl = res.data?.paymentUrl;
+
+      if (!paymentUrl) {
+        throw new Error('Không nhận được URL thanh toán VNPay');
+      }
+
+      message.loading('Đang chuyển sang cổng thanh toán VNPay...', 2);
+      window.location.href = paymentUrl;
+    } catch (error: any) {
+      message.error(getErrorMessage(error, 'Không thể tạo lại link thanh toán'));
+      setPayingOrderId('');
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    scrollToPageTop();
+  };
+
+  const handlePageSizeChange: MenuProps['onClick'] = ({ key }) => {
+    setPageSize(Number(key));
+    setCurrentPage(1);
+    scrollToPageTop();
+  };
+
+  const handleReload = async () => {
+    await fetchCurrentOrders();
+    scrollToPageTop();
+  };
+
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     fetchCurrentOrders();
   }, []);
 
@@ -169,16 +253,17 @@ const CurrentOrderPage = () => {
 
           return (
             <div className="current-order__desktop-order">
-              <Text type="secondary" className="current-order__code">
-                {record.orderCode}
-              </Text>
+              <Text className="current-order__code">{record.orderCode}</Text>
 
               <div className="current-order__desktop-products">
-                {previewItems.map((item) => (
-                  <div key={item.bookId} className="current-order__desktop-product">
+                {previewItems.map((item, index) => (
+                  <div
+                    key={`${record._id}-${item.bookId}-${index}`}
+                    className="current-order__desktop-product"
+                  >
                     <Avatar
                       shape="square"
-                      size={46}
+                      size={48}
                       src={getBookImageUrl(item.thumbnail)}
                       className="current-order__product-image"
                     >
@@ -197,7 +282,7 @@ const CurrentOrderPage = () => {
               </div>
 
               <div className="current-order__desktop-meta">
-                <Text type="secondary">{totalItems} sản phẩm</Text>
+                <Text type="secondary">{totalItems} cuốn sách</Text>
 
                 {remainItemsCount > 0 && (
                   <Button
@@ -217,16 +302,59 @@ const CurrentOrderPage = () => {
         title: 'Ngày đặt',
         dataIndex: 'createdAt',
         key: 'createdAt',
-        width: 150,
+        width: 140,
         render: (createdAt: string) => (
           <Text className="current-order__date">{formatDateTime(createdAt)}</Text>
+        ),
+      },
+      {
+        title: 'Trạng thái',
+        dataIndex: 'status',
+        key: 'status',
+        width: 140,
+        render: (status: IOrder['status']) => (
+          <Tag className="current-order__tag" color={orderStatusMap[status].color}>
+            {orderStatusMap[status].text}
+          </Tag>
+        ),
+      },
+      {
+        title: 'Thanh toán',
+        key: 'payment',
+        width: 190,
+        render: (_, record) => (
+          <div className="current-order__payment">
+            <Text className="current-order__payment-method">
+              {paymentMethodMap[record.paymentMethod]}
+            </Text>
+
+            <Tag
+              className="current-order__tag"
+              color={paymentStatusMap[record.paymentStatus].color}
+            >
+              {paymentStatusMap[record.paymentStatus].text}
+            </Tag>
+
+            {canRepayOrder(record) && (
+              <Button
+                size="small"
+                type="primary"
+                icon={<CreditCardOutlined />}
+                loading={payingOrderId === record._id}
+                onClick={() => handleRepayOrder(record._id)}
+                className="current-order__pay-btn"
+              >
+                Thanh toán lại
+              </Button>
+            )}
+          </div>
         ),
       },
       {
         title: 'Tổng tiền',
         dataIndex: 'totalPrice',
         key: 'totalPrice',
-        width: 140,
+        width: 130,
         align: 'right',
         render: (totalPrice: number) => (
           <Text strong className="current-order__price">
@@ -235,41 +363,17 @@ const CurrentOrderPage = () => {
         ),
       },
       {
-        title: 'Trạng thái',
-        dataIndex: 'status',
-        key: 'status',
-        width: 150,
-        render: (status: keyof typeof orderStatusMap) => (
-          <Tag className="current-order__tag" color={orderStatusMap[status]?.color}>
-            {orderStatusMap[status]?.text}
-          </Tag>
-        ),
-      },
-      {
-        title: 'Thanh toán',
-        key: 'payment',
-        width: 180,
-        render: (_, record) => (
-          <div className="current-order__payment">
-            <Text>{paymentMethodMap[record.paymentMethod]}</Text>
-
-            <Tag
-              className="current-order__tag"
-              color={paymentStatusMap[record.paymentStatus]?.color}
-            >
-              {paymentStatusMap[record.paymentStatus]?.text}
-            </Tag>
-          </div>
-        ),
-      },
-      {
         title: 'Thao tác',
         key: 'action',
         width: 190,
         align: 'right',
         render: (_, record) => (
-          <Space size={8} className="current-order__actions">
-            <Button icon={<EyeOutlined />} onClick={() => navigate(`/orders/${record._id}`)}>
+          <div className="current-order__actions">
+            <Button
+              size="middle"
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/orders/${record._id}`)}
+            >
               Chi tiết
             </Button>
 
@@ -283,6 +387,7 @@ const CurrentOrderPage = () => {
                 onConfirm={() => handleCancelOrder(record._id)}
               >
                 <Button
+                  size="middle"
                   danger
                   icon={<CloseCircleOutlined />}
                   loading={cancelLoadingId === record._id}
@@ -291,15 +396,146 @@ const CurrentOrderPage = () => {
                 </Button>
               </Popconfirm>
             )}
-          </Space>
+          </div>
         ),
       },
     ],
-    [cancelLoadingId, navigate],
+    [cancelLoadingId, navigate, payingOrderId],
   );
 
+  const renderMobileOrderCard = (order: IOrder) => {
+    const previewItems = getPreviewItems(order, 2);
+    const remainItemsCount = getRemainItemsCount(order, 2);
+    const totalItems = getOrderItemsCount(order);
+    const statusInfo = orderStatusMap[order.status];
+    const paymentInfo = paymentStatusMap[order.paymentStatus];
+
+    return (
+      <List.Item className="current-order__mobile-list-item">
+        <Card className="current-order__mobile-card">
+          <div className="current-order__mobile-top">
+            <div className="current-order__mobile-code-box">
+              <Text className="current-order__mobile-code">{order.orderCode}</Text>
+              <Text className="current-order__mobile-date">{formatDateTime(order.createdAt)}</Text>
+            </div>
+
+            <Tag className="current-order__mobile-status" color={statusInfo.color}>
+              {statusInfo.text}
+            </Tag>
+          </div>
+
+          <div className="current-order__mobile-message">
+            <TruckOutlined />
+            <span>{statusInfo.message}</span>
+          </div>
+
+          <div className="current-order__mobile-products">
+            {previewItems.map((item, index) => (
+              <div
+                key={`${order._id}-${item.bookId}-${index}`}
+                className="current-order__mobile-product"
+              >
+                <Avatar
+                  shape="square"
+                  size={58}
+                  src={getBookImageUrl(item.thumbnail)}
+                  className="current-order__mobile-image"
+                >
+                  <ShoppingOutlined />
+                </Avatar>
+
+                <div className="current-order__mobile-product-info">
+                  <Text className="current-order__mobile-name">{item.bookName}</Text>
+
+                  <div className="current-order__mobile-product-bottom">
+                    <Text type="secondary" className="current-order__mobile-qty">
+                      x{item.quantity}
+                    </Text>
+
+                    <Text className="current-order__mobile-item-price">
+                      {formatCurrency(item.price)}
+                    </Text>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {remainItemsCount > 0 && (
+              <button
+                type="button"
+                className="current-order__mobile-more"
+                onClick={() => navigate(`/orders/${order._id}`)}
+              >
+                Xem thêm {remainItemsCount} sản phẩm
+              </button>
+            )}
+          </div>
+
+          <div className="current-order__mobile-info-box">
+            <div className="current-order__mobile-info-row">
+              <span>Phương thức</span>
+              <b>{paymentMethodMap[order.paymentMethod]}</b>
+            </div>
+
+            <div className="current-order__mobile-info-row">
+              <span>Thanh toán</span>
+              <Tag className="current-order__payment-tag" color={paymentInfo.color}>
+                {paymentInfo.text}
+              </Tag>
+            </div>
+          </div>
+
+          <div className="current-order__mobile-total">
+            <span>Tổng số tiền ({totalItems} cuốn sách)</span>
+            <b>{formatCurrency(order.totalPrice)}</b>
+          </div>
+
+          <div className="current-order__mobile-actions">
+            {canRepayOrder(order) && (
+              <Button
+                type="primary"
+                block
+                icon={<CreditCardOutlined />}
+                loading={payingOrderId === order._id}
+                onClick={() => handleRepayOrder(order._id)}
+                className="current-order__mobile-pay-btn"
+              >
+                Thanh toán lại
+              </Button>
+            )}
+
+            <div className="current-order__mobile-secondary-actions">
+              <Button icon={<EyeOutlined />} onClick={() => navigate(`/orders/${order._id}`)}>
+                Chi tiết
+              </Button>
+
+              {order.status === 'PENDING' && (
+                <Popconfirm
+                  title="Hủy đơn hàng"
+                  description="Bạn có chắc muốn hủy đơn hàng này không?"
+                  okText="Hủy đơn"
+                  cancelText="Không"
+                  okButtonProps={{ danger: true }}
+                  onConfirm={() => handleCancelOrder(order._id)}
+                >
+                  <Button
+                    danger
+                    icon={<CloseCircleOutlined />}
+                    loading={cancelLoadingId === order._id}
+                  >
+                    Hủy
+                  </Button>
+                </Popconfirm>
+              )}
+            </div>
+          </div>
+        </Card>
+      </List.Item>
+    );
+  };
+
   return (
-    <div className="current-order">
+    <div className="current-order" ref={pageTopRef}>
       <Card className="current-order__card">
         <div className="current-order__header">
           <div className="current-order__heading">
@@ -309,29 +545,61 @@ const CurrentOrderPage = () => {
 
             <div>
               <Title level={3} className="current-order__title">
-                Đơn hàng của tôi
+                Đơn hàng đang xử lý
               </Title>
 
               <Text type="secondary" className="current-order__subtitle">
-                Theo dõi các đơn đang chờ xác nhận, đã xác nhận hoặc đang giao.
+                Theo dõi đơn đang chờ xác nhận, đã xác nhận hoặc đang giao.
               </Text>
             </div>
           </div>
 
-          <Button icon={<ReloadOutlined />} onClick={fetchCurrentOrders} loading={loading}>
-            Tải lại
-          </Button>
+          <div className="current-order__header-actions">
+            <Button onClick={() => navigate('/orders/history')}>Lịch sử</Button>
+
+            <Button icon={<ReloadOutlined />} onClick={handleReload} loading={loading}>
+              Tải lại
+            </Button>
+          </div>
+        </div>
+
+        <div className="current-order__toolbar">
+          <div className="current-order__toolbar-left">
+            <span>Tổng {orders.length} đơn hàng</span>
+          </div>
+
+          <Dropdown
+            trigger={['click']}
+            placement="bottomRight"
+            menu={{
+              items: pageSizeMenuItems,
+              selectedKeys: [String(pageSize)],
+              onClick: handlePageSizeChange,
+            }}
+          >
+            <Button className="current-order__page-size-btn">
+              Hiển thị {pageSize} đơn / trang
+              <DownOutlined />
+            </Button>
+          </Dropdown>
         </div>
 
         {isMobile ? (
           <List
             dataSource={orders}
             loading={loading}
-            pagination={{
-              pageSize: 4,
-              size: 'small',
-              align: 'center',
-            }}
+            pagination={
+              orders.length > pageSize
+                ? {
+                    current: currentPage,
+                    pageSize,
+                    size: 'small',
+                    align: 'center',
+                    showSizeChanger: false,
+                    onChange: handlePageChange,
+                  }
+                : false
+            }
             locale={{
               emptyText: (
                 <Empty
@@ -340,120 +608,7 @@ const CurrentOrderPage = () => {
                 />
               ),
             }}
-            renderItem={(order) => {
-              const previewItems = getPreviewItems(order, 2);
-              const remainItemsCount = getRemainItemsCount(order, 2);
-              const totalItems = getOrderItemsCount(order);
-
-              return (
-                <Card className="current-order__mobile-card">
-                  <div className="current-order__mobile-top">
-                    <div>
-                      <Text type="secondary" className="current-order__mobile-code">
-                        {order.orderCode}
-                      </Text>
-
-                      <Text type="secondary" className="current-order__mobile-date">
-                        {formatDateTime(order.createdAt)}
-                      </Text>
-                    </div>
-
-                    <Tag
-                      className="current-order__tag current-order__mobile-status"
-                      color={orderStatusMap[order.status]?.color}
-                    >
-                      {orderStatusMap[order.status]?.text}
-                    </Tag>
-                  </div>
-
-                  <div className="current-order__mobile-products">
-                    {previewItems.map((item) => (
-                      <div key={item.bookId} className="current-order__mobile-product">
-                        <Avatar
-                          shape="square"
-                          size={52}
-                          src={getBookImageUrl(item.thumbnail)}
-                          className="current-order__mobile-image"
-                        >
-                          <ShoppingOutlined />
-                        </Avatar>
-
-                        <div className="current-order__mobile-product-info">
-                          <Text className="current-order__mobile-name">{item.bookName}</Text>
-
-                          <Text type="secondary" className="current-order__mobile-product-meta">
-                            x{item.quantity}
-                          </Text>
-                        </div>
-
-                        <Text className="current-order__mobile-item-price">
-                          {formatCurrency(item.price)}
-                        </Text>
-                      </div>
-                    ))}
-
-                    {remainItemsCount > 0 && (
-                      <Button
-                        type="link"
-                        className="current-order__mobile-more"
-                        onClick={() => navigate(`/orders/${order._id}`)}
-                      >
-                        Xem thêm {remainItemsCount} sản phẩm
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="current-order__mobile-footer">
-                    <Text type="secondary">Tổng số tiền ({totalItems} sản phẩm)</Text>
-
-                    <Text strong className="current-order__price">
-                      {formatCurrency(order.totalPrice)}
-                    </Text>
-                  </div>
-
-                  <div className="current-order__mobile-payment-row">
-                    <Text type="secondary">{paymentMethodMap[order.paymentMethod]}</Text>
-
-                    <Tag
-                      className="current-order__tag"
-                      color={paymentStatusMap[order.paymentStatus]?.color}
-                    >
-                      {paymentStatusMap[order.paymentStatus]?.text}
-                    </Tag>
-                  </div>
-
-                  <div className="current-order__mobile-actions">
-                    <Button
-                      size="middle"
-                      icon={<EyeOutlined />}
-                      onClick={() => navigate(`/orders/${order._id}`)}
-                    >
-                      Chi tiết
-                    </Button>
-
-                    {order.status === 'PENDING' && (
-                      <Popconfirm
-                        title="Hủy đơn hàng"
-                        description="Bạn có chắc muốn hủy đơn hàng này không?"
-                        okText="Hủy đơn"
-                        cancelText="Không"
-                        okButtonProps={{ danger: true }}
-                        onConfirm={() => handleCancelOrder(order._id)}
-                      >
-                        <Button
-                          danger
-                          size="middle"
-                          icon={<CloseCircleOutlined />}
-                          loading={cancelLoadingId === order._id}
-                        >
-                          Hủy
-                        </Button>
-                      </Popconfirm>
-                    )}
-                  </div>
-                </Card>
-              );
-            }}
+            renderItem={renderMobileOrderCard}
           />
         ) : (
           <Table
@@ -462,8 +617,10 @@ const CurrentOrderPage = () => {
             dataSource={orders}
             loading={loading}
             pagination={{
-              pageSize: 6,
+              current: currentPage,
+              pageSize,
               showSizeChanger: false,
+              onChange: handlePageChange,
             }}
             locale={{
               emptyText: (
@@ -473,6 +630,7 @@ const CurrentOrderPage = () => {
                 />
               ),
             }}
+            scroll={{ x: 1120 }}
             className="current-order__table"
           />
         )}

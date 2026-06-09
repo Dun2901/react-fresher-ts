@@ -4,29 +4,33 @@ import {
   ExceptionOutlined,
   HeartTwoTone,
   TeamOutlined,
-  UserOutlined,
   DollarCircleOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   TagsOutlined,
 } from '@ant-design/icons';
-import { Layout, Menu, Dropdown, Space, Avatar } from 'antd';
-import { Outlet, UIMatch, useLocation, useMatches } from 'react-router-dom';
-import { Link } from 'react-router-dom';
-import { useCurrentApp } from '../context/app.context';
+import { Avatar, Dropdown, Layout, Menu, Space } from 'antd';
 import type { MenuProps } from 'antd';
+import { Link, Outlet, UIMatch, useLocation, useMatches, useNavigate } from 'react-router-dom';
+import { useCurrentApp } from '../context/app.context';
 import { logoutAPI } from '@/services/api';
 import { getAvatarUrl } from '@/services/helper';
 import AppBreadcrumb from '../share/breadcrumb';
+import './layout.admin.scss';
+
 type MenuItem = Required<MenuProps>['items'][number];
 
 const { Content, Footer, Sider } = Layout;
 
 const LayoutAdmin = () => {
   const [collapsed, setCollapsed] = useState(false);
+
+  const navigate = useNavigate();
   const location = useLocation();
-  const selectedKey = '/' + location.pathname.split('/').slice(1, 3).join('/');
-  const openKey = selectedKey.split('/')[2];
+
+  const pathnameParts = location.pathname.split('/');
+  const selectedKey =
+    location.pathname === '/admin' ? '/admin' : `/${pathnameParts.slice(1, 3).join('/')}`;
 
   const { user, setUser, setIsAuthenticated, isAuthenticated } = useCurrentApp();
 
@@ -39,8 +43,8 @@ const LayoutAdmin = () => {
     });
 
   const handleLogout = async () => {
-    //todo
     const res = await logoutAPI();
+
     if (res.data) {
       setUser(null);
       setIsAuthenticated(false);
@@ -48,73 +52,61 @@ const LayoutAdmin = () => {
     }
   };
 
-  const items: MenuItem[] = [
+  const menuItems: MenuItem[] = [
     {
-      label: <Link to="/admin">Dashboard</Link>,
+      label: 'Tổng quan',
       key: '/admin',
       icon: <AppstoreOutlined />,
+      title: 'Tổng quan',
     },
     {
-      label: <span>Manage Users</span>,
-      key: 'user',
-      icon: <UserOutlined />,
-      children: [
-        {
-          label: <Link to="/admin/user">CRUD</Link>,
-          key: '/admin/user',
-          icon: <TeamOutlined />,
-        },
-      ],
+      label: 'Quản lý người dùng',
+      key: '/admin/user',
+      icon: <TeamOutlined />,
+      title: 'Quản lý người dùng',
     },
     {
-      label: <span>Manage Books</span>,
-      key: 'book',
+      label: 'Quản lý sách',
+      key: '/admin/book',
       icon: <ExceptionOutlined />,
-      children: [
-        {
-          label: <Link to="/admin/book">CRUD</Link>,
-          key: '/admin/book',
-          icon: <ExceptionOutlined />,
-        },
-      ],
+      title: 'Quản lý sách',
     },
     {
-      label: <span>Danh mục</span>,
-      key: 'category',
+      label: 'Danh mục',
+      key: '/admin/category',
       icon: <TagsOutlined />,
-      children: [
-        {
-          label: <Link to="/admin/category">Quản lý</Link>,
-          key: '/admin/category',
-          icon: <TagsOutlined />,
-        },
-      ],
+      title: 'Danh mục',
     },
     {
-      label: <Link to="/admin/order">Manage Orders</Link>,
+      label: 'Quản lý đơn hàng',
       key: '/admin/order',
       icon: <DollarCircleOutlined />,
+      title: 'Quản lý đơn hàng',
     },
   ];
 
-  const itemsDropdown = [
+  const itemsDropdown: MenuProps['items'] = [
     {
       label: <Link to="/profile">Quản lý tài khoản</Link>,
       key: 'account',
     },
     {
-      label: <Link to={'/'}>Trang chủ</Link>,
+      label: <Link to="/">Trang chủ</Link>,
       key: 'home',
     },
     {
       label: (
-        <label style={{ cursor: 'pointer' }} onClick={() => handleLogout()}>
+        <label className="layout-admin__logout" onClick={handleLogout}>
           Đăng xuất
         </label>
       ),
       key: 'logout',
     },
   ];
+
+  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+    navigate(key);
+  };
 
   const urlAvatar = getAvatarUrl(user?.avatar);
 
@@ -123,65 +115,73 @@ const LayoutAdmin = () => {
   }
 
   const isAdminRoute = location.pathname.includes('admin');
+
   if (isAuthenticated === true && isAdminRoute === true) {
     const role = user?.role;
+
     if (role === 'USER') {
       return <Outlet />;
     }
   }
 
   return (
-    <>
-      <Layout style={{ minHeight: '100vh' }} className="layout-admin">
-        <Sider
-          theme="light"
-          collapsible
-          collapsed={collapsed}
-          onCollapse={(value) => setCollapsed(value)}
+    <Layout className={`layout-admin ${collapsed ? 'layout-admin--collapsed' : ''}`}>
+      <Sider
+        width={260}
+        collapsedWidth={88}
+        theme="light"
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        trigger={null}
+        className="layout-admin__sider"
+      >
+        <div className="layout-admin__brand">{collapsed ? '📚' : 'Quản trị'}</div>
+
+        <Menu
+          selectedKeys={[selectedKey]}
+          mode="inline"
+          inlineCollapsed={collapsed}
+          items={menuItems}
+          onClick={handleMenuClick}
+          className="layout-admin__menu"
+        />
+
+        <button
+          type="button"
+          className="layout-admin__collapse-btn"
+          onClick={() => setCollapsed(!collapsed)}
         >
-          <div style={{ height: 32, margin: 16, textAlign: 'center' }}>Admin</div>
-          <Menu
-            selectedKeys={[selectedKey]}
-            defaultOpenKeys={openKey ? [openKey] : []}
-            mode="inline"
-            items={items}
-          />
-        </Sider>
-        <Layout>
-          <div
-            className="admin-header"
-            style={{
-              height: '50px',
-              borderBottom: '1px solid #ebebeb',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 15px',
-            }}
-          >
-            <span>
-              {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-                className: 'trigger',
-                onClick: () => setCollapsed(!collapsed),
-              })}
-            </span>
-            <Dropdown menu={{ items: itemsDropdown }} trigger={['click']}>
-              <Space style={{ cursor: 'pointer' }}>
-                <Avatar src={urlAvatar} />
-                {user?.fullName}
-              </Space>
-            </Dropdown>
-          </div>
-          <Content style={{ padding: '15px' }}>
-            {crumbs.length > 0 && <AppBreadcrumb items={crumbs} />}
-            <Outlet />
-          </Content>
-          <Footer style={{ padding: 0, textAlign: 'center' }}>
-            React Test Fresher &copy; Hỏi Dân IT - Made with <HeartTwoTone />
-          </Footer>
-        </Layout>
+          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        </button>
+      </Sider>
+
+      <Layout className="layout-admin__main">
+        <div className="layout-admin__header">
+          <span className="layout-admin__trigger">
+            {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+              onClick: () => setCollapsed(!collapsed),
+            })}
+          </span>
+
+          <Dropdown menu={{ items: itemsDropdown }} trigger={['click']}>
+            <Space className="layout-admin__user">
+              <Avatar src={urlAvatar} />
+              <span>{user?.fullName}</span>
+            </Space>
+          </Dropdown>
+        </div>
+
+        <Content className="layout-admin__content">
+          {crumbs.length > 0 && <AppBreadcrumb items={crumbs} />}
+          <Outlet />
+        </Content>
+
+        <Footer className="layout-admin__footer">
+          BookStore &copy; {new Date().getFullYear()} — Made with <HeartTwoTone />
+        </Footer>
       </Layout>
-    </>
+    </Layout>
   );
 };
 

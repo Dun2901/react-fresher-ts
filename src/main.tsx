@@ -2,7 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import Layout from '@/layout';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import BookPage from 'pages/client/book';
 import AboutPage from 'pages/client/about';
 import LoginPage from 'pages/client/auth/login';
 import RegisterPage from 'pages/client/auth/register';
@@ -10,6 +9,9 @@ import CartPage from 'pages/client/cart/cartPage.tsx';
 import 'styles/global.scss';
 import HomePage from 'pages/client/homepage/home.tsx';
 import { App, ConfigProvider } from 'antd';
+import viVN from 'antd/locale/vi_VN';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
 import { AppProvider } from 'components/context/app.context';
 import ProtectedRoute from '@/components/auth';
 import DashBoardPage from 'pages/admin/dashboard';
@@ -17,7 +19,6 @@ import ManageBookPage from 'pages/admin/manage.book';
 import ManageOrderPage from 'pages/admin/manage.order';
 import ManageUserPage from 'pages/admin/manage.user';
 import LayoutAdmin from 'components/layout/layout.admin';
-import enUS from 'antd/locale/en_US';
 import VerifyPage from 'pages/client/auth/verify';
 import DetailUserPage from 'pages/admin/detail.user';
 import {
@@ -36,7 +37,8 @@ import ManageCategoryPage from './pages/admin/manage.category';
 import BookListPage from 'pages/client/book/bookListPage';
 import BookDetailPage from 'pages/client/book/bookDetailPage';
 import ProfilePage from './pages/client/profile/profile.page';
-// import viVN from 'antd/locale/vi_VN';
+
+dayjs.locale('vi');
 
 const router = createBrowserRouter([
   {
@@ -51,12 +53,10 @@ const router = createBrowserRouter([
         path: '/book',
         element: <BookListPage />,
       },
-
       {
         path: '/book/:id',
         element: <BookDetailPage />,
       },
-
       {
         path: '/about',
         element: <AboutPage />,
@@ -85,7 +85,6 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: 'orders',
         element: (
@@ -110,7 +109,6 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: 'payment/vnpay-return',
         element: <VnpayReturnPage />,
@@ -162,7 +160,6 @@ const router = createBrowserRouter([
           },
         ],
       },
-
       {
         path: 'category',
         element: (
@@ -178,7 +175,6 @@ const router = createBrowserRouter([
           },
         },
       },
-
       {
         path: 'order',
         element: (
@@ -193,7 +189,6 @@ const router = createBrowserRouter([
           },
         },
       },
-
       {
         path: 'user',
         handle: {
@@ -245,12 +240,12 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App>
-      <AppProvider>
-        <ConfigProvider locale={enUS}>
+    <ConfigProvider locale={viVN}>
+      <App>
+        <AppProvider>
           <RouterProvider router={router} />
-        </ConfigProvider>
-      </AppProvider>
-    </App>
+        </AppProvider>
+      </App>
+    </ConfigProvider>
   </StrictMode>,
 );
