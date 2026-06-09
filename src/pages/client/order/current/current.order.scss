@@ -138,7 +138,7 @@
   &__product-name {
     display: -webkit-box;
     overflow: hidden;
-    max-width: 230px;
+    max-width: 180px;
     color: #1f2937;
     font-size: 13px;
     line-height: 1.35;
@@ -164,18 +164,32 @@
   }
 
   &__date {
+    display: block;
+    max-width: 82px;
     font-size: 13px;
+    line-height: 1.6;
+    white-space: normal;
   }
 
   &__price {
     color: #ff4d4f;
     font-size: 15px;
+    white-space: nowrap;
   }
 
   &__payment {
     display: flex;
+    align-items: flex-start;
     flex-direction: column;
     gap: 7px;
+  }
+
+  &__pay-btn {
+    height: 30px;
+    margin-top: 2px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
   }
 
   &__tag {
@@ -187,10 +201,17 @@
   }
 
   &__actions {
+    display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: nowrap;
 
     .ant-btn {
-      border-radius: 9px;
+      min-width: 82px;
+      height: 36px;
+      border-radius: 10px;
+      font-weight: 500;
     }
   }
 
@@ -306,6 +327,13 @@
     justify-content: space-between;
     gap: 8px;
     margin-top: 8px;
+  }
+
+  &__mobile-payment-info {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
   }
 
   &__mobile-actions {

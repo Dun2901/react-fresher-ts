@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Button, Result, Spin } from 'antd';
+import { Button, Result, Spin, Space, Typography } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { verifyVnpayReturnAPI } from '@/services/api';
+
+import { fetchMyCartAPI, verifyVnpayReturnAPI } from '@/services/api';
+import { useCurrentApp } from 'components/context/app.context.tsx';
+
+const { Text } = Typography;
 
 interface IVnpayReturnResult {
   success: boolean;
@@ -12,6 +16,8 @@ interface IVnpayReturnResult {
 const VnpayReturnPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { setCarts } = useCurrentApp();
+
   const [result, setResult] = useState<IVnpayReturnResult | null>(null);
 
   useEffect(() => {
@@ -19,12 +25,23 @@ const VnpayReturnPage = () => {
       try {
         const res = await verifyVnpayReturnAPI(searchParams.toString());
 
-        setResult(
-          res.data || {
-            success: false,
-            message: 'Không nhận được kết quả thanh toán',
-          },
-        );
+        const paymentResult = res.data || {
+          success: false,
+          message: 'Không nhận được kết quả thanh toán',
+        };
+
+        setResult(paymentResult);
+
+        if (paymentResult.success) {
+          try {
+            const cartRes = await fetchMyCartAPI();
+            setCarts(cartRes.data?.items || []);
+          } catch {
+            // Nếu sync cart lỗi thì vẫn hiển thị kết quả thanh toán.
+            // User có thể reload lại trang, AppProvider sẽ tự fetch cart lại.
+            setCarts([]);
+          }
+        }
       } catch {
         setResult({
           success: false,
@@ -34,7 +51,7 @@ const VnpayReturnPage = () => {
     };
 
     verifyPayment();
-  }, [searchParams]);
+  }, [searchParams, setCarts]);
 
   if (!result) {
     return <Spin fullscreen />;
@@ -44,10 +61,29 @@ const VnpayReturnPage = () => {
     <Result
       status={result.success ? 'success' : 'error'}
       title={result.message}
-      subTitle={result.orderCode ? `Mã đơn hàng: ${result.orderCode}` : undefined}
+      subTitle={
+        result.orderCode ? (
+          <Space direction="vertical">
+            <Text>
+              Mã đơn hàng:{' '}
+              <Text strong type="warning">
+                {result.orderCode}
+              </Text>
+            </Text>
+            {result.success && (
+              <Text type="secondary">
+                Giỏ hàng đã được đồng bộ lại sau khi thanh toán thành công.
+              </Text>
+            )}
+          </Space>
+        ) : undefined
+      }
       extra={[
         <Button key="orders" type="primary" onClick={() => navigate('/orders')}>
-          Xem lịch sử đơn hàng
+          Xem đơn hàng
+        </Button>,
+        <Button key="cart" onClick={() => navigate('/cart')}>
+          Xem giỏ hàng
         </Button>,
         <Button key="home" onClick={() => navigate('/')}>
           Về trang chủ

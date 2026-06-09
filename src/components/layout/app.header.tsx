@@ -12,6 +12,7 @@ import { getAvatarUrl, formatCurrency } from '@/services/helper';
 
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [openCartPopover, setOpenCartPopover] = useState(false);
   const { isAuthenticated, user, setUser, setIsAuthenticated, carts } = useCurrentApp();
   const navigate = useNavigate();
 
@@ -105,7 +106,10 @@ const AppHeader = () => {
               cursor: 'pointer',
               fontWeight: 500,
             }}
-            onClick={() => navigate('/cart')}
+            onClick={() => {
+              setOpenCartPopover(false);
+              navigate('/cart');
+            }}
           >
             Xem giỏ hàng
           </button>
@@ -151,14 +155,17 @@ const AppHeader = () => {
                   title={<span style={{ fontWeight: 600 }}>Sản phẩm mới thêm</span>}
                   content={contentPopover}
                   arrow={true}
+                  trigger="click"
+                  open={openCartPopover}
+                  onOpenChange={setOpenCartPopover}
                 >
                   <Badge
                     count={carts?.length ?? 0}
-                    size={'small'}
+                    size="small"
                     showZero
                     style={{ cursor: 'pointer' }}
                   >
-                    <FiShoppingCart className="icon-cart-svg" onClick={() => navigate('/cart')} />
+                    <FiShoppingCart className="icon-cart-svg" />
                   </Badge>
                 </Popover>
               </div>

@@ -7,7 +7,6 @@ import {
   Grid,
   List,
   Popconfirm,
-  Space,
   Table,
   Tag,
   Typography,
@@ -16,12 +15,13 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import {
   CloseCircleOutlined,
+  CreditCardOutlined,
   EyeOutlined,
   ReloadOutlined,
   ShoppingOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { cancelOrderAPI, getMyOrdersAPI } from '@/services/api';
+import { cancelOrderAPI, createVnpayPaymentUrlAPI, getMyOrdersAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './current.order.scss';
 
@@ -99,6 +99,14 @@ const getRemainItemsCount = (order: IOrder, limit = 2) => {
   return totalTypes > limit ? totalTypes - limit : 0;
 };
 
+const canRepayOrder = (order: IOrder) => {
+  return (
+    order.status === 'PENDING' &&
+    order.paymentMethod === 'ONLINE' &&
+    order.paymentStatus === 'UNPAID'
+  );
+};
+
 const CurrentOrderPage = () => {
   const navigate = useNavigate();
   const screens = useBreakpoint();
@@ -107,6 +115,7 @@ const CurrentOrderPage = () => {
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [cancelLoadingId, setCancelLoadingId] = useState('');
+  const [payingOrderId, setPayingOrderId] = useState('');
 
   const fetchCurrentOrders = async () => {
     setLoading(true);
@@ -152,6 +161,31 @@ const CurrentOrderPage = () => {
     }
   };
 
+  const handleRepayOrder = async (orderId: string) => {
+    setPayingOrderId(orderId);
+
+    try {
+      const res = await createVnpayPaymentUrlAPI(orderId);
+      const paymentUrl = res.data?.paymentUrl;
+
+      if (!paymentUrl) {
+        throw new Error('Không nhận được URL thanh toán VNPay');
+      }
+
+      message.loading('Đang chuyển sang cổng thanh toán VNPay...', 2);
+      window.location.href = paymentUrl;
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Không thể tạo lại link thanh toán';
+
+      message.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+      setPayingOrderId('');
+    }
+  };
+
   useEffect(() => {
     fetchCurrentOrders();
   }, []);
@@ -161,7 +195,7 @@ const CurrentOrderPage = () => {
       {
         title: 'Đơn hàng',
         key: 'product',
-        width: 360,
+        width: 330,
         render: (_, record) => {
           const previewItems = getPreviewItems(record, 2);
           const remainItemsCount = getRemainItemsCount(record, 2);
@@ -217,7 +251,7 @@ const CurrentOrderPage = () => {
         title: 'Ngày đặt',
         dataIndex: 'createdAt',
         key: 'createdAt',
-        width: 150,
+        width: 120,
         render: (createdAt: string) => (
           <Text className="current-order__date">{formatDateTime(createdAt)}</Text>
         ),
@@ -226,7 +260,7 @@ const CurrentOrderPage = () => {
         title: 'Tổng tiền',
         dataIndex: 'totalPrice',
         key: 'totalPrice',
-        width: 140,
+        width: 120,
         align: 'right',
         render: (totalPrice: number) => (
           <Text strong className="current-order__price">
@@ -248,7 +282,7 @@ const CurrentOrderPage = () => {
       {
         title: 'Thanh toán',
         key: 'payment',
-        width: 180,
+        width: 190,
         render: (_, record) => (
           <div className="current-order__payment">
             <Text>{paymentMethodMap[record.paymentMethod]}</Text>
@@ -259,17 +293,34 @@ const CurrentOrderPage = () => {
             >
               {paymentStatusMap[record.paymentStatus]?.text}
             </Tag>
+
+            {canRepayOrder(record) && (
+              <Button
+                size="small"
+                type="primary"
+                icon={<CreditCardOutlined />}
+                loading={payingOrderId === record._id}
+                onClick={() => handleRepayOrder(record._id)}
+                className="current-order__pay-btn"
+              >
+                Thanh toán
+              </Button>
+            )}
           </div>
         ),
       },
       {
         title: 'Thao tác',
         key: 'action',
-        width: 190,
+        width: 220,
         align: 'right',
         render: (_, record) => (
-          <Space size={8} className="current-order__actions">
-            <Button icon={<EyeOutlined />} onClick={() => navigate(`/orders/${record._id}`)}>
+          <div className="current-order__actions">
+            <Button
+              size="middle"
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/orders/${record._id}`)}
+            >
               Chi tiết
             </Button>
 
@@ -283,6 +334,7 @@ const CurrentOrderPage = () => {
                 onConfirm={() => handleCancelOrder(record._id)}
               >
                 <Button
+                  size="middle"
                   danger
                   icon={<CloseCircleOutlined />}
                   loading={cancelLoadingId === record._id}
@@ -291,11 +343,11 @@ const CurrentOrderPage = () => {
                 </Button>
               </Popconfirm>
             )}
-          </Space>
+          </div>
         ),
       },
     ],
-    [cancelLoadingId, navigate],
+    [cancelLoadingId, navigate, payingOrderId],
   );
 
   return (
@@ -412,14 +464,28 @@ const CurrentOrderPage = () => {
                   </div>
 
                   <div className="current-order__mobile-payment-row">
-                    <Text type="secondary">{paymentMethodMap[order.paymentMethod]}</Text>
+                    <div className="current-order__mobile-payment-info">
+                      <Text type="secondary">{paymentMethodMap[order.paymentMethod]}</Text>
 
-                    <Tag
-                      className="current-order__tag"
-                      color={paymentStatusMap[order.paymentStatus]?.color}
-                    >
-                      {paymentStatusMap[order.paymentStatus]?.text}
-                    </Tag>
+                      <Tag
+                        className="current-order__tag"
+                        color={paymentStatusMap[order.paymentStatus]?.color}
+                      >
+                        {paymentStatusMap[order.paymentStatus]?.text}
+                      </Tag>
+                    </div>
+
+                    {canRepayOrder(order) && (
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={<CreditCardOutlined />}
+                        loading={payingOrderId === order._id}
+                        onClick={() => handleRepayOrder(order._id)}
+                      >
+                        Thanh toán
+                      </Button>
+                    )}
                   </div>
 
                   <div className="current-order__mobile-actions">
