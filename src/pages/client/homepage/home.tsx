@@ -5,7 +5,6 @@ import {
   LoadingOutlined,
   ArrowRightOutlined,
   FireOutlined,
-  BookOutlined,
   HistoryOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
@@ -18,7 +17,8 @@ import './home.scss';
 
 const Homepage: React.FC = () => {
   const navigate = useNavigate();
-  const { carts, setCarts } = useCurrentApp();
+
+  const { isAuthenticated, carts, setCarts } = useCurrentApp();
 
   const [listBook, setListBook] = useState<IBookTable[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -47,7 +47,25 @@ const Homepage: React.FC = () => {
     loadBooks();
   }, []);
 
+  const showLoginRequiredMessage = () => {
+    message.warning('Vui lòng đăng nhập để sử dụng chức năng này.');
+  };
+
+  const handleAuthOnlyAction = (path: string) => {
+    if (!isAuthenticated) {
+      showLoginRequiredMessage();
+      return;
+    }
+
+    navigate(path);
+  };
+
   const handleAddToCart = async (book: IBookTable) => {
+    if (!isAuthenticated) {
+      showLoginRequiredMessage();
+      return;
+    }
+
     try {
       const res = await addItemToCartAPI(book._id, 1);
 
@@ -113,14 +131,14 @@ const Homepage: React.FC = () => {
           Danh mục
         </button>
 
-        <button type="button" onClick={() => navigate('/cart')}>
+        <button type="button" onClick={() => handleAuthOnlyAction('/cart')}>
           <span className="mobile-shortcut-bar__icon">
             <ShoppingCartOutlined />
           </span>
           Giỏ hàng
         </button>
 
-        <button type="button" onClick={() => navigate('/orders')}>
+        <button type="button" onClick={() => handleAuthOnlyAction('/orders')}>
           <span className="mobile-shortcut-bar__icon">
             <HistoryOutlined />
           </span>
