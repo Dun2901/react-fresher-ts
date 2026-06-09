@@ -43,7 +43,7 @@ const sortOptions = [
 
 const BookListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { carts, setCarts } = useCurrentApp();
+  const { isAuthenticated, carts, setCarts } = useCurrentApp();
 
   const pageTopRef = useRef<HTMLDivElement | null>(null);
 
@@ -85,6 +85,10 @@ const BookListPage: React.FC = () => {
     key: item.value,
     label: item.label,
   }));
+
+  const showLoginRequiredMessage = () => {
+    message.warning('Vui lòng đăng nhập để sử dụng chức năng này.');
+  };
 
   const scrollToPageTop = () => {
     requestAnimationFrame(() => {
@@ -223,6 +227,11 @@ const BookListPage: React.FC = () => {
   };
 
   const handleAddToCart = async (book: IBookTable) => {
+    if (!isAuthenticated) {
+      showLoginRequiredMessage();
+      return;
+    }
+
     try {
       const res = await addItemToCartAPI(book._id, 1);
 
