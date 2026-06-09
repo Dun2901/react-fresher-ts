@@ -11,7 +11,6 @@ import {
   Popconfirm,
   Row,
   Space,
-  Typography,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -19,16 +18,16 @@ import {
   MinusOutlined,
   PlusOutlined,
   ShoppingCartOutlined,
+  ShoppingOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import { clearCartAPI, removeCartItemAPI, updateCartItemAPI } from '@/services/api.ts';
-import { formatCurrency } from '@/services/helper';
+import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './cartPage.scss';
-
-const { Text } = Typography;
 
 const CartPage: React.FC = () => {
   const { carts, setCarts } = useCurrentApp();
@@ -39,6 +38,10 @@ const CartPage: React.FC = () => {
   const [draftQuantities, setDraftQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
+
+  useEffect(() => {
     const nextDraftQuantities = carts.reduce<Record<string, number>>((result, item) => {
       result[item.bookId._id] = item.quantity;
       return result;
@@ -47,15 +50,22 @@ const CartPage: React.FC = () => {
     setDraftQuantities(nextDraftQuantities);
   }, [carts]);
 
+  const totalItems = useMemo(() => {
+    return carts.reduce((total, item) => total + item.quantity, 0);
+  }, [carts]);
+
+  const totalPrice = useMemo(() => {
+    return carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
+  }, [carts]);
+
   const stockWarningItems = useMemo(() => {
-    return carts.filter((item) => item.quantity > item.bookId.quantity);
+    return carts.filter(
+      (item) => item.quantity > item.bookId.quantity || item.bookId.quantity <= 0,
+    );
   }, [carts]);
 
   const hasStockWarning = stockWarningItems.length > 0;
-
-  const calculateTotalPrice = () => {
-    return carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
-  };
+  const isCheckoutDisabled = hasStockWarning || Boolean(updatingBookId) || clearingCart;
 
   const getErrorMessage = (error: unknown, fallbackMessage: string) => {
     if (axios.isAxiosError(error)) {
@@ -79,18 +89,25 @@ const CartPage: React.FC = () => {
 
     const currentItem = carts.find((item) => item.bookId._id === bookId);
 
-    if (!currentItem) return;
+    if (!currentItem) {
+      return;
+    }
 
-    if (quantity === currentItem.quantity) return;
+    if (quantity === currentItem.quantity) {
+      return;
+    }
+
+    if (currentItem.bookId.quantity <= 0) {
+      message.warning('Sách này hiện đã hết hàng.');
+      setDraftQuantities((prev) => ({ ...prev, [bookId]: currentItem.quantity }));
+      return;
+    }
 
     if (quantity > currentItem.bookId.quantity) {
       message.warning(
         `Số lượng vượt quá tồn kho. Hiện còn ${currentItem.bookId.quantity} sản phẩm.`,
       );
-      setDraftQuantities((prev) => ({
-        ...prev,
-        [bookId]: currentItem.quantity,
-      }));
+      setDraftQuantities((prev) => ({ ...prev, [bookId]: currentItem.quantity }));
       return;
     }
 
@@ -104,11 +121,7 @@ const CartPage: React.FC = () => {
       }
     } catch (error) {
       message.error(getErrorMessage(error, 'Không thể cập nhật số lượng!'));
-
-      setDraftQuantities((prev) => ({
-        ...prev,
-        [bookId]: currentItem.quantity,
-      }));
+      setDraftQuantities((prev) => ({ ...prev, [bookId]: currentItem.quantity }));
     } finally {
       setUpdatingBookId(null);
     }
@@ -117,7 +130,9 @@ const CartPage: React.FC = () => {
   const handleDecreaseQuantity = (item: ICartItem) => {
     const nextQuantity = item.quantity - 1;
 
-    if (nextQuantity < 1) return;
+    if (nextQuantity < 1) {
+      return;
+    }
 
     updateCartQuantity(item.bookId._id, nextQuantity);
   };
@@ -183,47 +198,56 @@ const CartPage: React.FC = () => {
 
   if (carts.length === 0) {
     return (
-      <div className="order-page-empty" style={{ padding: '50px 20px', textAlign: 'center' }}>
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="Giỏ hàng của bạn đang trống không!"
-        />
+      <div className="cart-empty-state">
+        <div className="cart-empty-state__card">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <div className="cart-empty-state__description">
+                <h3>Giỏ hàng của bạn đang trống</h3>
+                <p>Hãy chọn thêm vài cuốn sách yêu thích trước khi đặt hàng nhé.</p>
+              </div>
+            }
+          />
 
-        <Button
-          type="link"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/')}
-          style={{ marginTop: 20 }}
-        >
-          Tiếp tục mua sắm
-        </Button>
+          <Button
+            type="primary"
+            icon={<ShoppingOutlined />}
+            onClick={() => navigate('/book')}
+            className="cart-empty-state__btn"
+          >
+            Mua sách ngay
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      className="order-page-container"
-      style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 15px' }}
-    >
+    <div className="cart-page-wrapper">
       <div className="cart-page-header">
-        <h2 className="order-title">
-          <ShoppingCartOutlined /> Giỏ Hàng ({carts.length} sản phẩm)
-        </h2>
+        <div>
+          <h2 className="cart-page-header__title">
+            <ShoppingCartOutlined />
+            Giỏ hàng
+          </h2>
+          <p className="cart-page-header__subtitle">
+            Có {carts.length} sản phẩm, tổng {totalItems} cuốn sách trong giỏ hàng
+          </p>
+        </div>
 
-        <Space wrap>
+        <Space wrap className="cart-page-header__actions">
           <Button
-            type="link"
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/')}
-            style={{ paddingRight: 0, color: '#3481ed', fontSize: 16, fontWeight: 600 }}
+            onClick={() => navigate('/book')}
+            className="cart-page-header__back-btn"
           >
             Tiếp tục mua sắm
           </Button>
 
           <Popconfirm
             title="Xóa toàn bộ giỏ hàng?"
-            description="Bạn có chắc muốn xóa tất cả sản phẩm trong giỏ hàng không?"
+            description="Bạn có chắc muốn xóa tất cả sản phẩm không?"
             okText="Xóa"
             cancelText="Hủy"
             okButtonProps={{ danger: true }}
@@ -240,13 +264,15 @@ const CartPage: React.FC = () => {
         <Alert
           type="warning"
           showIcon
+          icon={<WarningOutlined />}
           className="cart-stock-alert"
-          message="Một số sản phẩm trong giỏ hàng đã vượt quá số lượng tồn kho"
+          message="Một số sản phẩm trong giỏ hàng cần cập nhật lại số lượng"
           description={
-            <div>
+            <div className="cart-stock-alert__list">
               {stockWarningItems.map((item) => (
                 <div key={item.bookId._id}>
-                  {item.bookId.mainText}: đang chọn {item.quantity}, còn kho {item.bookId.quantity}
+                  <b>{item.bookId.mainText}</b>: đang chọn {item.quantity}, kho hiện còn{' '}
+                  {item.bookId.quantity}
                 </div>
               ))}
             </div>
@@ -254,7 +280,7 @@ const CartPage: React.FC = () => {
         />
       )}
 
-      <Row gutter={[20, 20]}>
+      <Row gutter={[20, 20]} className="cart-main-row">
         <Col xs={24} lg={17}>
           <div className="cart-items-list">
             {carts.map((item) => {
@@ -262,43 +288,71 @@ const CartPage: React.FC = () => {
               const isCurrentItemLoading = updatingBookId === bookId;
               const isOutOfStock = item.bookId.quantity <= 0;
               const isOverStock = item.quantity > item.bookId.quantity;
+              const itemTotalPrice = item.quantity * item.priceAtAdd;
 
               return (
-                <Card
+                <div
                   key={bookId}
-                  className={`cart-item-card ${isOverStock ? 'cart-item-card--warning' : ''}`}
-                  style={{ marginBottom: 15 }}
-                  bodyStyle={{ padding: '15px' }}
+                  className={`cart-item-card ${isOverStock || isOutOfStock ? 'cart-item-card--warning' : ''}`}
                 >
-                  <Row align="middle" gutter={[16, 16]}>
-                    <Col xs={6} sm={4} style={{ textAlign: 'center' }}>
-                      <img
-                        src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item.bookId.thumbnail}`}
-                        alt={item.bookId.mainText}
-                        style={{ width: '100%', maxHeight: 90, objectFit: 'contain' }}
-                      />
-                    </Col>
+                  <div
+                    className="cart-item-card__image-wrap"
+                    onClick={() => navigate(`/book/${bookId}`)}
+                  >
+                    <img
+                      src={getBookImageUrl(item.bookId.thumbnail)}
+                      alt={item.bookId.mainText}
+                      className="cart-item-card__image"
+                    />
+                  </div>
 
-                    <Col xs={18} sm={10}>
-                      <div
-                        className="item-title"
-                        style={{ fontWeight: 600, fontSize: 15, marginBottom: 5 }}
+                  <div className="cart-item-card__content">
+                    <div className="cart-item-card__top">
+                      <div className="cart-item-card__info">
+                        <h3
+                          className="cart-item-card__title"
+                          onClick={() => navigate(`/book/${bookId}`)}
+                        >
+                          {item.bookId.mainText}
+                        </h3>
+
+                        <div className="cart-item-card__unit-price">
+                          Đơn giá: <b>{formatCurrency(item.priceAtAdd)}</b>
+                        </div>
+
+                        <div
+                          className={`cart-item-card__stock ${
+                            isOverStock || isOutOfStock ? 'cart-item-card__stock--warning' : ''
+                          }`}
+                        >
+                          {isOutOfStock
+                            ? 'Sản phẩm hiện đã hết hàng'
+                            : `Còn kho: ${item.bookId.quantity}`}
+                        </div>
+                      </div>
+
+                      <Popconfirm
+                        title="Xóa sản phẩm?"
+                        description="Bạn có chắc muốn xóa sản phẩm này không?"
+                        okText="Xóa"
+                        cancelText="Hủy"
+                        okButtonProps={{ danger: true }}
+                        onConfirm={() => handleRemoveItem(bookId)}
                       >
-                        {item.bookId.mainText}
-                      </div>
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          disabled={isCurrentItemLoading}
+                          loading={isCurrentItemLoading}
+                          className="cart-item-card__delete-btn"
+                        >
+                          Xóa
+                        </Button>
+                      </Popconfirm>
+                    </div>
 
-                      <div className="item-price-unit" style={{ color: '#8c8c8c', fontSize: 13 }}>
-                        Đơn giá: {formatCurrency(item.priceAtAdd)}
-                      </div>
-
-                      {isOverStock && (
-                        <Text type="danger" style={{ fontSize: 12 }}>
-                          Số lượng trong giỏ đang vượt tồn kho
-                        </Text>
-                      )}
-                    </Col>
-
-                    <Col xs={12} sm={6} style={{ textAlign: 'center' }}>
+                    <div className="cart-item-card__bottom">
                       <Space.Compact className="cart-quantity-control">
                         <Button
                           icon={<MinusOutlined />}
@@ -328,86 +382,54 @@ const CartPage: React.FC = () => {
                         />
                       </Space.Compact>
 
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: isOverStock ? '#ff4d4f' : '#8c8c8c',
-                          marginTop: 4,
-                        }}
-                      >
-                        Còn kho: {item.bookId.quantity}
+                      <div className="cart-item-card__total">
+                        <span>Thành tiền</span>
+                        <b>{formatCurrency(itemTotalPrice)}</b>
                       </div>
-                    </Col>
-
-                    <Col xs={12} sm={4} style={{ textAlign: 'right' }}>
-                      <div
-                        className="item-total-price"
-                        style={{ fontWeight: 600, color: '#ff4d4f', marginBottom: 10 }}
-                      >
-                        {formatCurrency(item.quantity * item.priceAtAdd)}
-                      </div>
-
-                      <Popconfirm
-                        title="Xóa sản phẩm?"
-                        description="Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng không?"
-                        okText="Xóa"
-                        cancelText="Hủy"
-                        okButtonProps={{ danger: true }}
-                        onConfirm={() => handleRemoveItem(bookId)}
-                      >
-                        <Button
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                          disabled={isCurrentItemLoading}
-                          loading={isCurrentItemLoading}
-                        >
-                          Xóa
-                        </Button>
-                      </Popconfirm>
-                    </Col>
-                  </Row>
-                </Card>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
         </Col>
 
         <Col xs={24} lg={7}>
-          <Card className="cart-summary-card" style={{ position: 'sticky', top: 20 }}>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 15 }}>Tóm tắt đơn hàng</div>
+          <Card className="cart-summary-card">
+            <div className="cart-summary-title">Tóm tắt đơn hàng</div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ color: '#595959' }}>Tạm tính:</span>
-              <span>{formatCurrency(calculateTotalPrice())}</span>
+            <div className="cart-summary-row">
+              <span className="cart-summary-label">Số sản phẩm</span>
+              <span>{carts.length}</span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ color: '#595959' }}>Phí vận chuyển:</span>
-              <span style={{ color: '#52c41a' }}>Miễn phí</span>
+            <div className="cart-summary-row">
+              <span className="cart-summary-label">Tổng số lượng</span>
+              <span>{totalItems}</span>
             </div>
 
-            <Divider style={{ margin: '12px 0' }} />
+            <div className="cart-summary-row">
+              <span className="cart-summary-label">Tạm tính</span>
+              <span>{formatCurrency(totalPrice)}</span>
+            </div>
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 20,
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>Tổng tiền:</span>
-              <span style={{ fontSize: 20, fontWeight: 700, color: '#ff4d4f' }}>
-                {formatCurrency(calculateTotalPrice())}
-              </span>
+            <div className="cart-summary-row">
+              <span className="cart-summary-label">Phí vận chuyển</span>
+              <span className="cart-summary-free">Miễn phí</span>
+            </div>
+
+            <Divider className="cart-summary-divider" />
+
+            <div className="cart-summary-total-row">
+              <span className="cart-summary-total-label">Tổng tiền</span>
+              <span className="cart-summary-total-amount">{formatCurrency(totalPrice)}</span>
             </div>
 
             {hasStockWarning && (
               <Alert
                 type="warning"
                 showIcon
-                style={{ marginBottom: 12 }}
+                className="cart-summary-alert"
                 message="Vui lòng cập nhật lại số lượng trước khi đặt hàng."
               />
             )}
@@ -416,13 +438,8 @@ const CartPage: React.FC = () => {
               type="primary"
               size="large"
               block
-              disabled={hasStockWarning || Boolean(updatingBookId)}
-              style={{
-                backgroundColor: hasStockWarning ? undefined : '#ff4d4f',
-                borderColor: hasStockWarning ? undefined : '#ff4d4f',
-                height: 45,
-                fontWeight: 600,
-              }}
+              disabled={isCheckoutDisabled}
+              className="cart-order-btn"
               onClick={() => navigate('/checkout')}
             >
               Đặt hàng ngay
@@ -430,6 +447,22 @@ const CartPage: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <div className="mobile-cart-summary-bar">
+        <div className="mobile-cart-summary-bar__price">
+          <span>Tổng tiền</span>
+          <b>{formatCurrency(totalPrice)}</b>
+        </div>
+
+        <Button
+          type="primary"
+          disabled={isCheckoutDisabled}
+          className="mobile-cart-summary-bar__btn"
+          onClick={() => navigate('/checkout')}
+        >
+          Đặt hàng
+        </Button>
+      </div>
     </div>
   );
 };

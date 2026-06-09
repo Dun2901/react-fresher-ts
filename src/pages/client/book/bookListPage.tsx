@@ -1,291 +1,462 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Row,
-    Col,
-    Card,
-    Button,
-    Tooltip,
-    message,
-    Spin,
-    Pagination,
-    Layout,
-    Checkbox,
-    Slider,
-    Rate,
-    Divider,
-    Badge,
+  Row,
+  Col,
+  Button,
+  message,
+  Spin,
+  Pagination,
+  Layout,
+  Checkbox,
+  Slider,
+  Divider,
+  Drawer,
+  Empty,
+  Dropdown,
 } from 'antd';
+import type { MenuProps } from 'antd';
 import {
-    ShoppingCartOutlined,
-    EyeOutlined,
-    LoadingOutlined,
+  ShoppingCartOutlined,
+  LoadingOutlined,
+  FilterOutlined,
+  ReloadOutlined,
+  SortAscendingOutlined,
+  DownOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context.tsx';
-import { addItemToCartAPI, getBooksAPI, getCategoriesAPI} from '@/services/api.ts';
+import { addItemToCartAPI, getBooksAPI, getCategoriesAPI } from '@/services/api.ts';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import axios from 'axios';
 import './bookListPage.scss';
 
 const { Sider, Content } = Layout;
 
+const MAX_PRICE = 1000000;
+
+const sortOptions = [
+  { label: 'Mới nhất', value: '-createdAt' },
+  { label: 'Giá thấp đến cao', value: 'price' },
+  { label: 'Giá cao đến thấp', value: '-price' },
+  { label: 'Bán chạy', value: '-sold' },
+];
+
 const BookListPage: React.FC = () => {
-    const navigate = useNavigate();
-    const { carts, setCarts } = useCurrentApp();
-    const [listBook, setListBook] = useState<IBookTable[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const { carts, setCarts } = useCurrentApp();
 
-    // quản lý phân trang
-    const [current, setCurrent] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(8);
-    const [total, setTotal] = useState<number>(0);
+  const pageTopRef = useRef<HTMLDivElement | null>(null);
 
-    // bộ lọc tìm kiếm
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
+  const [listBook, setListBook] = useState<IBookTable[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
 
-    const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; value: string }[]>([]);
+  const [current, setCurrent] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(12);
+  const [total, setTotal] = useState<number>(0);
 
-    useEffect(() => {
-        const loadBooks = async () => {
-            setIsLoading(true);
-            try {
-                let query = `current=${current}&pageSize=${pageSize}&sort=-createdAt`;
+  const [sort, setSort] = useState<string>('-createdAt');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, MAX_PRICE]);
 
-                if (selectedCategories.length > 0) {
-                    const categoryQuery = selectedCategories.map(id => `category=${id}`).join('&');
-                    query += `&${categoryQuery}`;
-                }
-                //lọc khoảng giá
-                if (priceRange[0] > 0) query += `&price>=${priceRange[0]}`;
-                if (priceRange[1] < 500000) query += `&price<=${priceRange[1]}`;
+  const [categoriesOptions, setCategoriesOptions] = useState<{ label: string; value: string }[]>(
+    [],
+  );
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
 
-                const res = await getBooksAPI(query);
-                if (res && res.data) {
-                    if (res.data.result.length === 0 && res.data.meta.total > 0) {
-                        setCurrent(1);
-                    }else {
-                        setListBook(res.data.result || []);
-                        setTotal(res.data.meta.total || 0);
-                    }
-                }
-            } catch (error) {
-                message.error('Không thể kết nối với cơ sở dữ liệu');
-                console.error('Lỗi hệ thống:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadBooks();
-    }, [current, pageSize, selectedCategories, priceRange]);
+    if (selectedCategories.length > 0) {
+      count += selectedCategories.length;
+    }
 
-    useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                const res = await getCategoriesAPI('current=1&pageSize=100');
+    if (priceRange[0] > 0 || priceRange[1] < MAX_PRICE) {
+      count += 1;
+    }
 
-                if (res && res.data && res.data.result) {
-                    const dynamicCategories = res.data.result.map((cat: any) => {
-                        return {
-                            label: cat.name,
-                            value: cat._id,
-                        };
-                    });
+    return count;
+  }, [selectedCategories, priceRange]);
 
-                    setCategoriesOptions(dynamicCategories);
-                }
-            } catch (error) {
-                console.error('Lỗi khi lấy danh mục từ hệ thống:', error);
-            }
-        };
-        loadCategories();
-    }, []);
+  const currentSortLabel = useMemo(() => {
+    return sortOptions.find((item) => item.value === sort)?.label || 'Sắp xếp';
+  }, [sort]);
 
-    // xử lý thay đổi checkbox danh mục
-    const handleCategoryChange = (checkedValues: any) => {
-        setSelectedCategories(checkedValues as string[]);
-    };
+  const sortMenuItems: MenuProps['items'] = sortOptions.map((item) => ({
+    key: item.value,
+    label: item.label,
+  }));
 
-    //xử lý thay đổi giá
-    const handlePriceChange = (value: [number, number]) => {
-        setPriceRange(value);
-    };
+  const scrollToPageTop = () => {
+    requestAnimationFrame(() => {
+      const topPosition = pageTopRef.current
+        ? pageTopRef.current.getBoundingClientRect().top + window.scrollY - 88
+        : 0;
 
-    const handlePaginationChange = (page: number, pSize: number) => {
-        setCurrent(page);
-        if (pSize !== pageSize) {
-            setPageSize(pSize);
+      window.scrollTo({
+        top: Math.max(topPosition, 0),
+        left: 0,
+        behavior: 'auto',
+      });
+    });
+  };
+
+  useEffect(() => {
+    scrollToPageTop();
+  }, []);
+
+  useEffect(() => {
+    const loadBooks = async () => {
+      setIsLoading(true);
+
+      try {
+        let query = `current=${current}&pageSize=${pageSize}&sort=${sort}`;
+
+        if (selectedCategories.length > 0) {
+          const categoryQuery = selectedCategories.map((id) => `category=${id}`).join('&');
+          query += `&${categoryQuery}`;
+        }
+
+        if (priceRange[0] > 0) {
+          query += `&price>=${priceRange[0]}`;
+        }
+
+        if (priceRange[1] < MAX_PRICE) {
+          query += `&price<=${priceRange[1]}`;
+        }
+
+        const res = await getBooksAPI(query);
+
+        if (res?.data) {
+          const result = res.data.result || [];
+          const metaTotal = res.data.meta?.total || 0;
+
+          if (result.length === 0 && metaTotal > 0 && current > 1) {
             setCurrent(1);
+            scrollToPageTop();
+            return;
+          }
+
+          setListBook(result);
+          setTotal(metaTotal);
         }
+      } catch (error) {
+        message.error('Không thể tải danh sách sách. Vui lòng thử lại sau.');
+        console.error('Lỗi hệ thống:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    const handleAddToCart = async (book: IBookTable) => {
-        try {
-            const res = await addItemToCartAPI(book._id, 1);
-            if (res && res.data) {
-                setCarts(res.data.items || []);
-                message.success(`Đã thêm "${book.mainText}" vào giỏ hàng!`);
-            }
-        } catch (error) {
-            let errorMsg = 'Không thể thêm sản phẩm vào giỏ hàng!';
-            if (axios.isAxiosError(error)) {
-                errorMsg = error.response?.data?.message || errorMsg;
-            }
-            message.error(errorMsg);
+    loadBooks();
+  }, [current, pageSize, sort, selectedCategories, priceRange]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await getCategoriesAPI('current=1&pageSize=100');
+
+        if (res?.data?.result) {
+          const dynamicCategories = res.data.result.map((cat: ICategory) => ({
+            label: cat.name,
+            value: cat._id,
+          }));
+
+          setCategoriesOptions(dynamicCategories);
         }
+      } catch (error) {
+        console.error('Lỗi khi lấy danh mục từ hệ thống:', error);
+      }
     };
 
+    loadCategories();
+  }, []);
+
+  const handleCategoryChange = (checkedValues: Array<string | number>) => {
+    setSelectedCategories(checkedValues.map(String));
+    setCurrent(1);
+  };
+
+  const handlePriceChange = (value: number | number[]) => {
+    if (!Array.isArray(value)) {
+      return;
+    }
+
+    const [minPrice, maxPrice] = value;
+
+    setPriceRange([Number(minPrice), Number(maxPrice)]);
+    setCurrent(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    scrollToPageTop();
+    setSort(value);
+    setCurrent(1);
+  };
+
+  const handleSortMenuClick: MenuProps['onClick'] = ({ key }) => {
+    handleSortChange(String(key));
+  };
+
+  const handlePaginationChange = (page: number, pSize: number) => {
+    scrollToPageTop();
+
+    if (pSize !== pageSize) {
+      setPageSize(pSize);
+      setCurrent(1);
+      return;
+    }
+
+    setCurrent(page);
+  };
+
+  const handleResetFilter = () => {
+    scrollToPageTop();
+    setSelectedCategories([]);
+    setPriceRange([0, MAX_PRICE]);
+    setSort('-createdAt');
+    setCurrent(1);
+  };
+
+  const handleApplyMobileFilter = () => {
+    setIsFilterDrawerOpen(false);
+    scrollToPageTop();
+  };
+
+  const handleAddToCart = async (book: IBookTable) => {
+    try {
+      const res = await addItemToCartAPI(book._id, 1);
+
+      if (res?.data) {
+        setCarts(res.data.items || []);
+        message.success(`Đã thêm "${book.mainText}" vào giỏ hàng!`);
+      }
+    } catch (error) {
+      let errorMsg = 'Không thể thêm sản phẩm vào giỏ hàng!';
+
+      if (axios.isAxiosError(error)) {
+        errorMsg = error.response?.data?.message || errorMsg;
+      }
+
+      message.error(errorMsg);
+    }
+  };
+
+  const renderFilterContent = () => {
     return (
-        <div className="book-list-shop-page">
-            <Layout className="shop-main-layout">
-                <Sider width={260} className="shop-sidebar-filter" breakpoint="lg" collapsedWidth="0" trigger={null}>
-                    <div className="filter-header">
-                        <ShoppingCartOutlined /> <span>BỘ LỌC TÌM KIẾM</span>
-                    </div>
-                    <Divider className="filter-divider-sm" />
-
-                    <div className="filter-group">
-                        <h4>Danh mục sản phẩm</h4>
-                        <Checkbox.Group
-                            options={categoriesOptions}
-                            value={selectedCategories}
-                            onChange={handleCategoryChange}
-                            className="vertical-checkbox-group"
-                        />
-                    </div>
-                    <Divider className="filter-divider-md" />
-
-                    <div className="filter-group">
-                        <h4>Khoảng giá (VNĐ)</h4>
-                        <Slider
-                            range
-                            min={0}
-                            max={500000}
-                            step={10000}
-                            value={priceRange}
-                            onChange={handlePriceChange}
-                            tooltip={{ formatter: (v) => `${v?.toLocaleString('vi-VN')}đ` }}
-                        />
-                        <div className="price-range-label">
-                            <span>{priceRange[0].toLocaleString('vi-VN')}đ</span>
-                            <span>-</span>
-                            <span>{priceRange[1].toLocaleString('vi-VN')}đ</span>
-                        </div>
-                    </div>
-                    <Divider className="filter-divider-md" />
-
-                    <div className="filter-group">
-                        <h4>Đánh giá từ khách hàng</h4>
-                        <div className="rating-filter-item"><Rate disabled defaultValue={5} /> <span>(Từ 5 sao)</span></div>
-                        <div className="rating-filter-item"><Rate disabled defaultValue={4} /> <span>(Từ 4 sao)</span></div>
-                        <div className="rating-filter-item"><Rate disabled defaultValue={3} /> <span>(Từ 3 sao)</span></div>
-                    </div>
-                </Sider>
-
-                <Content className="shop-content-products">
-                    <div className="content-title-wrapper">
-                        <h2 className="section-title">Tất cả sản phẩm sách</h2>
-                    </div>
-
-                    <Spin spinning={isLoading} indicator={<LoadingOutlined className="spin-loading-icon" spin />}>
-                        <Row gutter={[16, 20]}>
-                            {listBook.map((book, index) => {
-                                const hasDiscount = index % 2 === 0;
-                                const discountPercent = hasDiscount ? (index % 4 === 0 ? 25 : 15) : 0;
-                                const fakeRate = index % 3 === 0 ? 5 : 4.5;
-
-                                const innerCard = (
-                                    <Card
-                                        className="book-card-premium"
-                                        hoverable
-                                        styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
-                                        cover={
-                                            <div className="book-image-container">
-                                                <img
-                                                    alt={book.mainText}
-                                                    src={getBookImageUrl(book.thumbnail)}
-                                                    onError={(e) => {
-                                                        e.currentTarget.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
-                                                    }}
-                                                />
-                                            </div>
-                                        }
-                                    >
-                                        <div className="book-meta-data">
-                                            <div className="book-title-text" title={book.mainText}>{book.mainText}</div>
-                                            <div className="book-author-text">Tác giả: {book.author}</div>
-                                            <div className="book-rating-sold">
-                                                <Rate disabled allowHalf defaultValue={fakeRate} />
-                                                <span className="sold-count">Đã bán {book.sold ?? 0}</span>
-                                            </div>
-
-                                            <div className="book-card-footer">
-                                                <div className="price-section">
-                                                    <span className="current-price">{formatCurrency(book.price)}</span>
-                                                    {discountPercent > 0 && (
-                                                        <span className="old-price">{formatCurrency(book.price * (1 + discountPercent / 100))}</span>
-                                                    )}
-                                                </div>
-
-                                                <div className="action-buttons">
-                                                    <Tooltip title="Xem chi tiết">
-                                                        <Button
-                                                            className="btn-view"
-                                                            shape="circle"
-                                                            icon={<EyeOutlined />}
-                                                            onClick={() => navigate(`/book/${book._id}`)}
-                                                        />
-                                                    </Tooltip>
-                                                    <Button
-                                                        type="primary"
-                                                        className={`btn-action-cart ${carts.some((item) => item.bookId._id === book._id) ? 'btn-buy-more' : ''}`}
-                                                        danger={carts.some((item) => item.bookId._id === book._id)}
-                                                        icon={<ShoppingCartOutlined />}
-                                                        onClick={() => handleAddToCart(book)}
-                                                    >
-                                                        {carts.some((item) => item.bookId._id === book._id) ? 'Mua tiếp' : 'Mua'}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                );
-
-                                return (
-                                    <Col xs={24} sm={12} md={12} lg={8} xl={6} key={book._id}>
-                                        {discountPercent > 0 ? (
-                                            <Badge.Ribbon text={`-${discountPercent}%`} color="red" className="discount-ribbon">
-                                                {innerCard}
-                                            </Badge.Ribbon>
-                                        ) : (
-                                            innerCard
-                                        )}
-                                    </Col>
-                                );
-                            })}
-                        </Row>
-
-                        {/* Thanh điều hướng phân trang */}
-                        {listBook.length > 0 && (
-                            <Row className="pagination-wrapper">
-                                <Pagination
-                                    current={current}
-                                    pageSize={pageSize}
-                                    total={total}
-                                    responsive={true}
-                                    showSizeChanger={true}
-                                    pageSizeOptions={['4', '8', '12', '16']}
-                                    onChange={handlePaginationChange}
-                                    showTotal={(total) => `Hiển thị ${listBook.length}/${total} cuốn sách`}
-                                />
-                            </Row>
-                        )}
-                    </Spin>
-                </Content>
-            </Layout>
+      <div className="filter-content">
+        <div className="filter-header">
+          <FilterOutlined />
+          <span>Bộ lọc tìm kiếm</span>
         </div>
+
+        <Divider className="filter-divider-sm" />
+
+        <div className="filter-group">
+          <h4>Danh mục sách</h4>
+
+          {categoriesOptions.length > 0 ? (
+            <Checkbox.Group
+              options={categoriesOptions}
+              value={selectedCategories}
+              onChange={handleCategoryChange}
+              className="vertical-checkbox-group"
+            />
+          ) : (
+            <div className="filter-empty-text">Chưa có danh mục</div>
+          )}
+        </div>
+
+        <Divider className="filter-divider-md" />
+
+        <div className="filter-group">
+          <h4>Khoảng giá</h4>
+
+          <Slider
+            range
+            min={0}
+            max={MAX_PRICE}
+            step={10000}
+            value={priceRange}
+            onChange={handlePriceChange}
+            tooltip={{ formatter: (v) => `${v?.toLocaleString('vi-VN')}đ` }}
+          />
+
+          <div className="price-range-label">
+            <span>{priceRange[0].toLocaleString('vi-VN')}đ</span>
+            <span>-</span>
+            <span>{priceRange[1].toLocaleString('vi-VN')}đ</span>
+          </div>
+        </div>
+
+        <Divider className="filter-divider-md" />
+
+        <Button icon={<ReloadOutlined />} block onClick={handleResetFilter}>
+          Xóa bộ lọc
+        </Button>
+
+        <Button
+          type="primary"
+          block
+          className="mobile-apply-filter-btn"
+          onClick={handleApplyMobileFilter}
+        >
+          Xem kết quả
+        </Button>
+      </div>
     );
+  };
+
+  return (
+    <div className="book-list-shop-page" ref={pageTopRef}>
+      <Layout className="shop-main-layout">
+        <Sider width={260} className="shop-sidebar-filter" trigger={null}>
+          {renderFilterContent()}
+        </Sider>
+
+        <Content className="shop-content-products">
+          <div className="content-title-wrapper">
+            <div className="content-heading">
+              <h2 className="section-title">Tất cả sách</h2>
+              <p className="section-subtitle">
+                {total > 0
+                  ? `Tìm thấy ${total} cuốn sách`
+                  : 'Khám phá danh sách sách trong hệ thống'}
+              </p>
+            </div>
+
+            <div className="content-actions">
+              <Button
+                className="mobile-filter-btn"
+                icon={<FilterOutlined />}
+                onClick={() => setIsFilterDrawerOpen(true)}
+              >
+                Bộ lọc
+                {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
+              </Button>
+
+              <Dropdown
+                trigger={['click']}
+                placement="bottomRight"
+                menu={{
+                  items: sortMenuItems,
+                  selectedKeys: [sort],
+                  onClick: handleSortMenuClick,
+                }}
+              >
+                <Button className="sort-dropdown-btn" icon={<SortAscendingOutlined />}>
+                  <span className="sort-dropdown-btn__text">{currentSortLabel}</span>
+                  <DownOutlined className="sort-dropdown-btn__arrow" />
+                </Button>
+              </Dropdown>
+            </div>
+          </div>
+
+          <Spin
+            spinning={isLoading}
+            indicator={<LoadingOutlined className="spin-loading-icon" spin />}
+          >
+            {!isLoading && listBook.length === 0 ? (
+              <div className="book-empty-wrapper">
+                <Empty description="Không tìm thấy sách phù hợp" />
+                <Button type="primary" icon={<ReloadOutlined />} onClick={handleResetFilter}>
+                  Xóa bộ lọc
+                </Button>
+              </div>
+            ) : (
+              <Row gutter={[8, 8]} className="book-product-grid">
+                {listBook.map((book) => {
+                  const inCart = carts.some((item) => item.bookId?._id === book._id);
+
+                  return (
+                    <Col xs={12} sm={12} md={8} lg={8} xl={6} key={book._id}>
+                      <div
+                        className="book-card-mobile-shop"
+                        onClick={() => navigate(`/book/${book._id}`)}
+                      >
+                        <div className="book-card-mobile-shop__img">
+                          <img
+                            alt={book.mainText}
+                            src={getBookImageUrl(book.thumbnail)}
+                            onError={(e) => {
+                              e.currentTarget.src =
+                                'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
+                            }}
+                          />
+                        </div>
+
+                        <div className="book-card-mobile-shop__body">
+                          <div className="book-card-mobile-shop__title" title={book.mainText}>
+                            {book.mainText}
+                          </div>
+
+                          <div className="book-card-mobile-shop__author">
+                            Tác giả: {book.author}
+                          </div>
+
+                          <div className="book-card-mobile-shop__sold">
+                            {(book.sold ?? 0) > 0 ? `Đã bán ${book.sold}` : 'Chưa có lượt bán'}
+                          </div>
+
+                          <div className="book-card-mobile-shop__bottom">
+                            <div className="book-card-mobile-shop__price">
+                              {formatCurrency(book.price)}
+                            </div>
+
+                            <button
+                              type="button"
+                              className={`book-card-mobile-shop__cart ${
+                                inCart ? 'book-card-mobile-shop__cart--incart' : ''
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(book);
+                              }}
+                              aria-label={inCart ? 'Mua thêm' : 'Thêm vào giỏ hàng'}
+                            >
+                              <ShoppingCartOutlined className="book-card-mobile-shop__cart-icon" />
+                              <span className="book-card-mobile-shop__cart-text">
+                                {inCart ? 'Mua thêm' : 'Thêm giỏ'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </Col>
+                  );
+                })}
+              </Row>
+            )}
+
+            {listBook.length > 0 && (
+              <Row className="pagination-wrapper">
+                <Pagination
+                  current={current}
+                  pageSize={pageSize}
+                  total={total}
+                  responsive
+                  showSizeChanger
+                  pageSizeOptions={['8', '12', '16', '20']}
+                  onChange={handlePaginationChange}
+                  showTotal={(totalBooks) => `Tổng ${totalBooks} sách`}
+                />
+              </Row>
+            )}
+          </Spin>
+        </Content>
+      </Layout>
+
+      <Drawer
+        title="Bộ lọc sách"
+        placement="left"
+        open={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        width="86%"
+        className="mobile-filter-drawer"
+      >
+        {renderFilterContent()}
+      </Drawer>
+    </div>
+  );
 };
 
 export default BookListPage;

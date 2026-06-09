@@ -1,21 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Row,
-  Col,
-  Card,
-  Button,
-  Tooltip,
-  message,
-  Spin,
-  Carousel,
-  Badge,
-  Rate
-} from 'antd';
+import { Row, Col, Button, message, Spin, Carousel, Empty } from 'antd';
 import {
   ShoppingCartOutlined,
-  EyeOutlined,
   LoadingOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
+  FireOutlined,
+  BookOutlined,
+  HistoryOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context.tsx';
@@ -27,181 +19,208 @@ import './home.scss';
 const Homepage: React.FC = () => {
   const navigate = useNavigate();
   const { carts, setCarts } = useCurrentApp();
+
   const [listBook, setListBook] = useState<IBookTable[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-
-  const pageSize = 8;
+  const pageSize = 12;
 
   useEffect(() => {
     const loadBooks = async () => {
       setIsLoading(true);
+
       try {
-        // Gọi API lấy đúng 8 cuốn sách mới nhất được tạo dựa trên sort=-createdAt
         const query = `current=1&pageSize=${pageSize}&sort=-createdAt`;
         const res = await getBooksAPI(query);
-        if (res && res.data) {
+
+        if (res?.data) {
           setListBook(res.data.result || []);
         }
       } catch (error) {
-        message.error('Không thể kết nối với cơ sở dữ liệu');
+        message.error('Không thể tải danh sách sách. Vui lòng thử lại sau.');
         console.error('Lỗi hệ thống:', error);
       } finally {
         setIsLoading(false);
       }
     };
+
     loadBooks();
-  }, []); //
+  }, []);
 
   const handleAddToCart = async (book: IBookTable) => {
     try {
       const res = await addItemToCartAPI(book._id, 1);
-      if (res && res.data) {
+
+      if (res?.data) {
         setCarts(res.data.items || []);
         message.success(`Đã thêm "${book.mainText}" vào giỏ hàng!`);
       }
     } catch (error) {
       let errorMsg = 'Không thể thêm sản phẩm vào giỏ hàng!';
+
       if (axios.isAxiosError(error)) {
         errorMsg = error.response?.data?.message || errorMsg;
       }
+
       message.error(errorMsg);
     }
   };
 
   return (
-      <div className="homepage-shop">
-        {/* banner */}
-        <Carousel autoplay effect="fade" className="shop-carousel">
-          <div>
-            <div className="banner-slide slide-1">
-              <div className="banner-inner">
-                <span className="badge-promo">ƯU ĐÃI ĐỘC QUYỀN</span>
-                <h1>Hội Sách Công Nghệ & Khởi Nghiệp</h1>
-                <p>Đồng loạt giảm đến 35% cho toàn bộ các đầu sách chuyên ngành lập trình Web, AI tuần này!</p>
-                <Button type="primary" size="large" danger onClick={() => navigate('/book')}>
-                  Mua Ngay
-                </Button>
-              </div>
+    <div className="homepage-shop">
+      <Carousel autoplay effect="fade" className="shop-carousel">
+        <div>
+          <div className="banner-slide slide-1">
+            <div className="banner-inner">
+              <span className="badge-promo">Ưu đãi hôm nay</span>
+              <h1>Khám phá sách hay mỗi ngày</h1>
+              <p>Sách công nghệ, kinh doanh, kỹ năng và nhiều đầu sách mới đang có sẵn.</p>
+
+              <Button type="primary" danger onClick={() => navigate('/book')}>
+                Xem sách ngay
+              </Button>
             </div>
           </div>
-          <div>
-            <div className="banner-slide slide-2">
-              <div className="banner-inner">
-                <span className="badge-promo">BEST SELLER</span>
-                <h1>Sách Hay Thay Đổi Tư Duy</h1>
-                <p>Tặng ngay mã giảm giá 50.000 VNĐ cho hóa đơn mua sách từ 350.000 VNĐ áp dụng toàn quốc.</p>
-                <Button type="primary" size="large" style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={() => navigate('/book')}>
-                  Khám Phá
-                </Button>
-              </div>
+        </div>
+
+        <div>
+          <div className="banner-slide slide-2">
+            <div className="banner-inner">
+              <span className="badge-promo">Sách mới</span>
+              <h1>Bổ sung tri thức cho hành trình của bạn</h1>
+              <p>Chọn sách phù hợp, đặt hàng nhanh và theo dõi đơn hàng dễ dàng.</p>
+
+              <Button type="primary" className="banner-green-btn" onClick={() => navigate('/book')}>
+                Khám phá ngay
+              </Button>
             </div>
           </div>
-        </Carousel>
+        </div>
+      </Carousel>
 
-        <div className="homepage-products-section">
-          <div className="content-title-wrapper">
-            <h2 className="section-title">Sách Mới Nổi Bật</h2>
-            <p className="section-subtitle">Khám phá ngay những tựa sách mới nhất vừa cập bến tuần này</p>
+      <div className="mobile-shortcut-bar">
+        <button type="button" onClick={() => navigate('/book')}>
+          <span className="mobile-shortcut-bar__icon">
+            <FireOutlined />
+          </span>
+          Sách mới
+        </button>
+
+        <button type="button" onClick={() => navigate('/book')}>
+          <span className="mobile-shortcut-bar__icon">
+            <AppstoreOutlined />
+          </span>
+          Danh mục
+        </button>
+
+        <button type="button" onClick={() => navigate('/cart')}>
+          <span className="mobile-shortcut-bar__icon">
+            <ShoppingCartOutlined />
+          </span>
+          Giỏ hàng
+        </button>
+
+        <button type="button" onClick={() => navigate('/orders')}>
+          <span className="mobile-shortcut-bar__icon">
+            <HistoryOutlined />
+          </span>
+          Đơn hàng
+        </button>
+      </div>
+
+      <div className="homepage-products-section">
+        <div className="content-title-wrapper">
+          <div>
+            <h2 className="section-title">Gợi ý hôm nay</h2>
+            <p className="section-subtitle">Những cuốn sách mới nhất trong hệ thống</p>
           </div>
 
-          <Spin spinning={isLoading} indicator={<LoadingOutlined style={{ fontSize: 28 }} spin />}>
-            <Row gutter={[16, 20]}>
-              {listBook.map((book, index) => {
-                const hasDiscount = index % 2 === 0;
-                const discountPercent = hasDiscount ? (index % 4 === 0 ? 25 : 15) : 0;
-                const fakeRate = index % 3 === 0 ? 5 : 4.5;
+          <button type="button" className="section-more" onClick={() => navigate('/book')}>
+            Xem thêm
+          </button>
+        </div>
 
-                const innerCard = (
-                    <Card
-                        className="book-card-premium"
-                        hoverable
-                        styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
-                        cover={
-                          <div className="book-image-container">
-                            <img
-                                alt={book.mainText}
-                                src={getBookImageUrl(book.thumbnail)}
-                                onError={(e) => {
-                                  e.currentTarget.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
-                                }}
-                            />
-                          </div>
-                        }
-                    >
-                      <div className="book-meta-data">
-                        <div className="book-title-text" title={book.mainText}>{book.mainText}</div>
-                        <div className="book-author-text">Tác giả: {book.author}</div>
-
-                        <div className="book-rating-sold">
-                          <Rate disabled allowHalf defaultValue={fakeRate} style={{ fontSize: 10 }} />
-                          <span className="sold-count">Đã bán {book.sold ?? 0}</span>
-                        </div>
-
-                        <div className="book-card-footer">
-                          <div className="price-section">
-                            <span className="current-price">{formatCurrency(book.price)}</span>
-                            {discountPercent > 0 && (
-                                <span className="old-price">{formatCurrency(book.price * (1 + discountPercent / 100))}</span>
-                            )}
-                          </div>
-
-                          <div className="action-buttons">
-                            <Tooltip title="Xem chi tiết">
-                              <Button
-                                  className="btn-view"
-                                  shape="circle"
-                                  icon={<EyeOutlined />}
-                                  onClick={() => navigate(`/book/${book._id}`)} // Điều hướng đến chi tiết
-                              />
-                            </Tooltip>
-                            <Button
-                                type="primary"
-                                className={`btn-action-cart ${carts.some((item) => item.bookId._id === book._id) ? 'btn-buy-more' : ''}`}
-                                danger={carts.some((item) => item.bookId._id === book._id)}
-                                icon={<ShoppingCartOutlined />}
-                                onClick={() => handleAddToCart(book)}
-                            >
-                              {carts.some((item) => item.bookId._id === book._id) ? 'Mua tiếp' : 'Mua'}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                );
+        <Spin
+          spinning={isLoading}
+          indicator={<LoadingOutlined className="homepage-loading-icon" spin />}
+        >
+          {!isLoading && listBook.length === 0 ? (
+            <Empty description="Chưa có sách để hiển thị" />
+          ) : (
+            <Row gutter={[8, 8]} className="homepage-product-grid">
+              {listBook.map((book) => {
+                const inCart = carts.some((item) => item.bookId?._id === book._id);
 
                 return (
-                    <Col xs={24} sm={12} md={12} lg={8} xl={6} key={book._id}>
-                      {discountPercent > 0 ? (
-                          <Badge.Ribbon text={`-${discountPercent}%`} color="red" className="discount-ribbon">
-                            {innerCard}
-                          </Badge.Ribbon>
-                      ) : (
-                          innerCard
-                      )}
-                    </Col>
+                  <Col xs={12} sm={12} md={8} lg={6} xl={6} key={book._id}>
+                    <div className="book-card-shopee" onClick={() => navigate(`/book/${book._id}`)}>
+                      <div className="book-card-shopee__img-wrap">
+                        <img
+                          alt={book.mainText}
+                          src={getBookImageUrl(book.thumbnail)}
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
+                          }}
+                        />
+                      </div>
+
+                      <div className="book-card-shopee__info">
+                        <div className="book-card-shopee__title" title={book.mainText}>
+                          {book.mainText}
+                        </div>
+
+                        <div className="book-card-shopee__author">Tác giả: {book.author}</div>
+
+                        <div className="book-card-shopee__sold">
+                          {(book.sold ?? 0) > 0 ? `Đã bán ${book.sold}` : 'Chưa có lượt bán'}
+                        </div>
+
+                        <div className="book-card-shopee__bottom">
+                          <div className="book-card-shopee__price">
+                            {formatCurrency(book.price)}
+                          </div>
+
+                          <button
+                            type="button"
+                            className={`book-card-shopee__btn ${
+                              inCart ? 'book-card-shopee__btn--incart' : ''
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(book);
+                            }}
+                            aria-label={inCart ? 'Mua thêm' : 'Thêm vào giỏ hàng'}
+                          >
+                            <ShoppingCartOutlined className="book-card-shopee__cart-icon" />
+                            <span className="book-card-shopee__btn-text">
+                              {inCart ? 'Mua thêm' : 'Thêm giỏ'}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Col>
                 );
               })}
             </Row>
+          )}
 
-            {/* nút xem tất cả để chuyển qua trang boo list */}
-            {!isLoading && listBook.length > 0 && (
-                <div className="view-all-container">
-                  <Button
-                      type="primary"
-                      size="large"
-                      className="btn-view-all"
-                      icon={<ArrowRightOutlined />}
-                      iconPosition="end"
-                      onClick={() => navigate('/book')}
-                  >
-                    Xem tất cả sản phẩm
-                  </Button>
-                </div>
-            )}
-          </Spin>
-        </div>
+          {!isLoading && listBook.length > 0 && (
+            <div className="view-all-container">
+              <Button
+                type="primary"
+                className="btn-view-all"
+                icon={<ArrowRightOutlined />}
+                onClick={() => navigate('/book')}
+              >
+                Xem tất cả sách
+              </Button>
+            </div>
+          )}
+        </Spin>
       </div>
+    </div>
   );
 };
 

@@ -16,17 +16,19 @@
     margin: 0 auto;
     padding: 0 24px;
 
-    /* KHỐI TRÁI: BRAND LOGO */
+    /* KHỐI TRÁI */
     .navbar-left {
       display: flex;
       align-items: center;
       gap: 16px;
+      flex-shrink: 0;
 
       .navbar-toggle-btn {
         display: none;
         font-size: 22px;
         cursor: pointer;
         color: #262626;
+        padding: 4px;
       }
 
       .logo-brand {
@@ -35,13 +37,9 @@
         gap: 8px;
         cursor: pointer;
 
-        .icon-react {
-          font-size: 28px;
+        .icon-book {
+          font-size: 26px;
           color: #1677ff;
-
-          &.rotate {
-            animation: spin-react-logo 12s linear infinite;
-          }
         }
 
         .logo-brand-text {
@@ -51,15 +49,16 @@
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           letter-spacing: -0.3px;
+          white-space: nowrap;
         }
       }
     }
 
-    /* KHỐI GIỮA: Ô INPUT TÌM KIẾM CHUẨN UI KHÔNG BỊ LỆCH CHỮ */
+    /* KHỐI GIỮA */
     .navbar-center {
       flex: 1;
       max-width: 580px;
-      margin: 0 40px;
+      margin: 0 32px;
 
       .search-bar-input {
         border-radius: 8px;
@@ -82,10 +81,11 @@
       }
     }
 
-    /* KHỐI PHẢI: ICON GIỎ HÀNG & ACC */
+    /* KHỐI PHẢI */
     .navbar-right {
       display: flex;
       align-items: center;
+      flex-shrink: 0;
 
       .navigation-actions {
         display: flex;
@@ -123,6 +123,7 @@
             font-weight: 500;
             color: #595959;
             cursor: pointer;
+            white-space: nowrap;
             transition: color 0.2s ease;
 
             &:hover {
@@ -151,36 +152,143 @@
     }
   }
 
-  @keyframes spin-react-logo {
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-
-  /* TỐI ƯU HIỂN THỊ TRÊN ĐIỆN THOẠI & TABLET (RESPONSIVE) */
+  /* ====== RESPONSIVE ====== */
   @media (max-width: 768px) {
     .page-header-navbar {
-      padding: 0 16px;
+      padding: 0 12px;
 
       .navbar-left {
+        gap: 10px;
+
         .navbar-toggle-btn {
           display: block;
         }
+
         .logo-brand-text {
-          display: none; // Ẩn chữ logo ở màn hình quá bé để nhường chỗ ô search
+          display: none;
         }
       }
 
       .navbar-center {
-        margin: 0 12px;
+        margin: 0 10px;
       }
 
       .navbar-right {
         .desktop-divider,
         .action-item-user {
-          display: none !important; // Ẩn avatar trên thanh navbar mobile, chuyển vào trong Drawer menu
+          display: none !important;
         }
       }
     }
+  }
+
+  @media (max-width: 360px) {
+    .page-header-navbar {
+      padding: 0 8px;
+
+      .navbar-center {
+        margin: 0 6px;
+      }
+    }
+  }
+}
+
+/* ====== POPOVER GIỎ HÀNG ====== */
+.pop-cart-body {
+  width: 300px;
+
+  @media (max-width: 480px) {
+    width: 260px;
+  }
+
+  .pop-cart-content {
+    max-height: 250px;
+    overflow-y: auto;
+  }
+
+  .pop-cart-book {
+    display: flex;
+    padding: 8px 0;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #f0f0f0;
+
+    &__img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    &__name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      color: #262626;
+    }
+
+    &__price {
+      color: #ff4d4f;
+      font-weight: 600;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+  }
+
+  .pop-cart-footer {
+    margin-top: 12px;
+    text-align: right;
+
+    &__btn {
+      background: #1677ff;
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #0958d9;
+      }
+    }
+  }
+}
+
+/* ====== DRAWER MOBILE NAV ====== */
+.drawer-divider {
+  margin: 6px 0 !important;
+}
+
+.drawer-nav-item {
+  padding: 10px 4px;
+  cursor: pointer;
+  font-size: 15px;
+  color: #262626;
+  margin: 0;
+  border-radius: 6px;
+  transition:
+    background 0.2s,
+    color 0.2s;
+
+  &:hover {
+    background: #f0f5ff;
+    color: #1677ff;
+    padding-left: 8px;
+  }
+
+  &--admin {
+    color: #1677ff;
+    font-weight: 500;
+  }
+
+  &--logout {
+    color: #ff4d4f;
+    font-weight: 600;
   }
 }
