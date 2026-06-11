@@ -263,24 +263,29 @@ export const checkoutAPI = (data: ICheckoutDto) => {
 
 // 2. khách hàng lấy danh sách đơn hàng của mình
 export const getMyOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
-  let url = `/orders?current=${currentPage}&pageSize=${limit}`;
+  let url = `/orders/my?current=${currentPage}&pageSize=${limit}`;
   if (queryStr) url += `&${queryStr}`;
   return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
 };
 
-// 3. ddmin lấy toàn bộ đơn hàng của hệ thống
+// 3. admin lấy toàn bộ đơn hàng của hệ thống
 export const getAllOrdersAPI = (currentPage: number, limit: number, queryStr?: string) => {
   let url = `/orders?current=${currentPage}&pageSize=${limit}`;
   if (queryStr) url += `&${queryStr}`;
   return axios.get<IBackendRes<IModelPaginate<IOrder>>>(url);
 };
 
-// lấy chi tiết một đơn hàng theo ID cho cả ADMIN và USER
+// Admin xem chi tiết đơn hàng
 export const getOrderByIdAPI = (id: string) => {
   return axios.get<IBackendRes<IOrder>>(`/orders/${id}`);
 };
 
-// 5. admin cập nhật trạng thái đơn hàng (Duyệt, Ship, Hoàn thành, Hủy)
+// User xem chi tiết đơn hàng của mình
+export const getMyOrderByIdAPI = (id: string) => {
+  return axios.get<IBackendRes<IOrder>>(`/history/${id}`);
+};
+
+// 5. admin cập nhật trạng thái đơn hàng
 export const updateOrderStatusAPI = (
   id: string,
   status: 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED',

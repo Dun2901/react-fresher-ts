@@ -168,7 +168,7 @@ const CurrentOrderPage = () => {
     setLoading(true);
 
     try {
-      const res = await getMyOrdersAPI(1, 100);
+      const res = await getMyOrdersAPI(1, 10);
       const allOrders = res.data?.result ?? [];
 
       const currentOrders = allOrders.filter((order: IOrder) =>

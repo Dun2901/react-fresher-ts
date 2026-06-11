@@ -1,88 +1,32 @@
 import { useState } from 'react';
-import {
-  DashboardOutlined,
-  HistoryOutlined,
-  HomeOutlined,
-  LoginOutlined,
-  LogoutOutlined,
-  ProfileOutlined,
-  ReadOutlined,
-  SearchOutlined,
-  ShoppingOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { ReadOutlined, SearchOutlined } from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
-import {
-  App,
-  Avatar,
-  Badge,
-  Button,
-  Divider,
-  Drawer,
-  Dropdown,
-  Empty,
-  Input,
-  Popover,
-  Space,
-} from 'antd';
-import { useNavigate } from 'react-router';
-import { Link } from 'react-router-dom';
+import { Divider, Badge, Drawer, Avatar, Popover, Empty, Input, Dropdown, Space } from 'antd';
+import { Link, useNavigate } from 'react-router-dom';
+import './app.header.scss';
 import { useCurrentApp } from 'components/context/app.context';
 import { logoutAPI } from '@/services/api';
-import { formatCurrency, getAvatarUrl } from '@/services/helper';
-import './app.header.scss';
+import { getAvatarUrl, formatCurrency } from '@/services/helper';
 
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [openCartPopover, setOpenCartPopover] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const { message } = App.useApp();
-
-  const { isAuthenticated, user, setUser, setIsAuthenticated, carts, setCarts } = useCurrentApp();
+  const { isAuthenticated, user, setUser, setIsAuthenticated, carts } = useCurrentApp();
 
   const navigate = useNavigate();
 
-  const showLoginRequiredMessage = () => {
-    message.warning('Vui lòng đăng nhập để sử dụng chức năng này.');
-  };
-
-  const clearAuthState = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    setCarts([]);
-    localStorage.removeItem('access_token');
-  };
-
   const handleLogout = async () => {
-    if (isLoggingOut) return;
+    const res = await logoutAPI();
 
-    setIsLoggingOut(true);
-
-    try {
-      await logoutAPI();
-    } finally {
-      clearAuthState();
+    if (res.data) {
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('access_token');
       setOpenDrawer(false);
       setOpenCartPopover(false);
-      setIsLoggingOut(false);
-      message.success('Đăng xuất thành công');
       navigate('/');
     }
-  };
-
-  const handleCartOpenChange = (open: boolean) => {
-    if (!isAuthenticated) {
-      setOpenCartPopover(false);
-
-      if (open) {
-        showLoginRequiredMessage();
-      }
-
-      return;
-    }
-
-    setOpenCartPopover(open);
   };
 
   const items = [
@@ -100,8 +44,8 @@ const AppHeader = () => {
     },
     {
       label: (
-        <span onClick={handleLogout} style={{ cursor: 'pointer', color: '#ff4d4f' }}>
-          {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+        <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
+          Đăng xuất
         </span>
       ),
       key: 'logout',
@@ -156,14 +100,9 @@ const AppHeader = () => {
       <div className="header-container-premium">
         <header className="page-header-navbar">
           <div className="navbar-left">
-            <button
-              type="button"
-              className="navbar-toggle-btn"
-              onClick={() => setOpenDrawer(true)}
-              aria-label="Mở menu"
-            >
+            <div className="navbar-toggle-btn" onClick={() => setOpenDrawer(true)}>
               ☰
-            </button>
+            </div>
 
             <div className="logo-brand" onClick={() => navigate('/')}>
               <ReadOutlined className="icon-book" />
@@ -187,10 +126,10 @@ const AppHeader = () => {
                   placement="bottomRight"
                   title={<span style={{ fontWeight: 600 }}>Sản phẩm mới thêm</span>}
                   content={contentPopover}
-                  arrow
+                  arrow={true}
                   trigger="click"
-                  open={isAuthenticated ? openCartPopover : false}
-                  onOpenChange={handleCartOpenChange}
+                  open={openCartPopover}
+                  onOpenChange={setOpenCartPopover}
                 >
                   <Badge
                     count={carts?.length ?? 0}
@@ -207,20 +146,9 @@ const AppHeader = () => {
 
               <div className="action-item-user">
                 {!isAuthenticated ? (
-                  <>
-                    <span className="login-trigger-text" onClick={() => navigate('/login')}>
-                      Tài khoản
-                    </span>
-
-                    <button
-                      type="button"
-                      className="mobile-account-btn mobile-account-btn--login"
-                      onClick={() => setOpenDrawer(true)}
-                      aria-label="Tài khoản"
-                    >
-                      <UserOutlined />
-                    </button>
-                  </>
+                  <span className="login-trigger-text" onClick={() => navigate('/login')}>
+                    Tài Khoản
+                  </span>
                 ) : (
                   <Dropdown
                     menu={{ items }}
@@ -228,8 +156,8 @@ const AppHeader = () => {
                     placement="bottomRight"
                     getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body}
                   >
-                    <Space className="user-profile-dropdown">
-                      <Avatar src={getAvatarUrl(user?.avatar)} icon={<UserOutlined />} />
+                    <Space className="user-profile-dropdown" style={{ cursor: 'pointer' }}>
+                      <Avatar src={getAvatarUrl(user?.avatar)} />
                       <span className="user-display-name">{user?.fullName}</span>
                     </Space>
                   </Dropdown>
@@ -238,19 +166,6 @@ const AppHeader = () => {
             </nav>
           </div>
         </header>
-
-        {!isAuthenticated && (
-          <div className="mobile-login-hint">
-            <div className="mobile-login-hint__text">
-              <UserOutlined />
-              <span>Bạn chưa đăng nhập</span>
-            </div>
-
-            <button type="button" onClick={() => navigate('/login')}>
-              Đăng nhập
-            </button>
-          </div>
-        )}
       </div>
 
       <Drawer
@@ -258,138 +173,86 @@ const AppHeader = () => {
         placement="left"
         onClose={() => setOpenDrawer(false)}
         open={openDrawer}
-        width={340}
-        className="mobile-nav-drawer"
       >
-        {!isAuthenticated ? (
-          <div className="drawer-auth-card">
-            <div className="drawer-auth-card__icon">
-              <UserOutlined />
-            </div>
+        <p
+          className="drawer-nav-item"
+          onClick={() => {
+            navigate('/');
+            setOpenDrawer(false);
+          }}
+        >
+          Trang chủ
+        </p>
 
-            <div className="drawer-auth-card__content">
-              <h3>Bạn chưa đăng nhập</h3>
-              <p>Đăng nhập để xem giỏ hàng, đơn hàng và lịch sử mua hàng của bạn.</p>
-            </div>
+        <Divider className="drawer-divider" />
 
-            <Button
-              type="primary"
-              icon={<LoginOutlined />}
-              block
-              className="drawer-auth-card__btn"
+        <p
+          className="drawer-nav-item"
+          onClick={() => {
+            navigate('/profile');
+            setOpenDrawer(false);
+          }}
+        >
+          Quản lý tài khoản
+        </p>
+
+        <Divider className="drawer-divider" />
+
+        <p
+          className="drawer-nav-item"
+          onClick={() => {
+            navigate('/orders');
+            setOpenDrawer(false);
+          }}
+        >
+          Đơn hàng của tôi
+        </p>
+
+        <Divider className="drawer-divider" />
+
+        <p
+          className="drawer-nav-item"
+          onClick={() => {
+            navigate('/orders/history');
+            setOpenDrawer(false);
+          }}
+        >
+          Lịch sử mua hàng
+        </p>
+
+        <Divider className="drawer-divider" />
+
+        {user?.role === 'ADMIN' && (
+          <>
+            <p
+              className="drawer-nav-item drawer-nav-item--admin"
               onClick={() => {
+                navigate('/admin');
                 setOpenDrawer(false);
-                navigate('/login');
               }}
             >
-              Đăng nhập ngay
-            </Button>
-          </div>
-        ) : (
-          <div className="drawer-user-card">
-            <Avatar size={46} src={getAvatarUrl(user?.avatar)} icon={<UserOutlined />} />
+              Trang quản trị Admin
+            </p>
 
-            <div className="drawer-user-card__info">
-              <h3>{user?.fullName}</h3>
-              <p>{user?.email}</p>
-            </div>
-          </div>
+            <Divider className="drawer-divider" />
+          </>
         )}
 
-        <div className="drawer-nav-list">
+        {isAuthenticated ? (
+          <p className="drawer-nav-item drawer-nav-item--logout" onClick={handleLogout}>
+            Đăng xuất
+          </p>
+        ) : (
           <p
             className="drawer-nav-item"
             onClick={() => {
-              navigate('/');
+              navigate('/login');
               setOpenDrawer(false);
             }}
           >
-            <HomeOutlined />
-            <span>Trang chủ</span>
+            Đăng nhập
           </p>
-
-          <Divider className="drawer-divider" />
-
-          {!isAuthenticated ? (
-            <>
-              <p
-                className="drawer-nav-item drawer-nav-item--login"
-                onClick={() => {
-                  setOpenDrawer(false);
-                  navigate('/login');
-                }}
-              >
-                <LoginOutlined />
-                <span>Đăng nhập</span>
-              </p>
-
-              <Divider className="drawer-divider" />
-            </>
-          ) : (
-            <>
-              <p
-                className="drawer-nav-item"
-                onClick={() => {
-                  navigate('/profile');
-                  setOpenDrawer(false);
-                }}
-              >
-                <ProfileOutlined />
-                <span>Quản lý tài khoản</span>
-              </p>
-
-              <Divider className="drawer-divider" />
-
-              <p
-                className="drawer-nav-item"
-                onClick={() => {
-                  navigate('/orders');
-                  setOpenDrawer(false);
-                }}
-              >
-                <ShoppingOutlined />
-                <span>Đơn hàng của tôi</span>
-              </p>
-
-              <Divider className="drawer-divider" />
-
-              <p
-                className="drawer-nav-item"
-                onClick={() => {
-                  navigate('/orders/history');
-                  setOpenDrawer(false);
-                }}
-              >
-                <HistoryOutlined />
-                <span>Lịch sử mua hàng</span>
-              </p>
-
-              <Divider className="drawer-divider" />
-
-              {user?.role === 'ADMIN' && (
-                <>
-                  <p
-                    className="drawer-nav-item drawer-nav-item--admin"
-                    onClick={() => {
-                      navigate('/admin');
-                      setOpenDrawer(false);
-                    }}
-                  >
-                    <DashboardOutlined />
-                    <span>Trang quản trị Admin</span>
-                  </p>
-
-                  <Divider className="drawer-divider" />
-                </>
-              )}
-
-              <p className="drawer-nav-item drawer-nav-item--logout" onClick={handleLogout}>
-                <LogoutOutlined />
-                <span>{isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}</span>
-              </p>
-            </>
-          )}
-        </div>
+        )}
       </Drawer>
     </>
   );
