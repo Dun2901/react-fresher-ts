@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Avatar,
   Button,
@@ -24,7 +24,7 @@ import {
   ShoppingOutlined,
   TruckOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { cancelOrderAPI, createVnpayPaymentUrlAPI, getMyOrdersAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './current.order.scss';
@@ -133,6 +133,7 @@ const getErrorMessage = (error: any, fallbackMessage: string) => {
 
 const CurrentOrderPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
@@ -149,6 +150,18 @@ const CurrentOrderPage = () => {
     key: String(size),
     label: `${size} đơn / trang`,
   }));
+
+  const handleViewBookDetail = useCallback(
+    (bookId: string) => {
+      navigate(`/book/${bookId}`, {
+        state: {
+          from: location.pathname + location.search,
+          fromLabel: 'đơn hàng đang xử lý',
+        },
+      });
+    },
+    [location.pathname, location.search, navigate],
+  );
 
   const scrollToPageTop = () => {
     requestAnimationFrame(() => {
@@ -168,7 +181,7 @@ const CurrentOrderPage = () => {
     setLoading(true);
 
     try {
-      const res = await getMyOrdersAPI(1, 100);
+      const res = await getMyOrdersAPI(1, 10);
       const allOrders = res.data?.result ?? [];
 
       const currentOrders = allOrders.filter((order: IOrder) =>
@@ -260,6 +273,8 @@ const CurrentOrderPage = () => {
                   <div
                     key={`${record._id}-${item.bookId}-${index}`}
                     className="current-order__desktop-product"
+                    onClick={() => handleViewBookDetail(item.bookId)}
+                    title="Xem chi tiết sản phẩm"
                   >
                     <Avatar
                       shape="square"
@@ -400,7 +415,7 @@ const CurrentOrderPage = () => {
         ),
       },
     ],
-    [cancelLoadingId, navigate, payingOrderId],
+    [cancelLoadingId, handleViewBookDetail, navigate, payingOrderId],
   );
 
   const renderMobileOrderCard = (order: IOrder) => {
@@ -434,6 +449,8 @@ const CurrentOrderPage = () => {
               <div
                 key={`${order._id}-${item.bookId}-${index}`}
                 className="current-order__mobile-product"
+                onClick={() => handleViewBookDetail(item.bookId)}
+                title="Xem chi tiết sản phẩm"
               >
                 <Avatar
                   shape="square"

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Row, Col, Button, InputNumber, Divider, Image, message, Spin, Empty, Tag } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -14,6 +14,8 @@ import {
   TruckOutlined,
   ShopOutlined,
   StarOutlined,
+  LeftOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import { getBookByIdAPI, addItemToCartAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
@@ -23,14 +25,27 @@ import './bookDetailPage.scss';
 
 const FALLBACK_BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600';
 
+const AUTH_MESSAGE_KEY = 'auth-message-warning';
+
+type BookDetailLocationState = {
+  from?: string;
+  fromLabel?: string;
+} | null;
+
 const BookDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { carts, setCarts } = useCurrentApp();
+  const location = useLocation();
+
+  const { isAuthenticated, carts, setCarts } = useCurrentApp();
+
+  const routeState = location.state as BookDetailLocationState;
+  const from = routeState?.from;
+  const fromLabel = routeState?.fromLabel;
 
   const [bookData, setBookData] = useState<IBookTable | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [currentImage, setCurrentImage] = useState<string>('');
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [buyQuantity, setBuyQuantity] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -55,8 +70,68 @@ const BookDetailPage: React.FC = () => {
     return Array.from(new Set(images));
   }, [bookData]);
 
+  const canSlideImages = allImages.length > 1;
+
   const availableQuantity = bookData?.quantity ?? 0;
   const isOutOfStock = availableQuantity <= 0;
+
+  const handleBack = () => {
+    if (location.key !== 'default') {
+      navigate(-1);
+      return;
+    }
+
+    if (from) {
+      navigate(from, { replace: true });
+      return;
+    }
+
+    navigate('/book', { replace: true });
+  };
+
+  const getBackButtonLabel = () => {
+    if (fromLabel) {
+      return `Quay lại ${fromLabel}`;
+    }
+
+    return 'Quay lại danh sách sách';
+  };
+
+  const handlePrevImage = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.stopPropagation();
+
+    if (!canSlideImages) {
+      return;
+    }
+
+    setCurrentImageIndex((prev) => {
+      if (prev <= 0) {
+        return allImages.length - 1;
+      }
+
+      return prev - 1;
+    });
+  };
+
+  const handleNextImage = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.stopPropagation();
+
+    if (!canSlideImages) {
+      return;
+    }
+
+    setCurrentImageIndex((prev) => {
+      if (prev >= allImages.length - 1) {
+        return 0;
+      }
+
+      return prev + 1;
+    });
+  };
+
+  const handleSelectImage = (index: number) => {
+    setCurrentImageIndex(index);
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -75,11 +150,8 @@ const BookDetailPage: React.FC = () => {
         const res = await getBookByIdAPI(id);
 
         if (res?.data) {
-          const book = res.data;
-          const firstImage = getBookImageUrl(book.thumbnail) || FALLBACK_BOOK_IMAGE;
-
-          setBookData(book);
-          setCurrentImage(firstImage);
+          setBookData(res.data);
+          setCurrentImageIndex(0);
           setBuyQuantity(1);
         }
       } catch (error) {
@@ -93,6 +165,12 @@ const BookDetailPage: React.FC = () => {
     fetchBookDetail();
   }, [id]);
 
+  useEffect(() => {
+    if (currentImageIndex > allImages.length - 1) {
+      setCurrentImageIndex(0);
+    }
+  }, [allImages.length, currentImageIndex]);
+
   const handleQuantityChange = (value: number | null) => {
     if (!bookData || isOutOfStock) {
       return;
@@ -105,8 +183,25 @@ const BookDetailPage: React.FC = () => {
   };
 
   const handleAddToCart = async (goToCart = false) => {
+    if (!isAuthenticated) {
+      message.open({
+        key: AUTH_MESSAGE_KEY,
+        type: 'warning',
+        content: goToCart
+          ? 'Bạn cần đăng nhập để mua sản phẩm.'
+          : 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.',
+        duration: 2,
+      });
+      return;
+    }
+
     if (!bookData || isOutOfStock) {
-      message.warning('Sách này hiện đã hết hàng.');
+      message.open({
+        key: 'book-stock-warning',
+        type: 'warning',
+        content: 'Sách này hiện đã hết hàng.',
+        duration: 2,
+      });
       return;
     }
 
@@ -117,10 +212,11 @@ const BookDetailPage: React.FC = () => {
 
       if (res?.data) {
         setCarts(res.data.items || []);
+
         message.success(`Đã thêm ${buyQuantity} cuốn vào giỏ hàng!`);
 
         if (goToCart) {
-          navigate('/cart');
+          navigate('/cart', { replace: true });
         }
       }
     } catch (error) {
@@ -149,8 +245,9 @@ const BookDetailPage: React.FC = () => {
     return (
       <div className="book-detail-status">
         <Empty description="Không tìm thấy sách yêu cầu" />
-        <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/book')}>
-          Quay lại danh sách sách
+
+        <Button type="primary" icon={<ArrowLeftOutlined />} onClick={handleBack}>
+          {getBackButtonLabel()}
         </Button>
       </div>
     );
@@ -159,9 +256,9 @@ const BookDetailPage: React.FC = () => {
   return (
     <div className="book-detail-page">
       <div className="detail-shell">
-        <button type="button" className="detail-back-btn" onClick={() => navigate('/book')}>
+        <button type="button" className="detail-back-btn" onClick={handleBack}>
           <ArrowLeftOutlined />
-          <span>Quay lại danh sách sách</span>
+          <span>{getBackButtonLabel()}</span>
         </button>
 
         <div className="detail-top-card">
@@ -169,12 +266,57 @@ const BookDetailPage: React.FC = () => {
             <Col xs={24} md={10} className="detail-gallery-col">
               <div className="detail-gallery-card">
                 <div className="main-image-wrapper">
-                  <Image
-                    src={currentImage || FALLBACK_BOOK_IMAGE}
-                    fallback={FALLBACK_BOOK_IMAGE}
-                    preview
-                    alt={bookData.mainText}
-                  />
+                  <div className="gallery-preview-group">
+                    <Image.PreviewGroup
+                      preview={{
+                        current: currentImageIndex,
+                        onChange: (current) => {
+                          setCurrentImageIndex(current);
+                        },
+                      }}
+                    >
+                      {allImages.map((imgUrl, index) => (
+                        <div
+                          key={`${imgUrl}-${index}`}
+                          className={`gallery-preview-item ${
+                            currentImageIndex === index ? 'gallery-preview-item--active' : ''
+                          }`}
+                        >
+                          <Image
+                            src={imgUrl}
+                            fallback={FALLBACK_BOOK_IMAGE}
+                            alt={`${bookData.mainText} - ảnh ${index + 1}`}
+                          />
+                        </div>
+                      ))}
+                    </Image.PreviewGroup>
+                  </div>
+
+                  {canSlideImages && (
+                    <>
+                      <button
+                        type="button"
+                        className="gallery-nav-btn gallery-nav-btn--prev"
+                        onClick={handlePrevImage}
+                        aria-label="Xem ảnh trước"
+                      >
+                        <LeftOutlined />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="gallery-nav-btn gallery-nav-btn--next"
+                        onClick={handleNextImage}
+                        aria-label="Xem ảnh tiếp theo"
+                      >
+                        <RightOutlined />
+                      </button>
+
+                      <div className="gallery-counter">
+                        {currentImageIndex + 1}/{allImages.length}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {allImages.length > 1 && (
@@ -183,8 +325,8 @@ const BookDetailPage: React.FC = () => {
                       <button
                         type="button"
                         key={`${imgUrl}-${idx}`}
-                        className={`thumb-item ${currentImage === imgUrl ? 'active' : ''}`}
-                        onClick={() => setCurrentImage(imgUrl)}
+                        className={`thumb-item ${currentImageIndex === idx ? 'active' : ''}`}
+                        onClick={() => handleSelectImage(idx)}
                         aria-label={`Xem ảnh sách ${idx + 1}`}
                       >
                         <img src={imgUrl} alt={`Ảnh sách ${idx + 1}`} />

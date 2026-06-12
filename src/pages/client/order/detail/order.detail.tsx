@@ -29,12 +29,7 @@ import {
   WalletOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  cancelOrderAPI,
-  createVnpayPaymentUrlAPI,
-  getHistoryOrderByIdAPI,
-  getOrderByIdAPI,
-} from '@/services/api';
+import { cancelOrderAPI, createVnpayPaymentUrlAPI, getMyOrderByIdAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './order.detail.scss';
 
@@ -244,27 +239,13 @@ const OrderDetailPage = () => {
     setLoading(true);
 
     try {
-      let detail: IOrder | null = null;
+      const res = await getMyOrderByIdAPI(id);
 
-      try {
-        const res = await getOrderByIdAPI(id);
-
-        if (res.error) {
-          throw res;
-        }
-
-        detail = res.data ?? null;
-      } catch {
-        const historyRes = await getHistoryOrderByIdAPI(id);
-
-        if (historyRes.error) {
-          throw historyRes;
-        }
-
-        detail = historyRes.data ?? null;
+      if (res.error) {
+        throw res;
       }
 
-      setOrder(detail);
+      setOrder(res.data ?? null);
     } catch (error: any) {
       setOrder(null);
       message.error(getErrorMessage(error, 'Không thể tải chi tiết đơn hàng'));
