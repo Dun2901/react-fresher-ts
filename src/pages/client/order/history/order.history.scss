@@ -158,9 +158,24 @@
 
   &__desktop-product {
     min-width: 0;
+    margin-left: -4px;
+    padding: 4px;
     display: flex;
     align-items: center;
     gap: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      transform 0.2s ease;
+
+    &:hover {
+      background: #f0fff4;
+    }
+
+    &:active {
+      transform: scale(0.99);
+    }
   }
 
   &__product-image {
@@ -340,9 +355,22 @@
 
   &__mobile-product {
     min-width: 0;
+    margin-left: -5px;
+    margin-right: -5px;
+    padding: 5px;
     display: flex;
     align-items: center;
     gap: 9px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      transform 0.2s ease;
+
+    &:active {
+      background: #f0fff4;
+      transform: scale(0.99);
+    }
   }
 
   &__mobile-image {

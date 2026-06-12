@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  Checkbox,
   Col,
   Divider,
   Empty,
@@ -21,7 +22,7 @@ import {
   ShoppingOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 import { useCurrentApp } from 'components/context/app.context.tsx';
@@ -31,11 +32,14 @@ import './cartPage.scss';
 
 const CartPage: React.FC = () => {
   const { carts, setCarts } = useCurrentApp();
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [updatingBookId, setUpdatingBookId] = useState<string | null>(null);
   const [clearingCart, setClearingCart] = useState(false);
   const [draftQuantities, setDraftQuantities] = useState<Record<string, number>>({});
+  const [selectedBookIds, setSelectedBookIds] = useState<string[]>([]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -50,13 +54,39 @@ const CartPage: React.FC = () => {
     setDraftQuantities(nextDraftQuantities);
   }, [carts]);
 
+  useEffect(() => {
+    const eligibleBookIds = carts
+      .filter((item) => item.bookId.quantity > 0 && item.quantity <= item.bookId.quantity)
+      .map((item) => item.bookId._id);
+
+    setSelectedBookIds((prev) => prev.filter((bookId) => eligibleBookIds.includes(bookId)));
+  }, [carts]);
+
+  const selectedBookIdSet = useMemo(() => {
+    return new Set(selectedBookIds);
+  }, [selectedBookIds]);
+
   const totalItems = useMemo(() => {
     return carts.reduce((total, item) => total + item.quantity, 0);
   }, [carts]);
 
-  const totalPrice = useMemo(() => {
-    return carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
+  const eligibleBookIds = useMemo(() => {
+    return carts
+      .filter((item) => item.bookId.quantity > 0 && item.quantity <= item.bookId.quantity)
+      .map((item) => item.bookId._id);
   }, [carts]);
+
+  const selectedCartItems = useMemo(() => {
+    return carts.filter((item) => selectedBookIdSet.has(item.bookId._id));
+  }, [carts, selectedBookIdSet]);
+
+  const selectedTotalItems = useMemo(() => {
+    return selectedCartItems.reduce((total, item) => total + item.quantity, 0);
+  }, [selectedCartItems]);
+
+  const selectedTotalPrice = useMemo(() => {
+    return selectedCartItems.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
+  }, [selectedCartItems]);
 
   const stockWarningItems = useMemo(() => {
     return carts.filter(
@@ -64,8 +94,101 @@ const CartPage: React.FC = () => {
     );
   }, [carts]);
 
+  const selectedStockWarningItems = useMemo(() => {
+    return selectedCartItems.filter(
+      (item) => item.quantity > item.bookId.quantity || item.bookId.quantity <= 0,
+    );
+  }, [selectedCartItems]);
+
   const hasStockWarning = stockWarningItems.length > 0;
-  const isCheckoutDisabled = hasStockWarning || Boolean(updatingBookId) || clearingCart;
+  const hasSelectedStockWarning = selectedStockWarningItems.length > 0;
+
+  const isAllSelected =
+    eligibleBookIds.length > 0 && eligibleBookIds.every((bookId) => selectedBookIdSet.has(bookId));
+
+  const isIndeterminate =
+    selectedBookIds.length > 0 &&
+    eligibleBookIds.some((bookId) => selectedBookIdSet.has(bookId)) &&
+    !isAllSelected;
+
+  const isCheckoutDisabled =
+    selectedCartItems.length === 0 ||
+    hasSelectedStockWarning ||
+    Boolean(updatingBookId) ||
+    clearingCart;
+
+  const handleBack = () => {
+    navigate('/book', { replace: true });
+  };
+
+  const handleViewBookDetail = (bookId: string) => {
+    navigate(`/book/${bookId}`, {
+      state: {
+        from: location.pathname + location.search,
+        fromLabel: 'giỏ hàng',
+      },
+    });
+  };
+
+  const handleToggleSelectAll = (checked: boolean) => {
+    setSelectedBookIds(checked ? eligibleBookIds : []);
+  };
+
+  const handleToggleSelectItem = (bookId: string, checked: boolean) => {
+    setSelectedBookIds((prev) => {
+      if (checked) {
+        return Array.from(new Set([...prev, bookId]));
+      }
+
+      return prev.filter((id) => id !== bookId);
+    });
+  };
+
+  const handleToggleCartItem = (
+    item: ICartItem,
+    isSelected: boolean,
+    isCurrentItemLoading: boolean,
+  ) => {
+    const bookId = item.bookId._id;
+    const isOutOfStock = item.bookId.quantity <= 0;
+    const isOverStock = item.quantity > item.bookId.quantity;
+
+    if (isCurrentItemLoading) {
+      return;
+    }
+
+    if (isOutOfStock) {
+      message.warning('Sản phẩm này hiện đã hết hàng, không thể chọn để đặt hàng.');
+      return;
+    }
+
+    if (isOverStock) {
+      message.warning('Số lượng sản phẩm này đang vượt quá tồn kho, vui lòng cập nhật lại.');
+      return;
+    }
+
+    handleToggleSelectItem(bookId, !isSelected);
+  };
+
+  const handleCheckout = () => {
+    if (selectedCartItems.length === 0) {
+      message.warning('Vui lòng chọn ít nhất 1 sản phẩm để đặt hàng.');
+      return;
+    }
+
+    if (hasSelectedStockWarning) {
+      message.warning('Sản phẩm đã chọn có số lượng không hợp lệ. Vui lòng cập nhật lại.');
+      return;
+    }
+
+    sessionStorage.setItem('checkout_selected_book_ids', JSON.stringify(selectedBookIds));
+
+    navigate('/checkout', {
+      state: {
+        selectedBookIds,
+      },
+    });
+  };
 
   const getErrorMessage = (error: unknown, fallbackMessage: string) => {
     if (axios.isAxiosError(error)) {
@@ -99,7 +222,10 @@ const CartPage: React.FC = () => {
 
     if (currentItem.bookId.quantity <= 0) {
       message.warning('Sách này hiện đã hết hàng.');
-      setDraftQuantities((prev) => ({ ...prev, [bookId]: currentItem.quantity }));
+      setDraftQuantities((prev) => ({
+        ...prev,
+        [bookId]: currentItem.quantity,
+      }));
       return;
     }
 
@@ -107,7 +233,10 @@ const CartPage: React.FC = () => {
       message.warning(
         `Số lượng vượt quá tồn kho. Hiện còn ${currentItem.bookId.quantity} sản phẩm.`,
       );
-      setDraftQuantities((prev) => ({ ...prev, [bookId]: currentItem.quantity }));
+      setDraftQuantities((prev) => ({
+        ...prev,
+        [bookId]: currentItem.quantity,
+      }));
       return;
     }
 
@@ -121,7 +250,10 @@ const CartPage: React.FC = () => {
       }
     } catch (error) {
       message.error(getErrorMessage(error, 'Không thể cập nhật số lượng!'));
-      setDraftQuantities((prev) => ({ ...prev, [bookId]: currentItem.quantity }));
+      setDraftQuantities((prev) => ({
+        ...prev,
+        [bookId]: currentItem.quantity,
+      }));
     } finally {
       setUpdatingBookId(null);
     }
@@ -187,6 +319,8 @@ const CartPage: React.FC = () => {
 
       if (res?.data) {
         setCarts(res.data.items || []);
+        setSelectedBookIds([]);
+        sessionStorage.removeItem('checkout_selected_book_ids');
         message.success('Đã xóa toàn bộ giỏ hàng!');
       }
     } catch (error) {
@@ -200,6 +334,11 @@ const CartPage: React.FC = () => {
     return (
       <div className="cart-empty-state">
         <div className="cart-empty-state__card">
+          <button type="button" className="cart-empty-state__back" onClick={handleBack}>
+            <ArrowLeftOutlined />
+            <span>Tiếp tục mua sắm</span>
+          </button>
+
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
@@ -213,7 +352,7 @@ const CartPage: React.FC = () => {
           <Button
             type="primary"
             icon={<ShoppingOutlined />}
-            onClick={() => navigate('/book')}
+            onClick={() => navigate('/book', { replace: true })}
             className="cart-empty-state__btn"
           >
             Mua sách ngay
@@ -226,11 +365,20 @@ const CartPage: React.FC = () => {
   return (
     <div className="cart-page-wrapper">
       <div className="cart-page-header">
-        <div>
+        <div className="cart-page-header__mobile-title-row">
+          <button type="button" className="cart-page-header__mobile-back" onClick={handleBack}>
+            <ArrowLeftOutlined />
+          </button>
+
+          <h2>Giỏ hàng của bạn</h2>
+        </div>
+
+        <div className="cart-page-header__title-box">
           <h2 className="cart-page-header__title">
             <ShoppingCartOutlined />
             Giỏ hàng
           </h2>
+
           <p className="cart-page-header__subtitle">
             Có {carts.length} sản phẩm, tổng {totalItems} cuốn sách trong giỏ hàng
           </p>
@@ -239,7 +387,7 @@ const CartPage: React.FC = () => {
         <Space wrap className="cart-page-header__actions">
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/book')}
+            onClick={handleBack}
             className="cart-page-header__back-btn"
           >
             Tiếp tục mua sắm
@@ -288,17 +436,30 @@ const CartPage: React.FC = () => {
               const isCurrentItemLoading = updatingBookId === bookId;
               const isOutOfStock = item.bookId.quantity <= 0;
               const isOverStock = item.quantity > item.bookId.quantity;
+              const isSelectable = !isOutOfStock && !isOverStock;
+              const isSelected = selectedBookIdSet.has(bookId);
               const itemTotalPrice = item.quantity * item.priceAtAdd;
 
               return (
                 <div
                   key={bookId}
-                  className={`cart-item-card ${isOverStock || isOutOfStock ? 'cart-item-card--warning' : ''}`}
+                  className={`cart-item-card ${
+                    isOverStock || isOutOfStock ? 'cart-item-card--warning' : ''
+                  } ${isSelected ? 'cart-item-card--selected' : ''}`}
+                  onClick={() => handleToggleCartItem(item, isSelected, isCurrentItemLoading)}
                 >
                   <div
-                    className="cart-item-card__image-wrap"
-                    onClick={() => navigate(`/book/${bookId}`)}
+                    className="cart-item-card__checkbox"
+                    onClick={(event) => event.stopPropagation()}
                   >
+                    <Checkbox
+                      checked={isSelected}
+                      disabled={!isSelectable || isCurrentItemLoading}
+                      onChange={(event) => handleToggleSelectItem(bookId, event.target.checked)}
+                    />
+                  </div>
+
+                  <div className="cart-item-card__image-wrap">
                     <img
                       src={getBookImageUrl(item.bookId.thumbnail)}
                       alt={item.bookId.mainText}
@@ -311,7 +472,10 @@ const CartPage: React.FC = () => {
                       <div className="cart-item-card__info">
                         <h3
                           className="cart-item-card__title"
-                          onClick={() => navigate(`/book/${bookId}`)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleViewBookDetail(bookId);
+                          }}
                         >
                           {item.bookId.mainText}
                         </h3>
@@ -331,56 +495,66 @@ const CartPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <Popconfirm
-                        title="Xóa sản phẩm?"
-                        description="Bạn có chắc muốn xóa sản phẩm này không?"
-                        okText="Xóa"
-                        cancelText="Hủy"
-                        okButtonProps={{ danger: true }}
-                        onConfirm={() => handleRemoveItem(bookId)}
+                      <div
+                        className="cart-item-card__delete-area"
+                        onClick={(event) => event.stopPropagation()}
                       >
-                        <Button
-                          type="text"
-                          danger
-                          icon={<DeleteOutlined />}
-                          disabled={isCurrentItemLoading}
-                          loading={isCurrentItemLoading}
-                          className="cart-item-card__delete-btn"
+                        <Popconfirm
+                          title="Xóa sản phẩm?"
+                          description="Bạn có chắc muốn xóa sản phẩm này không?"
+                          okText="Xóa"
+                          cancelText="Hủy"
+                          okButtonProps={{ danger: true }}
+                          onConfirm={() => handleRemoveItem(bookId)}
                         >
-                          Xóa
-                        </Button>
-                      </Popconfirm>
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            disabled={isCurrentItemLoading}
+                            loading={isCurrentItemLoading}
+                            className="cart-item-card__delete-btn"
+                          >
+                            Xóa
+                          </Button>
+                        </Popconfirm>
+                      </div>
                     </div>
 
                     <div className="cart-item-card__bottom">
-                      <Space.Compact className="cart-quantity-control">
-                        <Button
-                          icon={<MinusOutlined />}
-                          disabled={isCurrentItemLoading || item.quantity <= 1}
-                          loading={isCurrentItemLoading}
-                          onClick={() => handleDecreaseQuantity(item)}
-                        />
+                      <div
+                        className="cart-item-card__quantity-area"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <Space.Compact className="cart-quantity-control">
+                          <Button
+                            icon={<MinusOutlined />}
+                            disabled={isCurrentItemLoading || item.quantity <= 1}
+                            loading={isCurrentItemLoading}
+                            onClick={() => handleDecreaseQuantity(item)}
+                          />
 
-                        <InputNumber
-                          min={1}
-                          value={draftQuantities[bookId] ?? item.quantity}
-                          disabled={isCurrentItemLoading}
-                          controls={false}
-                          onChange={(value) => handleDraftQuantityChange(bookId, value)}
-                          onBlur={() => handleCommitDraftQuantity(item)}
-                          onPressEnter={() => handleCommitDraftQuantity(item)}
-                        />
+                          <InputNumber
+                            min={1}
+                            value={draftQuantities[bookId] ?? item.quantity}
+                            disabled={isCurrentItemLoading}
+                            controls={false}
+                            onChange={(value) => handleDraftQuantityChange(bookId, value)}
+                            onBlur={() => handleCommitDraftQuantity(item)}
+                            onPressEnter={() => handleCommitDraftQuantity(item)}
+                          />
 
-                        <Button
-                          icon={<PlusOutlined />}
-                          disabled={
-                            isCurrentItemLoading ||
-                            isOutOfStock ||
-                            item.quantity >= item.bookId.quantity
-                          }
-                          onClick={() => handleIncreaseQuantity(item)}
-                        />
-                      </Space.Compact>
+                          <Button
+                            icon={<PlusOutlined />}
+                            disabled={
+                              isCurrentItemLoading ||
+                              isOutOfStock ||
+                              item.quantity >= item.bookId.quantity
+                            }
+                            onClick={() => handleIncreaseQuantity(item)}
+                          />
+                        </Space.Compact>
+                      </div>
 
                       <div className="cart-item-card__total">
                         <span>Thành tiền</span>
@@ -398,19 +572,30 @@ const CartPage: React.FC = () => {
           <Card className="cart-summary-card">
             <div className="cart-summary-title">Tóm tắt đơn hàng</div>
 
+            <div className="cart-summary-select-all">
+              <Checkbox
+                checked={isAllSelected}
+                indeterminate={isIndeterminate}
+                disabled={eligibleBookIds.length === 0}
+                onChange={(event) => handleToggleSelectAll(event.target.checked)}
+              >
+                Chọn tất cả sản phẩm hợp lệ
+              </Checkbox>
+            </div>
+
             <div className="cart-summary-row">
-              <span className="cart-summary-label">Số sản phẩm</span>
-              <span>{carts.length}</span>
+              <span className="cart-summary-label">Đã chọn</span>
+              <span>{selectedCartItems.length} sản phẩm</span>
             </div>
 
             <div className="cart-summary-row">
               <span className="cart-summary-label">Tổng số lượng</span>
-              <span>{totalItems}</span>
+              <span>{selectedTotalItems}</span>
             </div>
 
             <div className="cart-summary-row">
               <span className="cart-summary-label">Tạm tính</span>
-              <span>{formatCurrency(totalPrice)}</span>
+              <span>{formatCurrency(selectedTotalPrice)}</span>
             </div>
 
             <div className="cart-summary-row">
@@ -422,15 +607,17 @@ const CartPage: React.FC = () => {
 
             <div className="cart-summary-total-row">
               <span className="cart-summary-total-label">Tổng tiền</span>
-              <span className="cart-summary-total-amount">{formatCurrency(totalPrice)}</span>
+              <span className="cart-summary-total-amount">
+                {formatCurrency(selectedTotalPrice)}
+              </span>
             </div>
 
-            {hasStockWarning && (
+            {hasSelectedStockWarning && (
               <Alert
                 type="warning"
                 showIcon
                 className="cart-summary-alert"
-                message="Vui lòng cập nhật lại số lượng trước khi đặt hàng."
+                message="Vui lòng cập nhật lại số lượng sản phẩm đã chọn."
               />
             )}
 
@@ -440,7 +627,7 @@ const CartPage: React.FC = () => {
               block
               disabled={isCheckoutDisabled}
               className="cart-order-btn"
-              onClick={() => navigate('/checkout')}
+              onClick={handleCheckout}
             >
               Đặt hàng ngay
             </Button>
@@ -449,18 +636,29 @@ const CartPage: React.FC = () => {
       </Row>
 
       <div className="mobile-cart-summary-bar">
+        <div className="mobile-cart-summary-bar__select">
+          <Checkbox
+            checked={isAllSelected}
+            indeterminate={isIndeterminate}
+            disabled={eligibleBookIds.length === 0}
+            onChange={(event) => handleToggleSelectAll(event.target.checked)}
+          >
+            Chọn tất cả
+          </Checkbox>
+        </div>
+
         <div className="mobile-cart-summary-bar__price">
-          <span>Tổng tiền</span>
-          <b>{formatCurrency(totalPrice)}</b>
+          <span>Tạm tính</span>
+          <b>{formatCurrency(selectedTotalPrice)}</b>
         </div>
 
         <Button
           type="primary"
           disabled={isCheckoutDisabled}
           className="mobile-cart-summary-bar__btn"
-          onClick={() => navigate('/checkout')}
+          onClick={handleCheckout}
         >
-          Đặt hàng
+          Mua ngay
         </Button>
       </div>
     </div>

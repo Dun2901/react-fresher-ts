@@ -159,6 +159,7 @@ declare global {
     shippingAddress: IShippingAddress;
     paymentMethod: 'COD' | 'ONLINE';
     note?: string;
+    selectedBookIds?: string[];
   }
 
   // ------------DASHBOARD----------------------

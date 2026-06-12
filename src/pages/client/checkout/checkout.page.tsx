@@ -18,18 +18,15 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined,
-  CheckCircleOutlined,
   CreditCardOutlined,
   EnvironmentOutlined,
-  HomeOutlined,
   LoadingOutlined,
   PhoneOutlined,
-  ShoppingCartOutlined,
   UserOutlined,
   WalletOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import { checkoutAPI, createVnpayPaymentUrlAPI } from '@/services/api';
@@ -47,35 +44,89 @@ interface IOrderFormValues {
   note?: string;
 }
 
+type CheckoutLocationState = {
+  selectedBookIds?: string[];
+} | null;
+
+const getSelectedBookIdsFromStorage = () => {
+  try {
+    const rawSelectedBookIds = sessionStorage.getItem('checkout_selected_book_ids');
+
+    if (!rawSelectedBookIds) {
+      return [];
+    }
+
+    const parsedSelectedBookIds = JSON.parse(rawSelectedBookIds);
+
+    return Array.isArray(parsedSelectedBookIds) ? parsedSelectedBookIds : [];
+  } catch {
+    return [];
+  }
+};
+
 const CheckoutPage: React.FC = () => {
-  const { carts, setCarts } = useCurrentApp();
+  const { user, carts, setCarts } = useCurrentApp();
+
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [form] = Form.useForm<IOrderFormValues>();
+
+  const locationState = location.state as CheckoutLocationState;
 
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [isRedirectingPayment, setIsRedirectingPayment] = useState<boolean>(false);
   const [createdOrder, setCreatedOrder] = useState<IOrder | null>(null);
+  const [selectedBookIds] = useState<string[]>(() => {
+    if (locationState?.selectedBookIds?.length) {
+      return locationState.selectedBookIds;
+    }
+
+    return getSelectedBookIdsFromStorage();
+  });
+
+  const hasSelectedBookIds = selectedBookIds.length > 0;
+
+  const selectedBookIdSet = useMemo(() => {
+    return new Set(selectedBookIds);
+  }, [selectedBookIds]);
+
+  const checkoutItems = useMemo(() => {
+    if (!hasSelectedBookIds) {
+      return carts;
+    }
+
+    return carts.filter((item) => selectedBookIdSet.has(item.bookId._id));
+  }, [carts, hasSelectedBookIds, selectedBookIdSet]);
+
+  const totalItems = useMemo(() => {
+    return checkoutItems.reduce((total, item) => total + item.quantity, 0);
+  }, [checkoutItems]);
+
+  const totalPrice = useMemo(() => {
+    return checkoutItems.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
+  }, [checkoutItems]);
+
+  const stockWarningItems = useMemo(() => {
+    return checkoutItems.filter(
+      (item) => item.quantity > item.bookId.quantity || item.bookId.quantity <= 0,
+    );
+  }, [checkoutItems]);
+
+  const hasStockWarning = stockWarningItems.length > 0;
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
 
-  const totalItems = useMemo(() => {
-    return carts.reduce((total, item) => total + item.quantity, 0);
-  }, [carts]);
-
-  const totalPrice = useMemo(() => {
-    return carts.reduce((total, item) => total + item.quantity * item.priceAtAdd, 0);
-  }, [carts]);
-
-  const stockWarningItems = useMemo(() => {
-    return carts.filter(
-      (item) => item.quantity > item.bookId.quantity || item.bookId.quantity <= 0,
-    );
-  }, [carts]);
-
-  const hasStockWarning = stockWarningItems.length > 0;
+  useEffect(() => {
+    form.setFieldsValue({
+      fullName: user?.fullName || '',
+      phone: user?.phone || '',
+      paymentMethod: 'COD',
+    });
+  }, [form, user]);
 
   const getCheckoutErrorMessage = (error: any) => {
     const responseMessage = error?.response?.data?.message || error?.response?.data?.error?.message;
@@ -88,6 +139,15 @@ const CheckoutPage: React.FC = () => {
   };
 
   const onFinishOrder = async (values: IOrderFormValues) => {
+    if (checkoutItems.length === 0) {
+      notification.warning({
+        message: 'Không thể đặt hàng',
+        description: 'Vui lòng quay lại giỏ hàng và chọn sản phẩm cần mua.',
+        placement: 'topRight',
+      });
+      return;
+    }
+
     if (hasStockWarning) {
       notification.warning({
         message: 'Không thể đặt hàng',
@@ -107,6 +167,7 @@ const CheckoutPage: React.FC = () => {
       },
       paymentMethod: values.paymentMethod,
       note: values.note,
+      selectedBookIds: hasSelectedBookIds ? selectedBookIds : undefined,
     };
 
     try {
@@ -134,7 +195,14 @@ const CheckoutPage: React.FC = () => {
 
       message.success(res.message || 'Đặt hàng thành công!');
       setCreatedOrder(order);
-      setCarts([]);
+
+      if (hasSelectedBookIds) {
+        setCarts((prev) => prev.filter((item) => !selectedBookIdSet.has(item.bookId._id)));
+      } else {
+        setCarts([]);
+      }
+
+      sessionStorage.removeItem('checkout_selected_book_ids');
       setIsSuccess(true);
     } catch (error: any) {
       setIsRedirectingPayment(false);
@@ -211,7 +279,7 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
-  if (carts.length === 0) {
+  if (carts.length === 0 || checkoutItems.length === 0) {
     return (
       <div className="checkout-status-page">
         <div className="checkout-empty-card">
@@ -219,14 +287,14 @@ const CheckoutPage: React.FC = () => {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               <div className="checkout-empty-text">
-                <h3>Giỏ hàng của bạn đang trống</h3>
-                <p>Vui lòng chọn sản phẩm trước khi đặt hàng.</p>
+                <h3>Chưa có sản phẩm để đặt hàng</h3>
+                <p>Vui lòng quay lại giỏ hàng và chọn sản phẩm cần mua.</p>
               </div>
             }
           />
 
-          <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/book')}>
-            Quay lại mua sách
+          <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/cart')}>
+            Quay lại giỏ hàng
           </Button>
         </div>
       </div>
@@ -393,7 +461,7 @@ const CheckoutPage: React.FC = () => {
           <Col xs={24} lg={9}>
             <Card title="Chi tiết đơn hàng" className="checkout-summary-card">
               <div className="checkout-cart-list">
-                {carts.map((item) => {
+                {checkoutItems.map((item) => {
                   const isOverStock =
                     item.quantity > item.bookId.quantity || item.bookId.quantity <= 0;
 
@@ -427,7 +495,7 @@ const CheckoutPage: React.FC = () => {
 
               <div className="checkout-price-row">
                 <span>Số sản phẩm</span>
-                <b>{carts.length}</b>
+                <b>{checkoutItems.length}</b>
               </div>
 
               <div className="checkout-price-row">

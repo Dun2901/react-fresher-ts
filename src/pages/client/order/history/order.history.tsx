@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Avatar,
   Button,
@@ -24,7 +24,7 @@ import {
   ReloadOutlined,
   ShoppingOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getMyHistoryOrdersAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './order.history.scss';
@@ -129,6 +129,7 @@ const getErrorMessage = (error: any, fallbackMessage: string) => {
 
 const OrderHistoryPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
@@ -144,6 +145,18 @@ const OrderHistoryPage = () => {
     key: String(size),
     label: `${size} đơn / trang`,
   }));
+
+  const handleViewBookDetail = useCallback(
+    (bookId: string) => {
+      navigate(`/book/${bookId}`, {
+        state: {
+          from: location.pathname + location.search,
+          fromLabel: 'lịch sử mua hàng',
+        },
+      });
+    },
+    [location.pathname, location.search, navigate],
+  );
 
   const scrollToPageTop = () => {
     requestAnimationFrame(() => {
@@ -235,6 +248,8 @@ const OrderHistoryPage = () => {
                   <div
                     key={`${record._id}-${item.bookId}-${index}`}
                     className="order-history__desktop-product"
+                    onClick={() => handleViewBookDetail(item.bookId)}
+                    title="Xem chi tiết sản phẩm"
                   >
                     <Avatar
                       shape="square"
@@ -336,7 +351,7 @@ const OrderHistoryPage = () => {
         ),
       },
     ],
-    [navigate],
+    [handleViewBookDetail, navigate],
   );
 
   const renderMobileOrderCard = (order: IOrder) => {
@@ -373,6 +388,8 @@ const OrderHistoryPage = () => {
               <div
                 key={`${order._id}-${item.bookId}-${index}`}
                 className="order-history__mobile-product"
+                onClick={() => handleViewBookDetail(item.bookId)}
+                title="Xem chi tiết sản phẩm"
               >
                 <Avatar
                   shape="square"

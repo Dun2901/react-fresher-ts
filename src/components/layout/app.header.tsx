@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { ReadOutlined, SearchOutlined } from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
-import { Divider, Badge, Drawer, Avatar, Popover, Empty, Input, Dropdown, Space } from 'antd';
+import { Divider, Badge, Drawer, Avatar, Input, Dropdown, Space } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import './app.header.scss';
 import { useCurrentApp } from 'components/context/app.context';
 import { logoutAPI } from '@/services/api';
-import { getAvatarUrl, formatCurrency } from '@/services/helper';
+import { getAvatarUrl } from '@/services/helper';
 
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [openCartPopover, setOpenCartPopover] = useState(false);
 
   const { isAuthenticated, user, setUser, setIsAuthenticated, carts } = useCurrentApp();
 
@@ -24,9 +23,12 @@ const AppHeader = () => {
       setIsAuthenticated(false);
       localStorage.removeItem('access_token');
       setOpenDrawer(false);
-      setOpenCartPopover(false);
       navigate('/');
     }
+  };
+
+  const handleGoToCart = () => {
+    navigate('/cart');
   };
 
   const items = [
@@ -59,42 +61,6 @@ const AppHeader = () => {
     });
   }
 
-  const contentPopover = () => (
-    <div className="pop-cart-body">
-      <div className="pop-cart-content">
-        {carts?.map((item, index) => (
-          <div className="pop-cart-book" key={`pop-book-${index}`}>
-            <img
-              src={`${import.meta.env.VITE_BACKEND_URL}/images/book/${item?.bookId?.thumbnail}`}
-              className="pop-cart-book__img"
-              alt={item?.bookId?.mainText}
-            />
-
-            <div className="pop-cart-book__name">{item?.bookId?.mainText}</div>
-
-            <div className="pop-cart-book__price">{formatCurrency(item?.priceAtAdd ?? 0)}</div>
-          </div>
-        ))}
-      </div>
-
-      {carts && carts.length > 0 ? (
-        <div className="pop-cart-footer">
-          <button
-            className="pop-cart-footer__btn"
-            onClick={() => {
-              setOpenCartPopover(false);
-              navigate('/cart');
-            }}
-          >
-            Xem giỏ hàng
-          </button>
-        </div>
-      ) : (
-        <Empty description="Không có sản phẩm trong giỏ hàng" />
-      )}
-    </div>
-  );
-
   return (
     <>
       <div className="header-container-premium">
@@ -121,25 +87,15 @@ const AppHeader = () => {
 
           <div className="navbar-right">
             <nav className="navigation-actions">
-              <div className="action-item-cart">
-                <Popover
-                  placement="bottomRight"
-                  title={<span style={{ fontWeight: 600 }}>Sản phẩm mới thêm</span>}
-                  content={contentPopover}
-                  arrow={true}
-                  trigger="click"
-                  open={openCartPopover}
-                  onOpenChange={setOpenCartPopover}
+              <div className="action-item-cart" onClick={handleGoToCart}>
+                <Badge
+                  count={carts?.length ?? 0}
+                  size="small"
+                  showZero
+                  style={{ cursor: 'pointer' }}
                 >
-                  <Badge
-                    count={carts?.length ?? 0}
-                    size="small"
-                    showZero
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <FiShoppingCart className="icon-cart-svg" />
-                  </Badge>
-                </Popover>
+                  <FiShoppingCart className="icon-cart-svg" />
+                </Badge>
               </div>
 
               <Divider type="vertical" className="desktop-divider" />
