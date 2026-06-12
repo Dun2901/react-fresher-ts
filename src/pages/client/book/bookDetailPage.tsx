@@ -24,6 +24,8 @@ import axios from 'axios';
 
 import './bookDetailPage.scss';
 import RelatedBooks from './RelatedBooks';
+import { saveRecentlyViewedBook } from '@/utils/recentlyViewed';
+import RecentlyViewedBooks from './RecentlyViewedBooks';
 
 const FALLBACK_BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600';
 
@@ -212,6 +214,12 @@ const BookDetailPage: React.FC = () => {
 
     fetchRelatedBooks();
   }, [bookData?._id, bookData?.category?._id]);
+
+  useEffect(() => {
+    if (bookData?._id) {
+      saveRecentlyViewedBook(bookData);
+    }
+  }, [bookData]);
 
   const handleQuantityChange = (value: number | null) => {
     if (!bookData || isOutOfStock) {
@@ -625,6 +633,10 @@ const BookDetailPage: React.FC = () => {
             Mua ngay
           </Button>
         </div>
+      </div>
+
+      <div className="book-detail-page__container">
+        <RecentlyViewedBooks currentBookId={bookData?._id} />
       </div>
     </div>
   );
