@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Row, Col, Button, InputNumber, Divider, Image, message, Spin, Empty, Tag } from 'antd';
 import {
@@ -17,11 +17,13 @@ import {
   LeftOutlined,
   RightOutlined,
 } from '@ant-design/icons';
-import { getBookByIdAPI, addItemToCartAPI } from '@/services/api';
+import { getBookByIdAPI, addItemToCartAPI, getBooksAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import axios from 'axios';
+
 import './bookDetailPage.scss';
+import RelatedBooks from './RelatedBooks';
 
 const FALLBACK_BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600';
 
@@ -36,6 +38,7 @@ const BookDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const touchStartXRef = useRef<number | null>(null);
 
   const { isAuthenticated, carts, setCarts } = useCurrentApp();
 
@@ -45,9 +48,11 @@ const BookDetailPage: React.FC = () => {
 
   const [bookData, setBookData] = useState<IBookTable | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
   const [buyQuantity, setBuyQuantity] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [relatedBooks, setRelatedBooks] = useState<IBookTable[]>([]);
+  const [isRelatedLoading, setIsRelatedLoading] = useState<boolean>(false);
 
   const isInCart = useMemo(() => {
     if (!bookData) {
@@ -70,23 +75,19 @@ const BookDetailPage: React.FC = () => {
     return Array.from(new Set(images));
   }, [bookData]);
 
-  const canSlideImages = allImages.length > 1;
+  const currentImage = allImages[activeImageIndex] || FALLBACK_BOOK_IMAGE;
+  const hasMultipleImages = allImages.length > 1;
 
   const availableQuantity = bookData?.quantity ?? 0;
   const isOutOfStock = availableQuantity <= 0;
 
   const handleBack = () => {
-    if (location.key !== 'default') {
-      navigate(-1);
-      return;
-    }
-
     if (from) {
-      navigate(from, { replace: true });
+      navigate(from);
       return;
     }
 
-    navigate('/book', { replace: true });
+    navigate('/book');
   };
 
   const getBackButtonLabel = () => {
@@ -97,45 +98,55 @@ const BookDetailPage: React.FC = () => {
     return 'Quay lại danh sách sách';
   };
 
-  const handlePrevImage = (event?: React.MouseEvent<HTMLButtonElement>) => {
-    event?.stopPropagation();
-
-    if (!canSlideImages) {
+  const handleChangeImage = (nextIndex: number) => {
+    if (!allImages.length) {
       return;
     }
 
-    setCurrentImageIndex((prev) => {
-      if (prev <= 0) {
-        return allImages.length - 1;
-      }
-
-      return prev - 1;
-    });
+    const safeIndex = (nextIndex + allImages.length) % allImages.length;
+    setActiveImageIndex(safeIndex);
   };
 
-  const handleNextImage = (event?: React.MouseEvent<HTMLButtonElement>) => {
-    event?.stopPropagation();
+  const handlePrevImage = () => {
+    handleChangeImage(activeImageIndex - 1);
+  };
 
-    if (!canSlideImages) {
+  const handleNextImage = () => {
+    handleChangeImage(activeImageIndex + 1);
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = event.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartXRef.current === null || !hasMultipleImages) {
       return;
     }
 
-    setCurrentImageIndex((prev) => {
-      if (prev >= allImages.length - 1) {
-        return 0;
+    const touchEndX = event.changedTouches[0].clientX;
+    const diffX = touchStartXRef.current - touchEndX;
+
+    if (Math.abs(diffX) > 40) {
+      if (diffX > 0) {
+        handleNextImage();
+      } else {
+        handlePrevImage();
       }
+    }
 
-      return prev + 1;
-    });
-  };
-
-  const handleSelectImage = (index: number) => {
-    setCurrentImageIndex(index);
+    touchStartXRef.current = null;
   };
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [id]);
+
+  useEffect(() => {
+    if (activeImageIndex > allImages.length - 1) {
+      setActiveImageIndex(0);
+    }
+  }, [activeImageIndex, allImages.length]);
 
   useEffect(() => {
     const fetchBookDetail = async () => {
@@ -145,16 +156,21 @@ const BookDetailPage: React.FC = () => {
       }
 
       setIsLoading(true);
+      setBookData(null);
+      setRelatedBooks([]);
+      setActiveImageIndex(0);
 
       try {
         const res = await getBookByIdAPI(id);
 
         if (res?.data) {
           setBookData(res.data);
-          setCurrentImageIndex(0);
           setBuyQuantity(1);
+          setActiveImageIndex(0);
         }
       } catch (error) {
+        setBookData(null);
+        setRelatedBooks([]);
         message.error('Không thể tải thông tin chi tiết sách.');
         console.error('Lỗi hệ thống:', error);
       } finally {
@@ -166,10 +182,36 @@ const BookDetailPage: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if (currentImageIndex > allImages.length - 1) {
-      setCurrentImageIndex(0);
-    }
-  }, [allImages.length, currentImageIndex]);
+    const fetchRelatedBooks = async () => {
+      if (!bookData?.category?._id || !bookData?._id) {
+        setRelatedBooks([]);
+        return;
+      }
+
+      setIsRelatedLoading(true);
+
+      try {
+        const query = `current=1&pageSize=9&category=${bookData.category._id}&sort=-sold`;
+        const res = await getBooksAPI(query);
+
+        if (res?.data?.result) {
+          const related = res.data.result.filter((book) => book._id !== bookData._id).slice(0, 8);
+
+          setRelatedBooks(related);
+          return;
+        }
+
+        setRelatedBooks([]);
+      } catch (error) {
+        setRelatedBooks([]);
+        console.error('Lỗi khi tải sách liên quan:', error);
+      } finally {
+        setIsRelatedLoading(false);
+      }
+    };
+
+    fetchRelatedBooks();
+  }, [bookData?._id, bookData?.category?._id]);
 
   const handleQuantityChange = (value: number | null) => {
     if (!bookData || isOutOfStock) {
@@ -212,11 +254,12 @@ const BookDetailPage: React.FC = () => {
 
       if (res?.data) {
         setCarts(res.data.items || []);
+        sessionStorage.setItem('newly_added_cart_book_id', bookData._id);
 
         message.success(`Đã thêm ${buyQuantity} cuốn vào giỏ hàng!`);
 
         if (goToCart) {
-          navigate('/cart', { replace: true });
+          navigate('/cart');
         }
       }
     } catch (error) {
@@ -265,34 +308,27 @@ const BookDetailPage: React.FC = () => {
           <Row gutter={[24, 24]} className="detail-main-row">
             <Col xs={24} md={10} className="detail-gallery-col">
               <div className="detail-gallery-card">
-                <div className="main-image-wrapper">
-                  <div className="gallery-preview-group">
-                    <Image.PreviewGroup
-                      preview={{
-                        current: currentImageIndex,
-                        onChange: (current) => {
-                          setCurrentImageIndex(current);
-                        },
-                      }}
-                    >
-                      {allImages.map((imgUrl, index) => (
-                        <div
-                          key={`${imgUrl}-${index}`}
-                          className={`gallery-preview-item ${
-                            currentImageIndex === index ? 'gallery-preview-item--active' : ''
-                          }`}
-                        >
-                          <Image
-                            src={imgUrl}
-                            fallback={FALLBACK_BOOK_IMAGE}
-                            alt={`${bookData.mainText} - ảnh ${index + 1}`}
-                          />
-                        </div>
-                      ))}
-                    </Image.PreviewGroup>
-                  </div>
+                <div
+                  className="main-image-wrapper"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <Image.PreviewGroup
+                    items={allImages.length ? allImages : [FALLBACK_BOOK_IMAGE]}
+                    preview={{
+                      current: activeImageIndex,
+                      onChange: (current) => setActiveImageIndex(current),
+                    }}
+                  >
+                    <Image
+                      src={currentImage}
+                      fallback={FALLBACK_BOOK_IMAGE}
+                      preview
+                      alt={bookData.mainText}
+                    />
+                  </Image.PreviewGroup>
 
-                  {canSlideImages && (
+                  {hasMultipleImages && (
                     <>
                       <button
                         type="button"
@@ -312,21 +348,21 @@ const BookDetailPage: React.FC = () => {
                         <RightOutlined />
                       </button>
 
-                      <div className="gallery-counter">
-                        {currentImageIndex + 1}/{allImages.length}
+                      <div className="gallery-image-counter">
+                        {activeImageIndex + 1}/{allImages.length}
                       </div>
                     </>
                   )}
                 </div>
 
-                {allImages.length > 1 && (
+                {hasMultipleImages && (
                   <div className="thumbnail-list">
                     {allImages.map((imgUrl, idx) => (
                       <button
                         type="button"
                         key={`${imgUrl}-${idx}`}
-                        className={`thumb-item ${currentImageIndex === idx ? 'active' : ''}`}
-                        onClick={() => handleSelectImage(idx)}
+                        className={`thumb-item ${activeImageIndex === idx ? 'active' : ''}`}
+                        onClick={() => setActiveImageIndex(idx)}
                         aria-label={`Xem ảnh sách ${idx + 1}`}
                       >
                         <img src={imgUrl} alt={`Ảnh sách ${idx + 1}`} />
@@ -560,6 +596,8 @@ const BookDetailPage: React.FC = () => {
             </div>
           </Col>
         </Row>
+
+        <RelatedBooks books={relatedBooks} isLoading={isRelatedLoading} />
       </div>
 
       <div className="mobile-sticky-bar">
