@@ -2,6 +2,28 @@ import dayjs from 'dayjs';
 
 export const FORMATE_DATE = 'YYYY-MM-DD';
 
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+
+const isExternalUrl = (url?: string) => {
+  if (!url) return false;
+
+  return /^https?:\/\//i.test(url);
+};
+
+const buildLocalFileUrl = (file?: string, folder?: string) => {
+  if (!file) return '';
+
+  if (isExternalUrl(file)) {
+    return file;
+  }
+
+  if (file.startsWith('/')) {
+    return `${BACKEND_URL}${file}`;
+  }
+
+  return `${BACKEND_URL}/images/${folder}/${file}`;
+};
+
 export const dateRangeValidate = (dateRange: any) => {
   if (!dateRange) return undefined;
 
@@ -14,22 +36,31 @@ export const dateRangeValidate = (dateRange: any) => {
 export const getAvatarUrl = (avatar?: string) => {
   if (!avatar) return undefined;
 
-  const isExternalUrl = avatar.startsWith('http://') || avatar.startsWith('https://');
-
-  if (isExternalUrl) {
-    return avatar;
-  }
-
-  return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${avatar}`;
+  return buildLocalFileUrl(avatar, 'avatar');
 };
 
 export const getBookImageUrl = (thumbnail?: string): string => {
   if (!thumbnail) return '';
 
-  return thumbnail.startsWith('http')
-    ? thumbnail
-    : `${import.meta.env.VITE_BACKEND_URL}/images/book/${thumbnail}`;
+  return buildLocalFileUrl(thumbnail, 'book');
+};
+
+export const getReviewMediaUrl = (url?: string): string => {
+  if (!url) return '';
+
+  if (isExternalUrl(url)) {
+    return url;
+  }
+
+  if (url.startsWith('/')) {
+    return `${BACKEND_URL}${url}`;
+  }
+
+  return `${BACKEND_URL}/images/review/${url}`;
 };
 
 export const formatCurrency = (value: number): string =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(value);

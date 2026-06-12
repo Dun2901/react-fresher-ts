@@ -1,0 +1,275 @@
+.related-books-section {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 14px rgba(15, 23, 42, 0.04);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+
+    h2 {
+      margin: 0;
+      color: #222;
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1.3;
+    }
+
+    p {
+      margin: 5px 0 0;
+      color: #8c8c8c;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.related-books-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.related-book-card {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    border-color: #ffd1c2;
+    box-shadow: 0 8px 22px rgba(238, 77, 45, 0.12);
+    transform: translateY(-3px);
+  }
+
+  &__image {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-bottom: 1px solid #f6f6f6;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      padding: 14px;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+  }
+
+  &:hover &__image img {
+    transform: scale(1.04);
+  }
+
+  &__body {
+    min-height: 168px;
+    padding: 11px 12px 12px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  &__tag-wrap {
+    min-height: 24px;
+    margin-bottom: 6px;
+
+    .ant-tag {
+      margin-right: 0;
+      font-size: 11px;
+      font-weight: 700;
+    }
+  }
+
+  h3 {
+    min-height: 40px;
+    margin: 0;
+    overflow: hidden;
+    color: #222;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  &__author {
+    margin: 6px 0 0;
+    overflow: hidden;
+    color: #8c8c8c;
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__footer {
+    margin-top: auto;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    strong {
+      overflow: hidden;
+      color: #ee4d2d;
+      font-size: 16px;
+      font-weight: 900;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    span {
+      color: #999;
+      font-size: 11.5px;
+    }
+  }
+
+  &--skeleton {
+    cursor: default;
+
+    &:hover {
+      border-color: #f0f0f0;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .ant-skeleton {
+      padding: 12px;
+    }
+  }
+
+  &__skeleton-img {
+    width: 100% !important;
+    height: 240px !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .related-books-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .related-books-section {
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 1px solid #f0f0f0;
+
+    &__header {
+      margin-bottom: 10px;
+
+      h2 {
+        font-size: 15px;
+      }
+
+      p {
+        margin-top: 3px;
+        font-size: 11.5px;
+      }
+    }
+  }
+
+  .related-books-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .related-book-card {
+    border-radius: 8px;
+
+    &:hover {
+      transform: none;
+    }
+
+    &__image {
+      img {
+        padding: 10px;
+      }
+    }
+
+    &__body {
+      min-height: 142px;
+      padding: 8px 9px 10px;
+    }
+
+    &__tag-wrap {
+      min-height: 22px;
+      margin-bottom: 4px;
+
+      .ant-tag {
+        padding-inline: 5px;
+        font-size: 10px;
+      }
+    }
+
+    h3 {
+      min-height: 36px;
+      font-size: 12.5px;
+      line-height: 1.42;
+    }
+
+    &__author {
+      margin-top: 4px;
+      font-size: 10.5px;
+    }
+
+    &__footer {
+      padding-top: 7px;
+      gap: 2px;
+
+      strong {
+        font-size: 14px;
+      }
+
+      span {
+        font-size: 10.5px;
+      }
+    }
+
+    &__skeleton-img {
+      height: 170px !important;
+    }
+  }
+}
+
+@media (max-width: 380px) {
+  .related-book-card {
+    &__body {
+      min-height: 136px;
+    }
+
+    h3 {
+      font-size: 12px;
+    }
+
+    &__footer {
+      strong {
+        font-size: 13px;
+      }
+    }
+  }
+}
