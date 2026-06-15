@@ -1079,3 +1079,26 @@
     }
   }
 }
+
+.desktop-rating-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  .ant-rate {
+    color: #ee4d2d;
+    font-size: 13px;
+
+    .ant-rate-star {
+      margin-inline-end: 1px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-rating-meta {
+    .ant-rate {
+      display: none;
+    }
+  }
+}

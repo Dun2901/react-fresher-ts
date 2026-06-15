@@ -64,6 +64,16 @@ const getSelectedBookIdsFromStorage = () => {
   }
 };
 
+const normalizeText = (value?: string | number | null) => {
+  return String(value ?? '').trim();
+};
+
+const normalizePhone = (value?: string | number | null) => {
+  return String(value ?? '')
+    .replace(/\D/g, '')
+    .slice(0, 10);
+};
+
 const CheckoutPage: React.FC = () => {
   const { user, carts, setCarts } = useCurrentApp();
 
@@ -122,8 +132,8 @@ const CheckoutPage: React.FC = () => {
 
   useEffect(() => {
     form.setFieldsValue({
-      fullName: user?.fullName || '',
-      phone: user?.phone || '',
+      fullName: normalizeText(user?.fullName),
+      phone: normalizePhone(user?.phone),
       paymentMethod: 'COD',
     });
   }, [form, user]);
@@ -161,12 +171,12 @@ const CheckoutPage: React.FC = () => {
 
     const payload: ICheckoutDto = {
       shippingAddress: {
-        fullName: values.fullName,
-        phone: values.phone,
-        address: values.address,
+        fullName: normalizeText(values.fullName),
+        phone: normalizePhone(values.phone),
+        address: normalizeText(values.address),
       },
       paymentMethod: values.paymentMethod,
-      note: values.note,
+      note: normalizeText(values.note) || undefined,
       selectedBookIds: hasSelectedBookIds ? selectedBookIds : undefined,
     };
 
@@ -381,6 +391,7 @@ const CheckoutPage: React.FC = () => {
                     <Form.Item
                       label="Số điện thoại"
                       name="phone"
+                      normalize={normalizePhone}
                       rules={[
                         { required: true, message: 'Số điện thoại không được để trống!' },
                         { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải đúng 10 chữ số!' },
@@ -390,6 +401,8 @@ const CheckoutPage: React.FC = () => {
                         prefix={<PhoneOutlined />}
                         placeholder="Nhập số điện thoại"
                         size="large"
+                        inputMode="numeric"
+                        maxLength={10}
                       />
                     </Form.Item>
                   </Col>

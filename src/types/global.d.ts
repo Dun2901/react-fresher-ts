@@ -72,6 +72,11 @@ declare global {
       name: string;
       slug?: string;
     };
+
+    averageRating?: number;
+    reviewCount?: number;
+    ratingSummary?: Record<1 | 2 | 3 | 4 | 5, number>;
+
     createdAt: Date;
     updatedAt: Date;
   }
@@ -160,6 +165,77 @@ declare global {
     paymentMethod: 'COD' | 'ONLINE';
     note?: string;
     selectedBookIds?: string[];
+  }
+
+  // ------------REVIEW / RATING----------------------
+
+  type TReviewMediaType = 'IMAGE' | 'VIDEO';
+
+  interface IReviewMedia {
+    url: string;
+    publicId?: string;
+    type: TReviewMediaType;
+  }
+
+  interface IReviewUser {
+    _id: string;
+    fullName: string;
+    email?: string;
+    avatar?: string;
+  }
+
+  interface IReviewOrder {
+    _id: string;
+    orderCode: string;
+    createdAt: string;
+  }
+
+  interface IReview {
+    _id: string;
+    userId: string | IReviewUser;
+    bookId: string;
+    orderId: string | IReviewOrder;
+    rating: number;
+    comment?: string;
+    media: IReviewMedia[];
+    helpfulBy?: string[];
+    createdAt: string;
+    updatedAt: string;
+  }
+
+  interface IReviewSummary {
+    averageRating: number;
+    reviewCount: number;
+    commentCount?: number;
+    mediaCount?: number;
+    ratingSummary: Record<1 | 2 | 3 | 4 | 5, number>;
+  }
+
+  interface IReviewListData extends IModelPaginate<IReview> {
+    summary: IReviewSummary;
+  }
+
+  interface ICreateReviewDto {
+    bookId: string;
+    orderId?: string;
+    rating: number;
+    comment?: string;
+    media?: IReviewMedia[];
+  }
+
+  interface IUpdateReviewDto {
+    rating?: number;
+    comment?: string;
+    media?: IReviewMedia[];
+  }
+
+  interface IReviewPendingItem {
+    orderId: string;
+    orderCode: string;
+    bookId: string;
+    bookName: string;
+    thumbnail?: string;
+    orderCreatedAt: string;
   }
 
   // ------------DASHBOARD----------------------
