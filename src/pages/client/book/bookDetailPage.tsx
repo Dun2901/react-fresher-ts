@@ -1,6 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Row, Col, Button, InputNumber, Divider, Image, message, Spin, Empty, Tag } from 'antd';
+import {
+  Row,
+  Col,
+  Button,
+  InputNumber,
+  Divider,
+  Image,
+  message,
+  Spin,
+  Empty,
+  Tag,
+  Rate,
+} from 'antd';
 import {
   ShoppingCartOutlined,
   LoadingOutlined,
@@ -26,6 +38,7 @@ import './bookDetailPage.scss';
 import RelatedBooks from './RelatedBooks';
 import { saveRecentlyViewedBook } from '@/utils/recentlyViewed';
 import RecentlyViewedBooks from './RecentlyViewedBooks';
+import ProductReviews from './reviews/ProductReviews';
 
 const FALLBACK_BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600';
 
@@ -55,6 +68,7 @@ const BookDetailPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [relatedBooks, setRelatedBooks] = useState<IBookTable[]>([]);
   const [isRelatedLoading, setIsRelatedLoading] = useState<boolean>(false);
+  const [reviewSummary, setReviewSummary] = useState<IReviewSummary | null>(null);
 
   const isInCart = useMemo(() => {
     if (!bookData) {
@@ -161,6 +175,7 @@ const BookDetailPage: React.FC = () => {
       setBookData(null);
       setRelatedBooks([]);
       setActiveImageIndex(0);
+      setReviewSummary(null);
 
       try {
         const res = await getBookByIdAPI(id);
@@ -304,6 +319,9 @@ const BookDetailPage: React.FC = () => {
     );
   }
 
+  const reviewAverage = reviewSummary?.averageRating ?? bookData.averageRating ?? 0;
+  const reviewCount = reviewSummary?.reviewCount ?? bookData.reviewCount ?? 0;
+
   return (
     <div className="book-detail-page">
       <div className="detail-shell">
@@ -422,7 +440,7 @@ const BookDetailPage: React.FC = () => {
                   <div className="summary-item">
                     <StarOutlined />
                     <span>Đánh giá</span>
-                    <b>Chưa có</b>
+                    <b>{reviewCount > 0 ? `${reviewAverage.toFixed(1)}/5` : 'Chưa có'}</b>
                   </div>
                 </div>
 
@@ -437,9 +455,18 @@ const BookDetailPage: React.FC = () => {
                     Đã bán: <b>{bookData.sold ?? 0}</b>
                   </span>
 
-                  <span>
+                  <span className="desktop-rating-meta">
                     <StarOutlined />
-                    Đánh giá: <b>Chưa có</b>
+                    Đánh giá:{' '}
+                    {reviewCount > 0 ? (
+                      <>
+                        <b>{reviewAverage.toFixed(1)}</b>
+                        <Rate disabled allowHalf value={reviewAverage} />
+                        <b>{reviewCount}</b> đánh giá
+                      </>
+                    ) : (
+                      <b>Chưa có</b>
+                    )}
                   </span>
                 </div>
 
@@ -604,6 +631,13 @@ const BookDetailPage: React.FC = () => {
             </div>
           </Col>
         </Row>
+
+        <ProductReviews
+          book={bookData}
+          onSummaryChange={(summary) => {
+            setReviewSummary(summary);
+          }}
+        />
 
         <RelatedBooks books={relatedBooks} isLoading={isRelatedLoading} />
       </div>

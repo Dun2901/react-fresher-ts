@@ -48,9 +48,11 @@ export const getBookImageUrl = (thumbnail?: string): string => {
 export const getReviewMediaUrl = (url?: string): string => {
   if (!url) return '';
 
-  if (isExternalUrl(url)) {
+  if (/^https?:\/\//i.test(url)) {
     return url;
   }
+
+  const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
 
   if (url.startsWith('/')) {
     return `${BACKEND_URL}${url}`;

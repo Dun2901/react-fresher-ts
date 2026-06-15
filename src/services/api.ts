@@ -346,3 +346,51 @@ export const getRevenueChartDashboardAPI = (type: 'day' | 'month' = 'month') => 
     `/dashboard/revenue-chart?type=${type}`,
   );
 };
+
+//---------------------------------MODULE REVIEW / RATING-------------------
+export const uploadReviewMediaAPI = (files: File[]) => {
+  const bodyFormData = new FormData();
+
+  files.forEach((file) => {
+    bodyFormData.append('files', file);
+  });
+
+  return axios.post<
+    IBackendRes<{
+      fileUploaded: IReviewMedia[];
+      fileInfo: unknown[];
+    }>
+  >('/files/upload-review', bodyFormData, {
+    headers: {
+      folder_type: 'review',
+    },
+  });
+};
+
+export const getMyReviewsByBookAPI = (bookId: string) => {
+  return axios.get<IBackendRes<IReview[]>>(`/reviews/book/${bookId}/me`);
+};
+
+export const getReviewsByBookAPI = (bookId: string, query = 'current=1&pageSize=5') => {
+  return axios.get<IBackendRes<IReviewListData>>(`/reviews/book/${bookId}?${query}`);
+};
+
+export const createReviewAPI = (data: ICreateReviewDto) => {
+  return axios.post<IBackendRes<IReview>>('/reviews', data);
+};
+
+export const updateReviewAPI = (id: string, data: IUpdateReviewDto) => {
+  return axios.patch<IBackendRes<IReview>>(`/reviews/${id}`, data);
+};
+
+export const deleteReviewAPI = (id: string) => {
+  return axios.delete<IBackendRes<{ deleted: boolean; _id: string }>>(`/reviews/${id}`);
+};
+
+export const markReviewHelpfulAPI = (id: string) => {
+  return axios.patch<IBackendRes<IReview>>(`/reviews/${id}/helpful`);
+};
+
+export const getMyPendingReviewsAPI = () => {
+  return axios.get<IBackendRes<IReviewPendingItem[]>>('/reviews/my-pending');
+};
