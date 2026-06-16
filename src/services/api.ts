@@ -394,3 +394,30 @@ export const markReviewHelpfulAPI = (id: string) => {
 export const getMyPendingReviewsAPI = () => {
   return axios.get<IBackendRes<IReviewPendingItem[]>>('/reviews/my-pending');
 };
+
+// ==================== MODULE LOCATION ====================
+export const getProvincesAPI = () => {
+  return axios.get<
+    IBackendRes<
+      {
+        provinceCode: string;
+        name: string;
+        shortName: string;
+        code: string;
+        placeType: string;
+      }[]
+    >
+  >('/locations/provinces');
+};
+
+export const getWardsByProvinceAPI = (provinceCode: string) => {
+  return axios.get<
+    IBackendRes<
+      {
+        wardCode: string;
+        name: string;
+        provinceCode: string;
+      }[]
+    >
+  >(`/locations/provinces/${provinceCode}/wards`);
+};

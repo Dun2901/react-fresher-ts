@@ -13,6 +13,7 @@ import {
   Radio,
   Result,
   Row,
+  Select,
   Spin,
   Tag,
 } from 'antd';
@@ -29,7 +30,12 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useCurrentApp } from 'components/context/app.context.tsx';
-import { checkoutAPI, createVnpayPaymentUrlAPI } from '@/services/api';
+import {
+  checkoutAPI,
+  createVnpayPaymentUrlAPI,
+  getProvincesAPI,
+  getWardsByProvinceAPI,
+} from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import vnpayLogo from '@/assets/img/vnpay.png';
 import './checkout.page.scss';
@@ -39,9 +45,31 @@ const { TextArea } = Input;
 interface IOrderFormValues {
   fullName: string;
   phone: string;
-  address: string;
+
+  provinceCode: string;
+  provinceName: string;
+
+  wardCode: string;
+  wardName: string;
+
+  addressLine: string;
+
   paymentMethod: 'COD' | 'ONLINE';
   note?: string;
+}
+
+interface IProvinceLocation {
+  provinceCode: string;
+  name: string;
+  shortName: string;
+  code: string;
+  placeType: string;
+}
+
+interface IWardLocation {
+  wardCode: string;
+  name: string;
+  provinceCode: string;
 }
 
 type CheckoutLocationState = {
@@ -88,6 +116,14 @@ const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isRedirectingPayment, setIsRedirectingPayment] = useState<boolean>(false);
   const [createdOrder, setCreatedOrder] = useState<IOrder | null>(null);
+
+  const [provinces, setProvinces] = useState<IProvinceLocation[]>([]);
+  const [wards, setWards] = useState<IWardLocation[]>([]);
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState<boolean>(false);
+  const [isLoadingWards, setIsLoadingWards] = useState<boolean>(false);
+
+  const selectedProvinceCode = Form.useWatch('provinceCode', form);
+
   const [selectedBookIds] = useState<string[]>(() => {
     if (locationState?.selectedBookIds?.length) {
       return locationState.selectedBookIds;
@@ -126,6 +162,20 @@ const CheckoutPage: React.FC = () => {
 
   const hasStockWarning = stockWarningItems.length > 0;
 
+  const provinceOptions = useMemo(() => {
+    return provinces.map((province) => ({
+      label: province.name,
+      value: province.provinceCode,
+    }));
+  }, [provinces]);
+
+  const wardOptions = useMemo(() => {
+    return wards.map((ward) => ({
+      label: ward.name,
+      value: ward.wardCode,
+    }));
+  }, [wards]);
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
@@ -137,6 +187,73 @@ const CheckoutPage: React.FC = () => {
       paymentMethod: 'COD',
     });
   }, [form, user]);
+
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      setIsLoadingProvinces(true);
+
+      try {
+        const res = await getProvincesAPI();
+        const data = (res as any)?.data || [];
+
+        setProvinces(Array.isArray(data) ? data : []);
+      } catch {
+        notification.error({
+          message: 'Không tải được tỉnh/thành phố',
+          description: 'Vui lòng thử lại sau.',
+          placement: 'topRight',
+        });
+      } finally {
+        setIsLoadingProvinces(false);
+      }
+    };
+
+    fetchProvinces();
+  }, []);
+
+  useEffect(() => {
+    const fetchWards = async () => {
+      if (!selectedProvinceCode) {
+        setWards([]);
+        return;
+      }
+
+      setIsLoadingWards(true);
+
+      try {
+        const res = await getWardsByProvinceAPI(selectedProvinceCode);
+        const data = (res as any)?.data || [];
+
+        setWards(Array.isArray(data) ? data : []);
+      } catch {
+        notification.error({
+          message: 'Không tải được phường/xã',
+          description: 'Vui lòng thử lại sau.',
+          placement: 'topRight',
+        });
+      } finally {
+        setIsLoadingWards(false);
+      }
+    };
+
+    fetchWards();
+  }, [selectedProvinceCode]);
+
+  const handleProvinceChange = (provinceCode?: string) => {
+    const selectedProvince = provinces.find((province) => province.provinceCode === provinceCode);
+
+    form.setFieldsValue({
+      provinceName: selectedProvince?.name,
+      wardCode: undefined,
+      wardName: undefined,
+    });
+  };
+
+  const handleWardChange = (wardCode?: string) => {
+    const selectedWard = wards.find((ward) => ward.wardCode === wardCode);
+
+    form.setFieldValue('wardName', selectedWard?.name);
+  };
 
   const getCheckoutErrorMessage = (error: any) => {
     const responseMessage = error?.response?.data?.message || error?.response?.data?.error?.message;
@@ -167,13 +284,19 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    const addressLine = normalizeText(values.addressLine);
+    const wardName = normalizeText(values.wardName);
+    const provinceName = normalizeText(values.provinceName);
+
+    const fullShippingAddress = [addressLine, wardName, provinceName].filter(Boolean).join(', ');
+
     setLoading(true);
 
     const payload: ICheckoutDto = {
       shippingAddress: {
         fullName: normalizeText(values.fullName),
         phone: normalizePhone(values.phone),
-        address: normalizeText(values.address),
+        address: fullShippingAddress,
       },
       paymentMethod: values.paymentMethod,
       note: normalizeText(values.note) || undefined,
@@ -407,15 +530,66 @@ const CheckoutPage: React.FC = () => {
                     </Form.Item>
                   </Col>
 
+                  <Form.Item name="provinceName" hidden>
+                    <Input />
+                  </Form.Item>
+
+                  <Form.Item name="wardName" hidden>
+                    <Input />
+                  </Form.Item>
+
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      label="Tỉnh/Thành phố"
+                      name="provinceCode"
+                      rules={[{ required: true, message: 'Vui lòng chọn tỉnh/thành phố!' }]}
+                    >
+                      <Select
+                        showSearch
+                        allowClear
+                        size="large"
+                        placeholder="Chọn tỉnh/thành phố"
+                        loading={isLoadingProvinces}
+                        options={provinceOptions}
+                        optionFilterProp="label"
+                        onChange={handleProvinceChange}
+                      />
+                    </Form.Item>
+                  </Col>
+
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      label="Phường/Xã/Đặc khu"
+                      name="wardCode"
+                      rules={[{ required: true, message: 'Vui lòng chọn phường/xã/đặc khu!' }]}
+                    >
+                      <Select
+                        showSearch
+                        allowClear
+                        size="large"
+                        disabled={!selectedProvinceCode}
+                        placeholder={
+                          selectedProvinceCode
+                            ? 'Chọn phường/xã/đặc khu'
+                            : 'Chọn tỉnh/thành phố trước'
+                        }
+                        loading={isLoadingWards}
+                        options={wardOptions}
+                        optionFilterProp="label"
+                        onChange={handleWardChange}
+                      />
+                    </Form.Item>
+                  </Col>
+
                   <Col xs={24}>
                     <Form.Item
-                      label="Địa chỉ nhận hàng"
-                      name="address"
-                      rules={[{ required: true, message: 'Vui lòng nhập địa chỉ cụ thể!' }]}
+                      label="Số nhà, tên đường"
+                      name="addressLine"
+                      rules={[{ required: true, message: 'Vui lòng nhập số nhà, tên đường!' }]}
                     >
-                      <TextArea
-                        rows={3}
-                        placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành..."
+                      <Input
+                        prefix={<EnvironmentOutlined />}
+                        placeholder="Ví dụ: Số 12, đường Nguyễn Huệ, chung cư A..."
                         size="large"
                       />
                     </Form.Item>
