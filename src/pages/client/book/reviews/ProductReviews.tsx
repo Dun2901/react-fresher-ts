@@ -126,6 +126,14 @@ const throwIfBackendError = (response: unknown) => {
 };
 
 const getUserInfo = (review: IReview) => {
+  if (!review.userId) {
+    return {
+      _id: '',
+      fullName: 'Người dùng đã xóa',
+      avatar: undefined,
+    };
+  }
+
   if (typeof review.userId === 'string') {
     return {
       _id: review.userId,
@@ -555,13 +563,17 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ book, onSummaryChange }
       return false;
     }
 
+    if (user.role === 'ADMIN') {
+      return true;
+    }
+
     const reviewUser = getUserInfo(review);
 
-    return reviewUser._id === user._id || user.role === 'ADMIN';
+    return !!reviewUser._id && reviewUser._id === user._id;
   };
 
   const isOwner = (review: IReview) => {
-    if (!user || typeof review.userId === 'string') {
+    if (!user || !review.userId || typeof review.userId === 'string') {
       return false;
     }
 
