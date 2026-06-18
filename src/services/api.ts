@@ -63,7 +63,7 @@ export const resetPasswordAPI = (
 };
 
 export const changePasswordAPI = (oldPassword: string, newPassword: string) => {
-  return axios.patch<IBackendRes<string>>('/auth/change-password', {
+  return axios.patch<IBackendRes<{ access_token: string }>>('/auth/change-password', {
     oldPassword,
     newPassword,
   });

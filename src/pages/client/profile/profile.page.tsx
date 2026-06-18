@@ -173,6 +173,8 @@ const ProfilePage = () => {
     const res = await changePasswordAPI(values.oldPassword, values.newPassword);
 
     if (res.data) {
+      localStorage.setItem('access_token', res.data.access_token);
+
       message.success('Đổi mật khẩu thành công.');
       passwordForm.resetFields();
     } else {
