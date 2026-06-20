@@ -146,6 +146,8 @@ const CurrentOrderPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
+  const [expandedOrderIds, setExpandedOrderIds] = useState<Record<string, boolean>>({});
+
   const pageSizeMenuItems: MenuProps['items'] = PAGE_SIZE_OPTIONS.map((size) => ({
     key: String(size),
     label: `${size} đơn / trang`,
@@ -243,6 +245,13 @@ const CurrentOrderPage = () => {
     scrollToPageTop();
   };
 
+  const toggleOrderProducts = useCallback((orderId: string) => {
+    setExpandedOrderIds((prev) => ({
+      ...prev,
+      [orderId]: !prev[orderId],
+    }));
+  }, []);
+
   const handleReload = async () => {
     await fetchCurrentOrders();
     scrollToPageTop();
@@ -260,7 +269,8 @@ const CurrentOrderPage = () => {
         key: 'product',
         width: 360,
         render: (_, record) => {
-          const previewItems = getPreviewItems(record, 2);
+          const isExpanded = !!expandedOrderIds[record._id];
+          const previewItems = isExpanded ? (record.items ?? []) : getPreviewItems(record, 2);
           const remainItemsCount = getRemainItemsCount(record, 2);
           const totalItems = getOrderItemsCount(record);
 
@@ -303,9 +313,12 @@ const CurrentOrderPage = () => {
                   <Button
                     type="link"
                     className="current-order__more-btn"
-                    onClick={() => navigate(`/orders/${record._id}`)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleOrderProducts(record._id);
+                    }}
                   >
-                    Xem thêm {remainItemsCount} sản phẩm
+                    {isExpanded ? 'Thu gọn' : `Xem thêm ${remainItemsCount} sản phẩm`}
                   </Button>
                 )}
               </div>
@@ -415,11 +428,20 @@ const CurrentOrderPage = () => {
         ),
       },
     ],
-    [cancelLoadingId, handleViewBookDetail, navigate, payingOrderId],
+    [
+      cancelLoadingId,
+      expandedOrderIds,
+      handleViewBookDetail,
+      navigate,
+      payingOrderId,
+      toggleOrderProducts,
+      handleCancelOrder,
+    ],
   );
 
   const renderMobileOrderCard = (order: IOrder) => {
-    const previewItems = getPreviewItems(order, 2);
+    const isExpanded = !!expandedOrderIds[order._id];
+    const previewItems = isExpanded ? (order.items ?? []) : getPreviewItems(order, 2);
     const remainItemsCount = getRemainItemsCount(order, 2);
     const totalItems = getOrderItemsCount(order);
     const statusInfo = orderStatusMap[order.status];
@@ -481,9 +503,12 @@ const CurrentOrderPage = () => {
               <button
                 type="button"
                 className="current-order__mobile-more"
-                onClick={() => navigate(`/orders/${order._id}`)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleOrderProducts(order._id);
+                }}
               >
-                Xem thêm {remainItemsCount} sản phẩm
+                {isExpanded ? 'Thu gọn' : `Xem thêm ${remainItemsCount} sản phẩm`}
               </button>
             )}
           </div>
