@@ -37,6 +37,7 @@ import ManageCategoryPage from './pages/admin/manage.category';
 import BookListPage from 'pages/client/book/bookListPage';
 import BookDetailPage from 'pages/client/book/bookDetailPage';
 import ProfilePage from './pages/client/profile/profile.page';
+import NotificationsPage from './pages/client/notifications/notifications.page';
 
 dayjs.locale('vi');
 
@@ -74,6 +75,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CartPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'notifications',
+        element: (
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         ),
       },

@@ -92,6 +92,26 @@
         align-items: center;
         gap: 20px;
 
+        .action-item-notification {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .icon-notification-bell {
+            font-size: 22px;
+            color: #595959;
+            cursor: pointer;
+            transition:
+              color 0.2s ease,
+              transform 0.2s ease;
+
+            &:hover {
+              color: #1677ff;
+              transform: translateY(-1px);
+            }
+          }
+        }
+
         .action-item-cart {
           display: flex;
           align-items: center;

@@ -159,6 +159,20 @@ declare global {
     updatedAt: string;
   }
 
+  interface IUserNotification {
+    _id: string;
+    userId: string;
+    title: string;
+    message: string;
+    type: 'ORDER_STATUS' | 'PAYMENT_SUCCESS';
+    orderId?: string;
+    orderCode?: string;
+    isRead: boolean;
+    readAt?: string;
+    createdAt: string;
+    updatedAt: string;
+  }
+
   // DTO gửi lên khi đặt hàng
   interface ICheckoutDto {
     shippingAddress: IShippingAddress;

@@ -421,3 +421,26 @@ export const getWardsByProvinceAPI = (provinceCode: string) => {
     >
   >(`/locations/provinces/${provinceCode}/wards`);
 };
+
+// ==================== MODULE NOTIFICATION ====================
+export const getMyNotificationsAPI = (currentPage: number, limit: number, isRead?: boolean) => {
+  let url = `/notifications/my?current=${currentPage}&pageSize=${limit}`;
+
+  if (typeof isRead === 'boolean') {
+    url += `&isRead=${isRead}`;
+  }
+
+  return axios.get<IBackendRes<IModelPaginate<IUserNotification>>>(url);
+};
+
+export const getUnreadNotificationCountAPI = () => {
+  return axios.get<IBackendRes<{ total: number }>>('/notifications/unread-count');
+};
+
+export const markNotificationReadAPI = (id: string) => {
+  return axios.patch<IBackendRes<IUserNotification>>(`/notifications/${id}/read`);
+};
+
+export const markAllNotificationsReadAPI = () => {
+  return axios.patch<IBackendRes<{ success: boolean }>>('/notifications/read-all');
+};

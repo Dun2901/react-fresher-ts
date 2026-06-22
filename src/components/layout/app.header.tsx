@@ -7,6 +7,7 @@ import './app.header.scss';
 import { useCurrentApp } from 'components/context/app.context';
 import { logoutAPI } from '@/services/api';
 import { getAvatarUrl } from '@/services/helper';
+import UserNotificationBell from '../notification/user.notification.bell';
 
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -98,6 +99,8 @@ const AppHeader = () => {
                 </Badge>
               </div>
 
+              <UserNotificationBell />
+
               <Divider type="vertical" className="desktop-divider" />
 
               <div className="action-item-user">
@@ -151,6 +154,24 @@ const AppHeader = () => {
         >
           Quản lý tài khoản
         </p>
+
+        <Divider className="drawer-divider" />
+
+        {isAuthenticated && (
+          <>
+            <p
+              className="drawer-nav-item"
+              onClick={() => {
+                navigate('/notifications');
+                setOpenDrawer(false);
+              }}
+            >
+              Thông báo
+            </p>
+
+            <Divider className="drawer-divider" />
+          </>
+        )}
 
         <Divider className="drawer-divider" />
 
