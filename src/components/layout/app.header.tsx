@@ -133,71 +133,21 @@ const AppHeader = () => {
         onClose={() => setOpenDrawer(false)}
         open={openDrawer}
       >
-        <p
-          className="drawer-nav-item"
-          onClick={() => {
-            navigate('/');
-            setOpenDrawer(false);
-          }}
-        >
-          Trang chủ
-        </p>
-
-        <Divider className="drawer-divider" />
-
-        <p
-          className="drawer-nav-item"
-          onClick={() => {
-            navigate('/profile');
-            setOpenDrawer(false);
-          }}
-        >
-          Quản lý tài khoản
-        </p>
-
-        <Divider className="drawer-divider" />
-
         {isAuthenticated && (
           <>
             <p
               className="drawer-nav-item"
               onClick={() => {
-                navigate('/notifications');
+                navigate('/orders/history');
                 setOpenDrawer(false);
               }}
             >
-              Thông báo
+              Lịch sử mua hàng
             </p>
 
             <Divider className="drawer-divider" />
           </>
         )}
-
-        <Divider className="drawer-divider" />
-
-        <p
-          className="drawer-nav-item"
-          onClick={() => {
-            navigate('/orders');
-            setOpenDrawer(false);
-          }}
-        >
-          Đơn hàng của tôi
-        </p>
-
-        <Divider className="drawer-divider" />
-
-        <p
-          className="drawer-nav-item"
-          onClick={() => {
-            navigate('/orders/history');
-            setOpenDrawer(false);
-          }}
-        >
-          Lịch sử mua hàng
-        </p>
-
-        <Divider className="drawer-divider" />
 
         {user?.role === 'ADMIN' && (
           <>
@@ -221,7 +171,7 @@ const AppHeader = () => {
           </p>
         ) : (
           <p
-            className="drawer-nav-item"
+            className="drawer-nav-item drawer-nav-item--login"
             onClick={() => {
               navigate('/login');
               setOpenDrawer(false);

@@ -470,6 +470,22 @@
     }
   }
 
+  &__label {
+    flex: 1;
+  }
+
+  &__badge {
+    margin-left: auto;
+  }
+
+  &--notification {
+    font-weight: 600;
+
+    .anticon {
+      color: #1677ff;
+    }
+  }
+
   &--login {
     color: #1677ff;
     font-weight: 700;
