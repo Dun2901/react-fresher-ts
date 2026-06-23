@@ -1,13 +1,16 @@
 import {
   AppstoreOutlined,
+  BellOutlined,
   FileTextOutlined,
   HomeOutlined,
   ShoppingCartOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { Badge } from 'antd';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentApp } from '@/components/context/app.context';
+import { getUnreadNotificationCountAPI } from '@/services/api';
 import './mobile.bottom.nav.scss';
 
 interface IMobileNavItem {
@@ -28,7 +31,42 @@ const MobileBottomNav = () => {
 
   const pathname = location.pathname;
 
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+
   const totalCartQuantity = carts.reduce((total, item) => total + item.quantity, 0);
+
+  const fetchUnreadNotificationCount = async () => {
+    if (!isAuthenticated) {
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    try {
+      const res = await getUnreadNotificationCountAPI();
+      setUnreadNotificationCount(res.data?.total || 0);
+    } catch {
+      setUnreadNotificationCount(0);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadNotificationCount();
+
+    const intervalId = window.setInterval(() => {
+      fetchUnreadNotificationCount();
+    }, 30000);
+
+    const handleRefreshNotifications = () => {
+      fetchUnreadNotificationCount();
+    };
+
+    window.addEventListener('notifications:refresh', handleRefreshNotifications);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('notifications:refresh', handleRefreshNotifications);
+    };
+  }, [isAuthenticated]);
 
   const shouldHideBottomNav =
     pathname === '/login' ||
@@ -76,6 +114,15 @@ const MobileBottomNav = () => {
       activeWhen: (currentPath) => currentPath === '/cart' || currentPath === '/checkout',
     },
     {
+      key: 'notifications',
+      label: 'Thông báo',
+      path: '/notifications',
+      icon: <BellOutlined />,
+      requireAuth: true,
+      badge: unreadNotificationCount,
+      activeWhen: (currentPath) => currentPath === '/notifications',
+    },
+    {
       key: 'account',
       label: isAuthenticated ? 'Tài khoản' : 'Đăng nhập',
       path: isAuthenticated ? '/profile' : '/login',
@@ -102,7 +149,12 @@ const MobileBottomNav = () => {
   };
 
   return (
-    <nav className="mobile-bottom-nav">
+    <nav
+      className="mobile-bottom-nav"
+      style={{
+        gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+      }}
+    >
       {navItems.map((item) => {
         const isActive = item.activeWhen(pathname);
 
