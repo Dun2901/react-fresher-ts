@@ -1,8 +1,18 @@
 import { useState } from 'react';
-import { ReadOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  DashboardOutlined,
+  DownOutlined,
+  HistoryOutlined,
+  LogoutOutlined,
+  ReadOutlined,
+  SearchOutlined,
+  ShoppingOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
-import { Divider, Badge, Drawer, Avatar, Input, Dropdown, Space } from 'antd';
-import { Link, useNavigate } from 'react-router-dom';
+import { Divider, Badge, Drawer, Avatar, Input, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import './app.header.scss';
 import { useCurrentApp } from 'components/context/app.context';
 import { logoutAPI } from '@/services/api';
@@ -32,35 +42,72 @@ const AppHeader = () => {
     navigate('/cart');
   };
 
-  const items = [
-    {
-      label: <Link to="/profile">Quản lý tài khoản</Link>,
-      key: 'account',
-    },
-    {
-      label: <Link to="/orders">Đơn hàng của tôi</Link>,
-      key: 'orders',
-    },
-    {
-      label: <Link to="/orders/history">Lịch sử mua hàng</Link>,
-      key: 'order-history',
-    },
-    {
-      label: (
-        <span onClick={handleLogout} style={{ cursor: 'pointer' }}>
-          Đăng xuất
-        </span>
-      ),
-      key: 'logout',
-    },
-  ];
+  const userMenuItems: MenuProps['items'] = [];
 
   if (user?.role === 'ADMIN') {
-    items.unshift({
-      label: <Link to="/admin">Trang quản trị</Link>,
+    userMenuItems.push({
+      label: 'Trang quản trị',
       key: 'admin',
+      icon: <DashboardOutlined />,
+    });
+
+    userMenuItems.push({
+      type: 'divider',
     });
   }
+
+  userMenuItems.push(
+    {
+      label: 'Quản lý tài khoản',
+      key: 'account',
+      icon: <UserOutlined />,
+    },
+    {
+      label: 'Đơn hàng của tôi',
+      key: 'orders',
+      icon: <ShoppingOutlined />,
+    },
+    {
+      label: 'Lịch sử mua hàng',
+      key: 'order-history',
+      icon: <HistoryOutlined />,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      label: 'Đăng xuất',
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      danger: true,
+    },
+  );
+
+  const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === 'admin') {
+      navigate('/admin');
+      return;
+    }
+
+    if (key === 'account') {
+      navigate('/profile');
+      return;
+    }
+
+    if (key === 'orders') {
+      navigate('/orders');
+      return;
+    }
+
+    if (key === 'order-history') {
+      navigate('/orders/history');
+      return;
+    }
+
+    if (key === 'logout') {
+      void handleLogout();
+    }
+  };
 
   return (
     <>
@@ -110,15 +157,26 @@ const AppHeader = () => {
                   </span>
                 ) : (
                   <Dropdown
-                    menu={{ items }}
+                    menu={{
+                      items: userMenuItems,
+                      onClick: handleUserMenuClick,
+                    }}
                     trigger={['click']}
                     placement="bottomRight"
+                    overlayClassName="user-dropdown-overlay"
                     getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body}
                   >
-                    <Space className="user-profile-dropdown" style={{ cursor: 'pointer' }}>
-                      <Avatar src={getAvatarUrl(user?.avatar)} />
-                      <span className="user-display-name">{user?.fullName}</span>
-                    </Space>
+                    <button className="user-profile-dropdown" type="button">
+                      <Avatar
+                        className="user-profile-avatar"
+                        src={getAvatarUrl(user?.avatar)}
+                        icon={<UserOutlined />}
+                      />
+
+                      <span className="user-display-name">{user?.fullName || 'Tài khoản'}</span>
+
+                      <DownOutlined className="user-dropdown-arrow" />
+                    </button>
                   </Dropdown>
                 )}
               </div>

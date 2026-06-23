@@ -44,15 +44,15 @@
       }
 
       &--active {
-        color: #ee4d2d;
-        background: #fff1ed;
+        color: var(--color-primary);
+        background: var(--color-primary-soft);
 
         .mobile-bottom-nav__icon {
-          color: #ee4d2d;
+          color: var(--color-primary);
         }
 
         .mobile-bottom-nav__label {
-          color: #ee4d2d;
+          color: var(--color-primary);
           font-weight: 800;
         }
       }

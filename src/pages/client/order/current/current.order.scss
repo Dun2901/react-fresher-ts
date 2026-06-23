@@ -36,8 +36,8 @@
     height: 44px;
     flex-shrink: 0;
     border-radius: 14px;
-    background: #fff1ed;
-    color: #ee4d2d;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
     font-size: 21px;
     display: flex;
     align-items: center;
@@ -129,7 +129,7 @@
     }
 
     .ant-table-tbody > tr:hover > td {
-      background: #fffaf8;
+      background: var(--color-primary-soft);
     }
 
     .ant-pagination {
@@ -144,7 +144,7 @@
   }
 
   &__code {
-    color: #1677ff;
+    color: var(--color-primary);
     font-size: 12px;
     font-weight: 800;
     word-break: break-word;
@@ -170,7 +170,7 @@
       transform 0.2s ease;
 
     &:hover {
-      background: #fff1ed;
+      background: var(--color-primary-soft);
     }
 
     &:active {
@@ -222,7 +222,7 @@
   &__more-btn {
     height: auto;
     padding: 0;
-    color: #ee4d2d;
+    color: var(--color-primary);
     font-size: 12px;
     font-weight: 700;
   }
@@ -260,20 +260,20 @@
 
   &__pay-btn {
     height: 30px;
-    border-color: #ee4d2d;
+    border-color: var(--color-primary);
     border-radius: 8px;
-    background: #ee4d2d;
+    background: var(--color-primary);
     font-size: 12px;
     font-weight: 700;
 
     &:hover {
-      border-color: #d43816 !important;
-      background: #d43816 !important;
+      border-color: var(--color-primary-hover) !important;
+      background: var(--color-primary-hover) !important;
     }
   }
 
   &__price {
-    color: #ee4d2d;
+    color: var(--color-primary);
     font-size: 15px;
     font-weight: 900;
     white-space: nowrap;
@@ -327,7 +327,7 @@
   }
 
   &__mobile-code {
-    color: #1677ff;
+    color: var(--color-primary);
     font-size: 11px;
     font-weight: 900;
     line-height: 1.35;
@@ -386,7 +386,7 @@
       transform 0.2s ease;
 
     &:active {
-      background: #fff1ed;
+      background: var(--color-primary-soft);
       transform: scale(0.99);
     }
   }
@@ -433,7 +433,7 @@
   }
 
   &__mobile-item-price {
-    color: #ee4d2d;
+    color: var(--color-primary);
     font-size: 11.5px;
     font-weight: 800;
   }
@@ -444,7 +444,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: #ee4d2d;
+    color: var(--color-primary);
     font-size: 11px;
     font-weight: 800;
     cursor: pointer;
@@ -499,7 +499,7 @@
     }
 
     b {
-      color: #ee4d2d;
+      color: var(--color-primary);
       font-size: 14px;
       font-weight: 900;
       white-space: nowrap;
@@ -521,12 +521,12 @@
   }
 
   &__mobile-pay-btn {
-    border-color: #ee4d2d;
-    background: #ee4d2d;
+    border-color: var(--color-primary);
+    background: var(--color-primary);
 
     &:hover {
-      border-color: #d43816 !important;
-      background: #d43816 !important;
+      border-color: var(--color-primary-hover) !important;
+      background: var(--color-primary-hover) !important;
     }
   }
 
@@ -621,7 +621,7 @@
       height: 30px;
       padding: 0 8px;
       border-radius: 8px;
-      color: #ee4d2d;
+      color: var(--color-primary);
       font-size: 11px;
     }
 
@@ -649,7 +649,7 @@
       }
 
       .ant-pagination-item-active {
-        border-color: #1677ff;
+        border-color: var(--color-primary);
       }
     }
 

@@ -14,7 +14,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: #1677ff;
+    color: var(--color-primary);
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
@@ -23,7 +23,7 @@
     gap: 8px;
 
     &:hover {
-      color: #0958d9;
+      color: var(--color-primary-active);
     }
   }
 
@@ -174,7 +174,7 @@
 
       &:hover,
       &.active {
-        border-color: #ee4d2d;
+        border-color: var(--color-primary);
         transform: translateY(-2px);
       }
     }
@@ -234,7 +234,7 @@
     margin: 18px 0;
     padding: 18px 20px;
     border-radius: 14px;
-    background: linear-gradient(180deg, #fff7f3 0%, #fff1ec 100%);
+    background: linear-gradient(180deg, var(--color-primary-soft) 0%, #fff1ec 100%);
     border: 1px solid #ffe0d6;
 
     .price-label {
@@ -247,7 +247,7 @@
     }
 
     .current-price {
-      color: #ee4d2d;
+      color: var(--color-primary);
       font-size: 34px;
       font-weight: 900;
       line-height: 1;
@@ -273,8 +273,8 @@
         height: 34px;
         flex-shrink: 0;
         border-radius: 10px;
-        background: #fff1ed;
-        color: #ee4d2d;
+        background: var(--color-primary-soft);
+        color: var(--color-primary);
         font-size: 15px;
         display: inline-flex;
         align-items: center;
@@ -354,24 +354,24 @@
     }
 
     .btn-add-cart {
-      border-color: #ee4d2d;
+      border-color: var(--color-primary);
       background: #fff;
-      color: #ee4d2d;
+      color: var(--color-primary);
 
       &:hover {
-        border-color: #ee4d2d !important;
-        background: #fff5f1 !important;
-        color: #ee4d2d !important;
+        border-color: var(--color-primary) !important;
+        background: var(--color-primary-soft) !important;
+        color: var(--color-primary) !important;
       }
     }
 
     .btn-buy-now {
-      border-color: #ee4d2d;
-      background: #ee4d2d;
+      border-color: var(--color-primary);
+      background: var(--color-primary);
 
       &:hover {
-        border-color: #d43816 !important;
-        background: #d43816 !important;
+        border-color: var(--color-primary-hover) !important;
+        background: var(--color-primary-hover) !important;
       }
     }
   }
@@ -442,8 +442,8 @@
         height: 38px;
         flex-shrink: 0;
         border-radius: 12px;
-        background: #fff1ed;
-        color: #ee4d2d;
+        background: var(--color-primary-soft);
+        color: var(--color-primary);
         font-size: 16px;
         display: inline-flex;
         align-items: center;
@@ -485,7 +485,7 @@
   gap: 14px;
 
   &__icon {
-    color: #1677ff;
+    color: var(--color-primary);
     font-size: 38px;
   }
 
@@ -653,7 +653,7 @@
       padding: 12px;
       border: 0;
       border-radius: 0;
-      background: #fff5f1;
+      background: var(--color-primary-soft);
 
       .price-label {
         margin-bottom: 4px;
@@ -685,7 +685,7 @@
 
         .anticon {
           margin-bottom: 3px;
-          color: #ee4d2d;
+          color: var(--color-primary);
           font-size: 13px;
         }
 
@@ -866,7 +866,7 @@
 
         b {
           overflow: hidden;
-          color: #ee4d2d;
+          color: var(--color-primary);
           font-size: 16px;
           font-weight: 900;
           white-space: nowrap;
@@ -882,17 +882,17 @@
         .btn-mobile-cart {
           width: 44px;
           height: 42px;
-          border-color: #ee4d2d;
+          border-color: var(--color-primary);
           border-radius: 10px;
-          color: #ee4d2d;
+          color: var(--color-primary);
         }
 
         .btn-mobile-buy {
           min-width: 118px;
           height: 42px;
-          border-color: #ee4d2d;
+          border-color: var(--color-primary);
           border-radius: 10px;
-          background: #ee4d2d;
+          background: var(--color-primary);
           font-weight: 800;
         }
       }
@@ -977,7 +977,7 @@
 
     &:hover {
       color: inherit;
-      border-color: #ee4d2d;
+      border-color: var(--color-primary);
       transform: translateY(-2px);
     }
   }
@@ -1028,7 +1028,7 @@
     margin-top: 8px;
 
     strong {
-      color: #ee4d2d;
+      color: var(--color-primary);
       font-size: 15px;
       font-weight: 600;
     }
@@ -1086,7 +1086,7 @@
   gap: 5px;
 
   .ant-rate {
-    color: #ee4d2d;
+    color: var(--color-primary);
     font-size: 13px;
 
     .ant-rate-star {

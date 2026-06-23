@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AppstoreOutlined,
+  DollarCircleOutlined,
+  DownOutlined,
   ExceptionOutlined,
   HeartTwoTone,
-  TeamOutlined,
-  DollarCircleOutlined,
+  HomeOutlined,
+  LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   TagsOutlined,
+  TeamOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import { Avatar, Dropdown, Layout, Menu, Space } from 'antd';
+import { Avatar, Dropdown, Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
-import { Link, Outlet, UIMatch, useLocation, useMatches, useNavigate } from 'react-router-dom';
+import { Outlet, UIMatch, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { useCurrentApp } from '../context/app.context';
 import { logoutAPI } from '@/services/api';
 import { getAvatarUrl } from '@/services/helper';
@@ -24,6 +28,7 @@ const { Content, Footer, Sider } = Layout;
 
 const LayoutAdmin = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [openUserDropdown, setOpenUserDropdown] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,6 +47,18 @@ const LayoutAdmin = () => {
       return typeof breadcrumb === 'function' ? breadcrumb(match.params) : breadcrumb;
     });
 
+  useEffect(() => {
+    const closeDropdownOnScroll = () => {
+      setOpenUserDropdown(false);
+    };
+
+    window.addEventListener('scroll', closeDropdownOnScroll, true);
+
+    return () => {
+      window.removeEventListener('scroll', closeDropdownOnScroll, true);
+    };
+  }, []);
+
   const handleLogout = async () => {
     const res = await logoutAPI();
 
@@ -49,6 +66,8 @@ const LayoutAdmin = () => {
       setUser(null);
       setIsAuthenticated(false);
       localStorage.removeItem('access_token');
+      setOpenUserDropdown(false);
+      navigate('/');
     }
   };
 
@@ -87,22 +106,43 @@ const LayoutAdmin = () => {
 
   const itemsDropdown: MenuProps['items'] = [
     {
-      label: <Link to="/profile">Quản lý tài khoản</Link>,
+      label: 'Quản lý tài khoản',
       key: 'account',
+      icon: <UserOutlined />,
     },
     {
-      label: <Link to="/">Trang chủ</Link>,
+      label: 'Trang chủ',
       key: 'home',
+      icon: <HomeOutlined />,
     },
     {
-      label: (
-        <label className="layout-admin__logout" onClick={handleLogout}>
-          Đăng xuất
-        </label>
-      ),
+      type: 'divider',
+    },
+    {
+      label: 'Đăng xuất',
       key: 'logout',
+      icon: <LogoutOutlined />,
+      danger: true,
     },
   ];
+
+  const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
+    setOpenUserDropdown(false);
+
+    if (key === 'account') {
+      navigate('/profile');
+      return;
+    }
+
+    if (key === 'home') {
+      navigate('/');
+      return;
+    }
+
+    if (key === 'logout') {
+      void handleLogout();
+    }
+  };
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     navigate(key);
@@ -164,11 +204,34 @@ const LayoutAdmin = () => {
             })}
           </span>
 
-          <Dropdown menu={{ items: itemsDropdown }} trigger={['click']}>
-            <Space className="layout-admin__user">
-              <Avatar src={urlAvatar} />
-              <span>{user?.fullName}</span>
-            </Space>
+          <Dropdown
+            menu={{
+              items: itemsDropdown,
+              onClick: handleUserMenuClick,
+            }}
+            trigger={['click']}
+            placement="bottomRight"
+            open={openUserDropdown}
+            onOpenChange={setOpenUserDropdown}
+            overlayClassName="admin-user-dropdown-overlay"
+            getPopupContainer={(triggerNode) =>
+              (triggerNode.closest('.layout-admin__header') as HTMLElement) || document.body
+            }
+          >
+            <button type="button" className="layout-admin__user">
+              <Avatar
+                className="layout-admin__user-avatar"
+                src={urlAvatar}
+                icon={<UserOutlined />}
+              />
+
+              <span className="layout-admin__user-meta">
+                <span className="layout-admin__user-name">{user?.fullName || 'Admin'}</span>
+                <span className="layout-admin__user-role">Quản trị viên</span>
+              </span>
+
+              <DownOutlined className="layout-admin__user-arrow" />
+            </button>
           </Dropdown>
         </div>
 

@@ -249,7 +249,63 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ConfigProvider locale={viVN}>
+    <ConfigProvider
+      locale={viVN}
+      theme={{
+        token: {
+          colorPrimary: '#f97316',
+          colorLink: '#f97316',
+          colorSuccess: '#16a34a',
+          colorWarning: '#f59e0b',
+          colorError: '#ef4444',
+          colorInfo: '#2563eb',
+          colorText: '#111827',
+          colorTextSecondary: '#64748b',
+          colorBorder: '#e5e7eb',
+          colorBgLayout: '#f5f7fb',
+          borderRadius: 12,
+          fontFamily:
+            "'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        components: {
+          Button: {
+            colorPrimary: '#f97316',
+            colorPrimaryHover: '#ea580c',
+            colorPrimaryActive: '#c2410c',
+            borderRadius: 12,
+            fontWeight: 700,
+          },
+          Input: {
+            activeBorderColor: '#f97316',
+            hoverBorderColor: '#fb923c',
+            activeShadow: '0 0 0 3px rgba(249, 115, 22, 0.12)',
+            borderRadius: 10,
+          },
+          Select: {
+            optionSelectedBg: '#fff7ed',
+            optionSelectedColor: '#f97316',
+            controlOutline: 'rgba(249, 115, 22, 0.16)',
+            borderRadius: 10,
+          },
+          Menu: {
+            itemSelectedBg: '#fff7ed',
+            itemSelectedColor: '#f97316',
+            itemHoverColor: '#f97316',
+            itemHoverBg: '#fff7ed',
+          },
+          Tabs: {
+            itemSelectedColor: '#f97316',
+            itemHoverColor: '#ea580c',
+            inkBarColor: '#f97316',
+          },
+          Pagination: {
+            itemActiveBg: '#f97316',
+            colorPrimary: '#f97316',
+            colorPrimaryHover: '#ea580c',
+          },
+        },
+      }}
+    >
       <App>
         <AppProvider>
           <RouterProvider router={router} />

@@ -50,8 +50,8 @@
     font-size: 18px;
 
     &--order {
-      background: #f0f7ff;
-      color: #1677ff;
+      background: var(--color-primary-soft);
+      color: var(--color-primary);
     }
 
     &--status {
@@ -61,7 +61,7 @@
 
     &--money {
       background: #fff4ed;
-      color: #ee4d2d;
+      color: var(--color-primary);
     }
   }
 
@@ -76,7 +76,7 @@
   &__summary-price {
     display: block;
     margin-top: 3px;
-    color: #ee4d2d !important;
+    color: var(--color-primary) !important;
     font-size: 15px;
     font-weight: 900 !important;
   }
@@ -196,7 +196,7 @@
   }
 
   &__price {
-    color: #ee4d2d !important;
+    color: var(--color-primary) !important;
     font-weight: 900 !important;
     white-space: nowrap;
   }
@@ -211,7 +211,7 @@
     min-width: 320px;
     padding: 14px;
     border-radius: 12px;
-    background: #fff7f3;
+    background: var(--color-primary-soft);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -219,7 +219,7 @@
   }
 
   &__total-price {
-    color: #ee4d2d !important;
+    color: var(--color-primary) !important;
     font-size: 18px;
     font-weight: 900 !important;
   }
