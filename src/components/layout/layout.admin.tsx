@@ -13,11 +13,11 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { App, Avatar, Button, Dropdown, Layout, Menu } from 'antd';
+import { App, Avatar, Badge, Button, Dropdown, Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import { Outlet, UIMatch, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { useCurrentApp } from '../context/app.context';
-import { logoutAPI } from '@/services/api';
+import { getAllOrdersAPI, logoutAPI } from '@/services/api';
 import { formatCurrency, getAvatarUrl } from '@/services/helper';
 import AppBreadcrumb from '../share/breadcrumb';
 import './layout.admin.scss';
@@ -29,6 +29,7 @@ const { Content, Footer, Sider } = Layout;
 const LayoutAdmin = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [openUserDropdown, setOpenUserDropdown] = useState(false);
+  const [pendingOrderCount, setPendingOrderCount] = useState(0);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -91,6 +92,44 @@ const LayoutAdmin = () => {
     };
   }, [navigate, notification, user?.role]);
 
+  useEffect(() => {
+    if (user?.role !== 'ADMIN') {
+      setPendingOrderCount(0);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchPendingOrderCount = async () => {
+      try {
+        const res = await getAllOrdersAPI(1, 1, 'status=PENDING');
+
+        if (isMounted) {
+          setPendingOrderCount(res.data?.meta.total || 0);
+        }
+      } catch {
+        if (isMounted) {
+          setPendingOrderCount(0);
+        }
+      }
+    };
+
+    fetchPendingOrderCount();
+
+    const handleRefreshPendingOrders = () => {
+      fetchPendingOrderCount();
+    };
+
+    window.addEventListener('admin:order:new', handleRefreshPendingOrders);
+    window.addEventListener('admin:orders:pending-refresh', handleRefreshPendingOrders);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('admin:order:new', handleRefreshPendingOrders);
+      window.removeEventListener('admin:orders:pending-refresh', handleRefreshPendingOrders);
+    };
+  }, [user?.role]);
+
   const handleLogout = async () => {
     const res = await logoutAPI();
 
@@ -129,7 +168,12 @@ const LayoutAdmin = () => {
       title: 'Danh mục',
     },
     {
-      label: 'Quản lý đơn hàng',
+      label: (
+        <span className="layout-admin__menu-label">
+          <span>Quản lý đơn hàng</span>
+          <Badge count={pendingOrderCount} size="small" overflowCount={99} />
+        </span>
+      ),
       key: '/admin/order',
       icon: <DollarCircleOutlined />,
       title: 'Quản lý đơn hàng',

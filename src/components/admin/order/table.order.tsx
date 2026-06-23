@@ -191,6 +191,7 @@ const TableOrder = () => {
         message.success('Cập nhật trạng thái đơn hàng thành công.');
 
         refreshTable();
+        window.dispatchEvent(new CustomEvent('admin:orders:pending-refresh'));
 
         if (selectedOrderId === orderId) {
           setDetailRefreshKey((current) => current + 1);
