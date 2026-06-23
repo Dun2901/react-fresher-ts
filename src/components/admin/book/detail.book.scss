@@ -69,12 +69,12 @@
   }
 
   &:hover {
-    border-color: #1677ff;
+    border-color: var(--color-primary);
   }
 
   &.active {
-    border-color: #1677ff;
-    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.15);
   }
 }
 

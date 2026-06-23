@@ -46,7 +46,7 @@
     height: 46px;
     border-radius: 999px;
     background: #e7f0ff;
-    color: #1677ff;
+    color: var(--color-primary);
     display: grid;
     place-items: center;
     font-size: 22px;
@@ -117,11 +117,11 @@
       transform 0.2s ease;
 
     &:hover {
-      background: #f0f5ff;
+      background: var(--color-primary-soft);
     }
 
     &--unread {
-      background: #eef6ff;
+      background: var(--color-primary-soft);
     }
   }
 
@@ -138,7 +138,7 @@
     color: #ffffff;
 
     &--order_status {
-      background: #1677ff;
+      background: var(--color-primary);
     }
 
     &--payment_success {
@@ -196,7 +196,7 @@
     height: 10px;
     margin-top: 5px;
     border-radius: 999px;
-    background: #1677ff;
+    background: var(--color-primary);
     flex-shrink: 0;
   }
 

@@ -186,7 +186,7 @@ const TableCategory = () => {
             <Tooltip title="Cập nhật danh mục">
               <AiOutlineEdit
                 size={19}
-                color="#f57800"
+                color="var(--color-primary-hover)"
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
                   setDataUpdate(entity);

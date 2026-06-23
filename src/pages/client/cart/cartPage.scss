@@ -53,13 +53,13 @@
     height: 40px;
     margin-top: 18px;
     border-radius: 999px;
-    background: #ee4d2d;
-    border-color: #ee4d2d;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     font-weight: 700;
 
     &:hover {
-      background: #d43816 !important;
-      border-color: #d43816 !important;
+      background: var(--color-primary-hover) !important;
+      border-color: var(--color-primary-hover) !important;
     }
   }
 }
@@ -100,7 +100,7 @@
       gap: 8px;
 
       .anticon {
-        color: #ee4d2d;
+        color: var(--color-primary);
       }
     }
 
@@ -115,7 +115,7 @@
     }
 
     &__back-btn {
-      color: #1677ff;
+      color: var(--color-primary);
       font-weight: 700;
     }
   }
@@ -165,7 +165,7 @@
 
     &--selected {
       border-color: #ffccc7;
-      background: #fffaf8;
+      background: var(--color-primary-soft);
     }
 
     &--warning {
@@ -236,7 +236,7 @@
       -webkit-box-orient: vertical;
 
       &:hover {
-        color: #ee4d2d;
+        color: var(--color-primary);
       }
     }
 
@@ -318,7 +318,7 @@
       }
 
       b {
-        color: #ee4d2d;
+        color: var(--color-primary);
         font-size: 17px;
         font-weight: 900;
       }
@@ -391,7 +391,7 @@
     }
 
     .cart-summary-total-amount {
-      color: #ee4d2d;
+      color: var(--color-primary);
       font-size: 22px;
       font-weight: 900;
     }
@@ -403,15 +403,15 @@
 
     .cart-order-btn {
       height: 44px;
-      border-color: #ee4d2d;
+      border-color: var(--color-primary);
       border-radius: 10px;
-      background: #ee4d2d;
+      background: var(--color-primary);
       font-size: 15px;
       font-weight: 800;
 
       &:hover {
-        border-color: #d43816 !important;
-        background: #d43816 !important;
+        border-color: var(--color-primary-hover) !important;
+        background: var(--color-primary-hover) !important;
       }
     }
   }
@@ -561,7 +561,7 @@
       }
 
       &--selected {
-        background: #fffaf8;
+        background: var(--color-primary-soft);
       }
 
       &__checkbox {
@@ -688,7 +688,7 @@
 
         b {
           overflow: hidden;
-          color: #ee4d2d;
+          color: var(--color-primary);
           font-size: 16px;
           font-weight: 900;
           white-space: nowrap;
@@ -698,14 +698,14 @@
 
       &__btn {
         height: 42px;
-        border-color: #ee4d2d;
+        border-color: var(--color-primary);
         border-radius: 10px;
-        background: #ee4d2d;
+        background: var(--color-primary);
         font-weight: 800;
 
         &:hover {
-          border-color: #d43816 !important;
-          background: #d43816 !important;
+          border-color: var(--color-primary-hover) !important;
+          background: var(--color-primary-hover) !important;
         }
       }
     }

@@ -41,13 +41,13 @@
 
         .icon-book {
           font-size: 26px;
-          color: #1677ff;
+          color: var(--color-primary);
         }
 
         .logo-brand-text {
           font-size: 18px;
           font-weight: 700;
-          background: linear-gradient(135deg, #1677ff 0%, #002c8c 100%);
+          background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-active) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           letter-spacing: -0.3px;
@@ -71,8 +71,8 @@
         &:hover,
         &.ant-input-affix-wrapper-focused {
           background-color: #ffffff;
-          border-color: #1677ff;
-          box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
         }
 
         .ant-input {
@@ -106,7 +106,7 @@
               transform 0.2s ease;
 
             &:hover {
-              color: #1677ff;
+              color: var(--color-primary);
               transform: translateY(-1px);
             }
           }
@@ -124,7 +124,7 @@
             transition: color 0.2s ease;
 
             &:hover {
-              color: #1677ff;
+              color: var(--color-primary);
             }
           }
         }
@@ -147,7 +147,7 @@
             transition: color 0.2s ease;
 
             &:hover {
-              color: #1677ff;
+              color: var(--color-primary);
             }
           }
 
@@ -157,33 +157,72 @@
             height: 30px;
             border: 0;
             border-radius: 999px;
-            background: #f0f5ff;
-            color: #1677ff;
+            background: var(--color-primary-soft);
+            color: var(--color-primary);
             font-size: 16px;
             cursor: pointer;
             align-items: center;
             justify-content: center;
 
             &--login {
-              box-shadow: inset 0 0 0 1px rgba(22, 119, 255, 0.14);
+              box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.14);
             }
           }
 
           .user-profile-dropdown {
+            height: 40px;
+            max-width: 190px;
+            padding: 4px 8px 4px 5px;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            background: transparent;
             display: flex;
             align-items: center;
             gap: 8px;
             cursor: pointer;
+            transition:
+              background 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s ease,
+              transform 0.2s ease;
+
+            &:hover {
+              background: #f5f8ff;
+              border-color: var(--color-primary-border);
+              box-shadow: 0 6px 16px rgba(249, 115, 22, 0.08);
+              transform: translateY(-1px);
+
+              .user-display-name,
+              .user-dropdown-arrow {
+                color: var(--color-primary);
+              }
+            }
+
+            .user-profile-avatar {
+              width: 32px;
+              height: 32px;
+              flex-shrink: 0;
+              background: #eef2f7;
+              color: #94a3b8;
+            }
 
             .user-display-name {
-              font-size: 13.5px;
-              font-weight: 500;
-              color: #262626;
-              max-width: 120px;
+              font-size: 14px;
+              font-weight: 700;
+              color: #1f2937;
+              max-width: 105px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
               display: inline-block;
+              transition: color 0.2s ease;
+            }
+
+            .user-dropdown-arrow {
+              font-size: 10px;
+              color: #94a3b8;
+              transition: color 0.2s ease;
+              flex-shrink: 0;
             }
           }
         }
@@ -359,15 +398,15 @@
   padding: 16px;
   margin-bottom: 16px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
-  border: 1px solid #dbeafe;
+  background: linear-gradient(135deg, var(--color-primary-soft) 0%, #ffffff 100%);
+  border: 1px solid var(--color-primary-border);
 
   &__icon {
     width: 42px;
     height: 42px;
     margin-bottom: 10px;
     border-radius: 999px;
-    background: #1677ff;
+    background: var(--color-primary);
     color: #fff;
     display: grid;
     place-items: center;
@@ -462,11 +501,11 @@
   }
 
   &:hover {
-    background: #f0f5ff;
-    color: #1677ff;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
 
     .anticon {
-      color: #1677ff;
+      color: var(--color-primary);
     }
   }
 
@@ -482,25 +521,25 @@
     font-weight: 600;
 
     .anticon {
-      color: #1677ff;
+      color: var(--color-primary);
     }
   }
 
   &--login {
-    color: #1677ff;
+    color: var(--color-primary);
     font-weight: 700;
 
     .anticon {
-      color: #1677ff;
+      color: var(--color-primary);
     }
   }
 
   &--admin {
-    color: #1677ff;
+    color: var(--color-primary);
     font-weight: 700;
 
     .anticon {
-      color: #1677ff;
+      color: var(--color-primary);
     }
   }
 
@@ -534,5 +573,70 @@
         margin-right: 0;
       }
     }
+  }
+}
+
+.user-dropdown-overlay {
+  .ant-dropdown-menu {
+    min-width: 230px;
+    padding: 8px;
+    border-radius: 16px;
+    border: 1px solid #eef2f7;
+    box-shadow:
+      0 18px 45px rgba(15, 23, 42, 0.12),
+      0 4px 12px rgba(15, 23, 42, 0.06);
+  }
+
+  .ant-dropdown-menu-item {
+    min-height: 44px;
+    padding: 0 12px !important;
+    border-radius: 11px !important;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease;
+
+    .ant-dropdown-menu-title-content {
+      line-height: 44px;
+    }
+
+    .anticon {
+      color: #64748b;
+      font-size: 16px;
+      transition: color 0.2s ease;
+    }
+
+    &:hover {
+      background: var(--color-primary-soft) !important;
+      color: var(--color-primary) !important;
+
+      .anticon {
+        color: var(--color-primary);
+      }
+    }
+  }
+
+  .ant-dropdown-menu-item-danger {
+    color: #ef4444 !important;
+
+    .anticon {
+      color: #ef4444;
+    }
+
+    &:hover {
+      background: #fff1f0 !important;
+      color: #ef4444 !important;
+
+      .anticon {
+        color: #ef4444;
+      }
+    }
+  }
+
+  .ant-dropdown-menu-item-divider {
+    margin: 6px 4px !important;
+    background-color: #eef2f7;
   }
 }

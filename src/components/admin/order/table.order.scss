@@ -79,8 +79,8 @@
     height: 38px;
     flex-shrink: 0;
     border-radius: 12px;
-    background: #f0f7ff;
-    color: #1677ff;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -96,7 +96,7 @@
 
   &__order-code {
     max-width: 100%;
-    color: #1677ff !important;
+    color: var(--color-primary) !important;
     font-size: 13px;
     font-weight: 800;
     word-break: break-word;
@@ -143,7 +143,7 @@
   }
 
   &__price {
-    color: #ee4d2d !important;
+    color: var(--color-primary) !important;
     font-size: 14px;
     font-weight: 900 !important;
     white-space: nowrap;

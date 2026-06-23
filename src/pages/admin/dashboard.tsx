@@ -329,7 +329,7 @@ const DashBoardPage = () => {
                   title="Đơn hoàn thành"
                   value={summary?.completedOrders || 0}
                   prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#1677ff' }}
+                  valueStyle={{ color: 'var(--color-primary)' }}
                 />
               </Card>
             </Col>

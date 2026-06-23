@@ -96,7 +96,7 @@ const TableUser = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <AiOutlineEdit
               size={18}
-              color="#f57800"
+              color="var(--color-primary-hover)"
               style={{ cursor: 'pointer' }}
               onClick={() => {
                 setDataUpdate(entity);

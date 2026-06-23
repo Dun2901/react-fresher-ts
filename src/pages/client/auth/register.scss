@@ -3,7 +3,7 @@
   padding: 28px 18px;
   background:
     radial-gradient(circle at top right, rgba(238, 77, 45, 0.14), transparent 30%),
-    linear-gradient(135deg, #fff7f3 0%, #f8fafc 45%, #eef4ff 100%);
+    linear-gradient(135deg, var(--color-primary-soft) 0%, #f8fafc 45%, var(--color-primary-soft) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,7 +85,7 @@
     margin-top: 4px;
     border-radius: 12px;
     font-weight: 800;
-    box-shadow: 0 8px 18px rgba(22, 119, 255, 0.22);
+    box-shadow: 0 8px 18px rgba(249, 115, 22, 0.22);
   }
 
   &__footer-text {
@@ -95,7 +95,7 @@
     font-size: 14px;
 
     a {
-      color: #1677ff;
+      color: var(--color-primary);
       font-weight: 800;
     }
   }
@@ -106,7 +106,7 @@
     min-height: 560px;
     padding: 42px;
     border-radius: 24px;
-    background: linear-gradient(135deg, #ee4d2d 0%, #d63f20 48%, #12305f 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #d63f20 48%, var(--color-primary-active) 100%);
     color: #fff;
     box-shadow: 0 22px 50px rgba(15, 23, 42, 0.16);
 
