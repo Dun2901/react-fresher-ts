@@ -121,11 +121,13 @@ const LayoutAdmin = () => {
     };
 
     window.addEventListener('admin:order:new', handleRefreshPendingOrders);
+    window.addEventListener('admin:order:updated', handleRefreshPendingOrders);
     window.addEventListener('admin:orders:pending-refresh', handleRefreshPendingOrders);
 
     return () => {
       isMounted = false;
       window.removeEventListener('admin:order:new', handleRefreshPendingOrders);
+      window.removeEventListener('admin:order:updated', handleRefreshPendingOrders);
       window.removeEventListener('admin:orders:pending-refresh', handleRefreshPendingOrders);
     };
   }, [user?.role]);

@@ -2,19 +2,42 @@ import { io, Socket } from 'socket.io-client';
 
 let notificationSocket: Socket | null = null;
 
+type NotificationUnreadCountPayload = {
+  unreadCount: number;
+};
+
+type NotificationNewPayload = {
+  notification: unknown;
+  unreadCount: number;
+};
+
 const getSocketUrl = () => {
   const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8081';
 
   return baseUrl.replace(/\/api\/v\d+\/?$/, '').replace(/\/$/, '');
 };
 
-const dispatchNotificationRefresh = () => {
-  window.dispatchEvent(new CustomEvent('notifications:refresh'));
+const dispatchUnreadCount = (unreadCount: number) => {
+  window.dispatchEvent(
+    new CustomEvent<NotificationUnreadCountPayload>('notifications:unread-count', {
+      detail: {
+        unreadCount,
+      },
+    }),
+  );
 };
 
 const dispatchAdminNewOrder = (payload: IAdminNewOrderSocketPayload) => {
   window.dispatchEvent(
     new CustomEvent<IAdminNewOrderSocketPayload>('admin:order:new', {
+      detail: payload,
+    }),
+  );
+};
+
+const dispatchAdminOrderUpdated = (payload: IAdminOrderUpdatedSocketPayload) => {
+  window.dispatchEvent(
+    new CustomEvent<IAdminOrderUpdatedSocketPayload>('admin:order:updated', {
       detail: payload,
     }),
   );
@@ -44,12 +67,20 @@ export const connectNotificationSocket = () => {
     withCredentials: true,
   });
 
-  notificationSocket.on('notification:new', () => {
-    dispatchNotificationRefresh();
+  notificationSocket.on('notification:new', (payload: NotificationNewPayload) => {
+    if (typeof payload?.unreadCount === 'number') {
+      dispatchUnreadCount(payload.unreadCount);
+    }
   });
 
-  notificationSocket.on('notification:unread-count', () => {
-    dispatchNotificationRefresh();
+  notificationSocket.on('admin:order:updated', (payload: IAdminOrderUpdatedSocketPayload) => {
+    dispatchAdminOrderUpdated(payload);
+  });
+
+  notificationSocket.on('notification:unread-count', (payload: NotificationUnreadCountPayload) => {
+    if (typeof payload?.unreadCount === 'number') {
+      dispatchUnreadCount(payload.unreadCount);
+    }
   });
 
   notificationSocket.on('admin:order:new', (payload: IAdminNewOrderSocketPayload) => {
