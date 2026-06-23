@@ -10,6 +10,10 @@ type UserNotificationBellProps = {
   onNavigate?: () => void;
 };
 
+type NotificationUnreadCountPayload = {
+  unreadCount: number;
+};
+
 const UserNotificationBell = ({ variant = 'header', onNavigate }: UserNotificationBellProps) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useCurrentApp();
@@ -33,19 +37,19 @@ const UserNotificationBell = ({ variant = 'header', onNavigate }: UserNotificati
   useEffect(() => {
     fetchUnreadCount();
 
-    const intervalId = window.setInterval(() => {
-      fetchUnreadCount();
-    }, 30000);
+    const handleUnreadCount = (event: Event) => {
+      const customEvent = event as CustomEvent<NotificationUnreadCountPayload>;
+      const nextUnreadCount = customEvent.detail?.unreadCount;
 
-    const handleRefreshNotifications = () => {
-      fetchUnreadCount();
+      if (typeof nextUnreadCount === 'number') {
+        setUnreadCount(nextUnreadCount);
+      }
     };
 
-    window.addEventListener('notifications:refresh', handleRefreshNotifications);
+    window.addEventListener('notifications:unread-count', handleUnreadCount);
 
     return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('notifications:refresh', handleRefreshNotifications);
+      window.removeEventListener('notifications:unread-count', handleUnreadCount);
     };
   }, [isAuthenticated]);
 

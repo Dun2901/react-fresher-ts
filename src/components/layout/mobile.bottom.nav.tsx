@@ -52,19 +52,19 @@ const MobileBottomNav = () => {
   useEffect(() => {
     fetchUnreadNotificationCount();
 
-    const intervalId = window.setInterval(() => {
-      fetchUnreadNotificationCount();
-    }, 30000);
+    const handleUnreadCount = (event: Event) => {
+      const customEvent = event as CustomEvent<{ unreadCount: number }>;
+      const nextUnreadCount = customEvent.detail?.unreadCount;
 
-    const handleRefreshNotifications = () => {
-      fetchUnreadNotificationCount();
+      if (typeof nextUnreadCount === 'number') {
+        setUnreadNotificationCount(nextUnreadCount);
+      }
     };
 
-    window.addEventListener('notifications:refresh', handleRefreshNotifications);
+    window.addEventListener('notifications:unread-count', handleUnreadCount);
 
     return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('notifications:refresh', handleRefreshNotifications);
+      window.removeEventListener('notifications:unread-count', handleUnreadCount);
     };
   }, [isAuthenticated]);
 

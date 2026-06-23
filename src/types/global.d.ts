@@ -187,6 +187,21 @@ declare global {
     };
   }
 
+  interface IAdminOrderUpdatedSocketPayload {
+    order: {
+      _id: string;
+      orderCode: string;
+      customerName?: string;
+      customerEmail?: string;
+      totalPrice: number;
+      status: IOrder['status'];
+      paymentMethod: IOrder['paymentMethod'];
+      paymentStatus: IOrder['paymentStatus'];
+      createdAt?: string;
+      updatedAt?: string;
+    };
+  }
+
   // DTO gửi lên khi đặt hàng
   interface ICheckoutDto {
     shippingAddress: IShippingAddress;

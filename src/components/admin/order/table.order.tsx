@@ -160,14 +160,16 @@ const TableOrder = () => {
   };
 
   useEffect(() => {
-    const handleNewOrder = () => {
+    const handleRealtimeOrderChanged = () => {
       refreshTable();
     };
 
-    window.addEventListener('admin:order:new', handleNewOrder);
+    window.addEventListener('admin:order:new', handleRealtimeOrderChanged);
+    window.addEventListener('admin:order:updated', handleRealtimeOrderChanged);
 
     return () => {
-      window.removeEventListener('admin:order:new', handleNewOrder);
+      window.removeEventListener('admin:order:new', handleRealtimeOrderChanged);
+      window.removeEventListener('admin:order:updated', handleRealtimeOrderChanged);
     };
   }, []);
 
