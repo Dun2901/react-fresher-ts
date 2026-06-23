@@ -24,7 +24,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   getDashboardSummaryAPI,
   getLatestOrdersDashboardAPI,
@@ -83,8 +83,11 @@ const DashBoardPage = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const fetchDashboardData = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+
     setErrorMessage('');
 
     try {
@@ -100,9 +103,29 @@ const DashBoardPage = () => {
     } catch {
       setErrorMessage('Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.');
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const handleDashboardRealtimeRefresh = () => {
+      fetchDashboardData(false);
+    };
+
+    window.addEventListener('admin:order:new', handleDashboardRealtimeRefresh);
+    window.addEventListener('admin:orders:pending-refresh', handleDashboardRealtimeRefresh);
+
+    return () => {
+      window.removeEventListener('admin:order:new', handleDashboardRealtimeRefresh);
+      window.removeEventListener('admin:orders:pending-refresh', handleDashboardRealtimeRefresh);
+    };
+  }, [fetchDashboardData]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -251,7 +274,7 @@ const DashBoardPage = () => {
             showIcon
             message={errorMessage}
             action={
-              <Button size="small" danger onClick={fetchDashboardData}>
+              <Button size="small" danger onClick={() => fetchDashboardData()}>
                 Thử lại
               </Button>
             }
