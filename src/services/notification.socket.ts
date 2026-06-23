@@ -12,6 +12,14 @@ const dispatchNotificationRefresh = () => {
   window.dispatchEvent(new CustomEvent('notifications:refresh'));
 };
 
+const dispatchAdminNewOrder = (payload: IAdminNewOrderSocketPayload) => {
+  window.dispatchEvent(
+    new CustomEvent<IAdminNewOrderSocketPayload>('admin:order:new', {
+      detail: payload,
+    }),
+  );
+};
+
 export const connectNotificationSocket = () => {
   const token = localStorage.getItem('access_token');
 
@@ -42,6 +50,10 @@ export const connectNotificationSocket = () => {
 
   notificationSocket.on('notification:unread-count', () => {
     dispatchNotificationRefresh();
+  });
+
+  notificationSocket.on('admin:order:new', (payload: IAdminNewOrderSocketPayload) => {
+    dispatchAdminNewOrder(payload);
   });
 
   notificationSocket.on('connect_error', (error) => {

@@ -13,12 +13,12 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { Avatar, Dropdown, Layout, Menu } from 'antd';
+import { App, Avatar, Button, Dropdown, Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import { Outlet, UIMatch, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { useCurrentApp } from '../context/app.context';
 import { logoutAPI } from '@/services/api';
-import { getAvatarUrl } from '@/services/helper';
+import { formatCurrency, getAvatarUrl } from '@/services/helper';
 import AppBreadcrumb from '../share/breadcrumb';
 import './layout.admin.scss';
 
@@ -38,6 +38,7 @@ const LayoutAdmin = () => {
     location.pathname === '/admin' ? '/admin' : `/${pathnameParts.slice(1, 3).join('/')}`;
 
   const { user, setUser, setIsAuthenticated, isAuthenticated } = useCurrentApp();
+  const { notification } = App.useApp();
 
   const matches = useMatches() as UIMatch<unknown, HandleType>[];
   const crumbs = matches
@@ -58,6 +59,37 @@ const LayoutAdmin = () => {
       window.removeEventListener('scroll', closeDropdownOnScroll, true);
     };
   }, []);
+
+  useEffect(() => {
+    if (user?.role !== 'ADMIN') {
+      return;
+    }
+
+    const handleNewOrder = (event: Event) => {
+      const payload = (event as CustomEvent<IAdminNewOrderSocketPayload>).detail;
+      const order = payload?.order;
+
+      notification.success({
+        message: 'Có đơn hàng mới',
+        description: order
+          ? `${order.orderCode} - ${order.customerName || 'Khách hàng'} vừa đặt ${formatCurrency(
+              order.totalPrice,
+            )}.`
+          : 'Có đơn hàng mới vừa được đặt.',
+        btn: (
+          <Button type="primary" size="small" onClick={() => navigate('/admin/order')}>
+            Xem đơn
+          </Button>
+        ),
+      });
+    };
+
+    window.addEventListener('admin:order:new', handleNewOrder);
+
+    return () => {
+      window.removeEventListener('admin:order:new', handleNewOrder);
+    };
+  }, [navigate, notification, user?.role]);
 
   const handleLogout = async () => {
     const res = await logoutAPI();
