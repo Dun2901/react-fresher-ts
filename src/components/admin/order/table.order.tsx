@@ -10,7 +10,7 @@ import type { ActionType, ProColumns, ProTableProps } from '@ant-design/pro-comp
 import { ProTable } from '@ant-design/pro-components';
 import { App, Button, Dropdown, Grid, Popconfirm, Tag, Tooltip, Typography } from 'antd';
 import type { MenuProps } from 'antd';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAllOrdersAPI, updateOrderStatusAPI } from '@/services/api';
 import { dateRangeValidate, formatCurrency } from '@/services/helper';
 import DetailOrder from './detail.order';
@@ -159,6 +159,18 @@ const TableOrder = () => {
     actionRef.current?.reload();
   };
 
+  useEffect(() => {
+    const handleNewOrder = () => {
+      refreshTable();
+    };
+
+    window.addEventListener('admin:order:new', handleNewOrder);
+
+    return () => {
+      window.removeEventListener('admin:order:new', handleNewOrder);
+    };
+  }, []);
+
   const openOrderDetail = (orderId: string) => {
     setSelectedOrderId(orderId);
     setOpenDetail(true);
@@ -179,6 +191,7 @@ const TableOrder = () => {
         message.success('Cập nhật trạng thái đơn hàng thành công.');
 
         refreshTable();
+        window.dispatchEvent(new CustomEvent('admin:orders:pending-refresh'));
 
         if (selectedOrderId === orderId) {
           setDetailRefreshKey((current) => current + 1);

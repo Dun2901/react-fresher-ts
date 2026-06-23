@@ -16,10 +16,8 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { MenuProps } from 'antd';
 import {
-  CloseCircleOutlined,
   CreditCardOutlined,
   DownOutlined,
-  EyeOutlined,
   ReloadOutlined,
   ShoppingOutlined,
   TruckOutlined,
@@ -397,11 +395,7 @@ const CurrentOrderPage = () => {
         align: 'right',
         render: (_, record) => (
           <div className="current-order__actions">
-            <Button
-              size="middle"
-              icon={<EyeOutlined />}
-              onClick={() => navigate(`/orders/${record._id}`)}
-            >
+            <Button size="middle" onClick={() => navigate(`/orders/${record._id}`)}>
               Chi tiết
             </Button>
 
@@ -414,12 +408,7 @@ const CurrentOrderPage = () => {
                 okButtonProps={{ danger: true }}
                 onConfirm={() => handleCancelOrder(record._id)}
               >
-                <Button
-                  size="middle"
-                  danger
-                  icon={<CloseCircleOutlined />}
-                  loading={cancelLoadingId === record._id}
-                >
+                <Button size="middle" danger loading={cancelLoadingId === record._id}>
                   Hủy
                 </Button>
               </Popconfirm>
@@ -547,9 +536,7 @@ const CurrentOrderPage = () => {
             )}
 
             <div className="current-order__mobile-secondary-actions">
-              <Button icon={<EyeOutlined />} onClick={() => navigate(`/orders/${order._id}`)}>
-                Chi tiết
-              </Button>
+              <Button onClick={() => navigate(`/orders/${order._id}`)}>Chi tiết</Button>
 
               {order.status === 'PENDING' && (
                 <Popconfirm
@@ -560,11 +547,7 @@ const CurrentOrderPage = () => {
                   okButtonProps={{ danger: true }}
                   onConfirm={() => handleCancelOrder(order._id)}
                 >
-                  <Button
-                    danger
-                    icon={<CloseCircleOutlined />}
-                    loading={cancelLoadingId === order._id}
-                  >
+                  <Button danger loading={cancelLoadingId === order._id}>
                     Hủy
                   </Button>
                 </Popconfirm>

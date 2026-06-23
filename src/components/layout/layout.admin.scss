@@ -49,6 +49,19 @@
     scrollbar-width: thin;
     scrollbar-color: #d1d5db transparent;
 
+    .layout-admin__menu-label {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+
+      .ant-badge {
+        flex-shrink: 0;
+      }
+    }
+
     &::-webkit-scrollbar {
       width: 5px;
     }
