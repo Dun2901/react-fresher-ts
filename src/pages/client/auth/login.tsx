@@ -2,14 +2,7 @@ import { loginAPI } from '@/services/api';
 import './login.scss';
 import type { FormProps } from 'antd';
 import { App, Button, Divider, Form, Input, Typography } from 'antd';
-import {
-  BookOutlined,
-  LockOutlined,
-  LoginOutlined,
-  MailOutlined,
-  SafetyCertificateOutlined,
-  UserAddOutlined,
-} from '@ant-design/icons';
+import { BookOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCurrentApp } from '@/components/context/app.context';
@@ -106,113 +99,79 @@ const LoginPage = () => {
   return (
     <>
       <div className="login-page">
-        <div className="login-page__shell">
-          <section className="login-page__intro">
-            <div className="login-page__brand">
-              <BookOutlined />
-              <span>BookStore</span>
-            </div>
+        <section className="login-page__card">
+          <Link to="/" className="login-page__brand">
+            <BookOutlined />
+            <span>BookStore</span>
+          </Link>
 
-            <Title level={1} className="login-page__intro-title">
-              Chào mừng bạn quay lại
-            </Title>
+          <div className="login-page__card-header">
+            <Title level={2}>Đăng nhập</Title>
+            <Text>Chào mừng bạn quay lại. Tiếp tục mua sách và theo dõi đơn hàng của bạn.</Text>
+          </div>
 
-            <Text className="login-page__intro-desc">
-              Đăng nhập để tiếp tục mua sách, theo dõi đơn hàng và quản lý thông tin tài khoản của
-              bạn.
-            </Text>
-
-            <div className="login-page__benefits">
-              <div className="login-page__benefit">
-                <SafetyCertificateOutlined />
-                <span>Tài khoản được bảo mật</span>
-              </div>
-
-              <div className="login-page__benefit">
-                <LoginOutlined />
-                <span>Theo dõi đơn hàng nhanh hơn</span>
-              </div>
-
-              <div className="login-page__benefit">
-                <UserAddOutlined />
-                <span>Dễ dàng mua sách lần sau</span>
-              </div>
-            </div>
-          </section>
-
-          <section className="login-page__card">
-            <div className="login-page__card-header">
-              <Title level={2}>Đăng nhập</Title>
-              <Text>Nhập email và mật khẩu để tiếp tục.</Text>
-            </div>
-
-            <Form<FieldType>
-              name="form-login"
-              layout="vertical"
-              onFinish={onFinish}
-              autoComplete="off"
-              requiredMark={false}
-              className="login-page__form"
+          <Form<FieldType>
+            name="form-login"
+            layout="vertical"
+            onFinish={onFinish}
+            autoComplete="off"
+            requiredMark={false}
+            className="login-page__form"
+          >
+            <Form.Item<FieldType>
+              label="Email"
+              name="email"
+              rules={[
+                { required: true, message: 'Vui lòng nhập email!' },
+                { type: 'email', message: 'Email không đúng định dạng!' },
+              ]}
             >
-              <Form.Item<FieldType>
-                label="Email"
-                name="email"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập email!' },
-                  { type: 'email', message: 'Email không đúng định dạng!' },
-                ]}
-              >
-                <Input size="large" prefix={<MailOutlined />} placeholder="Nhập email của bạn" />
-              </Form.Item>
+              <Input size="large" prefix={<MailOutlined />} placeholder="Nhập email của bạn" />
+            </Form.Item>
 
-              <Form.Item<FieldType>
-                label="Mật khẩu"
-                name="password"
-                rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
-              >
-                <Input.Password
-                  size="large"
-                  prefix={<LockOutlined />}
-                  placeholder="Nhập mật khẩu"
-                />
-              </Form.Item>
+            <Form.Item<FieldType>
+              label="Mật khẩu"
+              name="password"
+              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+            >
+              <Input.Password size="large" prefix={<LockOutlined />} placeholder="Nhập mật khẩu" />
+            </Form.Item>
 
-              <div className="login-page__forgot-row">
-                <Button type="link" onClick={() => setIsChangePasswordOpen(true)}>
-                  Quên mật khẩu?
-                </Button>
-              </div>
-
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={isSubmit}
-                size="large"
-                block
-                className="login-page__submit-btn"
-              >
-                Đăng nhập
+            <div className="login-page__forgot-row">
+              <Button type="link" onClick={() => setIsChangePasswordOpen(true)}>
+                Quên mật khẩu?
               </Button>
+            </div>
 
-              <Divider plain>Hoặc</Divider>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isSubmit}
+              size="large"
+              block
+              className="login-page__submit-btn"
+            >
+              Đăng nhập
+            </Button>
 
-              <Button
-                icon={<GoogleIcon />}
-                block
-                size="large"
-                onClick={handleGoogleLogin}
-                className="login-page__google-btn"
-              >
-                Đăng nhập với Google
-              </Button>
+            <Divider plain>Hoặc</Divider>
 
-              <p className="login-page__footer-text">
-                Chưa có tài khoản?
-                <Link to="/register"> Đăng ký ngay</Link>
-              </p>
-            </Form>
-          </section>
-        </div>
+            <Button
+              icon={<GoogleIcon />}
+              block
+              size="large"
+              onClick={handleGoogleLogin}
+              className="login-page__google-btn"
+            >
+              Đăng nhập với Google
+            </Button>
+
+            <p className="login-page__footer-text">
+              Chưa có tài khoản?
+              <Link to="/register"> Đăng ký ngay</Link>
+            </p>
+          </Form>
+        </section>
       </div>
 
       <ModalReactive
