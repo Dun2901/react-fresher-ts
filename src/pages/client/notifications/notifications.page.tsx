@@ -11,8 +11,8 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   getMyNotificationsAPI,
   getUnreadNotificationCountAPI,
@@ -20,6 +20,7 @@ import {
   markNotificationReadAPI,
 } from '@/services/api';
 import './notifications.page.scss';
+import { getCurrentPath } from '@/utils/navigation';
 
 const { Text, Title } = Typography;
 
@@ -49,11 +50,12 @@ const getNotificationIcon = (type: IUserNotification['type']) => {
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [notifications, setNotifications] = useState<IUserNotification[]>([]);
+  const requestSeqRef = useRef(0);
 
-  const [loading, setLoading] = useState(false);
-  const [firstLoading, setFirstLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [loadMoreLoading, setLoadMoreLoading] = useState(false);
   const [markAllLoading, setMarkAllLoading] = useState(false);
 
@@ -72,13 +74,12 @@ const NotificationsPage = () => {
   }, [filter]);
 
   const fetchNotifications = async (page = 1, mode: 'reset' | 'append' = 'reset') => {
-    const shouldShowLoading = mode === 'reset' && firstLoading;
+    const requestId = requestSeqRef.current + 1;
+    requestSeqRef.current = requestId;
 
     if (mode === 'append') {
       setLoadMoreLoading(true);
-    }
-
-    if (shouldShowLoading) {
+    } else {
       setLoading(true);
     }
 
@@ -87,6 +88,10 @@ const NotificationsPage = () => {
         getMyNotificationsAPI(page, PAGE_SIZE, isReadFilter),
         getUnreadNotificationCountAPI(),
       ]);
+
+      if (requestSeqRef.current !== requestId) {
+        return;
+      }
 
       const newItems = notificationRes.data?.result || [];
       const total = notificationRes.data?.meta?.total || 0;
@@ -105,11 +110,14 @@ const NotificationsPage = () => {
       setCurrentPage(page);
       setHasMore(page * PAGE_SIZE < total);
     } catch {
-      message.error('Không thể tải danh sách thông báo');
+      if (requestSeqRef.current === requestId) {
+        message.error('Không thể tải danh sách thông báo');
+      }
     } finally {
-      setLoading(false);
-      setLoadMoreLoading(false);
-      setFirstLoading(false);
+      if (requestSeqRef.current === requestId) {
+        setLoading(false);
+        setLoadMoreLoading(false);
+      }
     }
   };
 
@@ -124,8 +132,11 @@ const NotificationsPage = () => {
       return;
     }
 
+    requestSeqRef.current += 1;
+    setLoading(true);
     setFilter(nextFilter);
     setCurrentPage(1);
+    setHasMore(false);
   };
 
   const handleLoadMore = () => {
@@ -162,7 +173,12 @@ const NotificationsPage = () => {
       }
 
       if (notification.orderId) {
-        navigate(`/orders/${notification.orderId}`);
+        navigate(`/orders/${notification.orderId}`, {
+          state: {
+            from: getCurrentPath(location),
+            fromLabel: 'thông báo',
+          },
+        });
       }
     } catch {
       message.error('Không thể cập nhật trạng thái thông báo');
@@ -246,7 +262,9 @@ const NotificationsPage = () => {
               ]}
             />
 
-            <Text type="secondary">{totalNotifications} thông báo</Text>
+            <Text type="secondary">
+              {loading ? 'Đang tải...' : `${totalNotifications} thông báo`}
+            </Text>
           </div>
 
           <div className="notifications-page__body">

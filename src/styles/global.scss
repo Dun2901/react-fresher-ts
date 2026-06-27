@@ -84,6 +84,11 @@ svg {
   max-width: 100%;
 }
 
+.anticon > svg {
+  display: inline-block;
+  max-width: none;
+}
+
 .ant-btn,
 .ant-input,
 .ant-input-affix-wrapper,

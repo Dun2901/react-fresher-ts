@@ -29,12 +29,14 @@ import { useCurrentApp } from 'components/context/app.context.tsx';
 import { clearCartAPI, removeCartItemAPI, updateCartItemAPI } from '@/services/api.ts';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './cartPage.scss';
+import { BackNavigationState, getBackFromState, getCurrentPath } from '@/utils/navigation';
 
 const CartPage: React.FC = () => {
   const { carts, setCarts } = useCurrentApp();
 
   const navigate = useNavigate();
   const location = useLocation();
+  const routeState = location.state as BackNavigationState;
 
   const [updatingBookId, setUpdatingBookId] = useState<string | null>(null);
   const [clearingCart, setClearingCart] = useState(false);
@@ -118,7 +120,7 @@ const CartPage: React.FC = () => {
     clearingCart;
 
   const handleBack = () => {
-    navigate('/book', { replace: true });
+    navigate(getBackFromState(routeState) || '/book');
   };
 
   const handleViewBookDetail = (bookId: string) => {
@@ -186,6 +188,8 @@ const CartPage: React.FC = () => {
     navigate('/checkout', {
       state: {
         selectedBookIds,
+        from: getCurrentPath(location),
+        fromLabel: 'giỏ hàng',
       },
     });
   };
@@ -352,7 +356,7 @@ const CartPage: React.FC = () => {
           <Button
             type="primary"
             icon={<ShoppingOutlined />}
-            onClick={() => navigate('/book', { replace: true })}
+            onClick={() => navigate('/book')}
             className="cart-empty-state__btn"
           >
             Mua sách ngay

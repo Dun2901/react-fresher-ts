@@ -1,6 +1,6 @@
-import { Button, Result } from "antd";
-import { useCurrentApp } from "components/context/app.context";
-import { Link, useLocation } from "react-router-dom";
+import { Button, Result } from 'antd';
+import { useCurrentApp } from 'components/context/app.context';
+import { Link, useLocation } from 'react-router-dom';
 
 interface IProps {
   children: React.ReactNode;
@@ -18,17 +18,17 @@ const ProtectedRoute = (props: IProps) => {
         subTitle="Trang bạn tìm kiếm không tồn tại."
         extra={
           <Button type="primary">
-            <Link to={"/login"}>Đăng nhập</Link>
+            <Link to={'/login'}>Đăng nhập</Link>
           </Button>
         }
       />
     );
   }
 
-  const isAdminRoute = location.pathname.includes("admin");
+  const isAdminRoute = location.pathname.includes('admin');
   if (isAuthenticated === true && isAdminRoute === true) {
     const role = user?.role;
-    if (role === "USER") {
+    if (role === 'USER') {
       return (
         <Result
           status="403"
@@ -36,7 +36,7 @@ const ProtectedRoute = (props: IProps) => {
           subTitle="Bạn không có quyền truy cập trang này."
           extra={
             <Button type="primary">
-              <Link to={"/"}>Back Home</Link>
+              <Link to={'/'}>Về trang chủ</Link>
             </Button>
           }
         />

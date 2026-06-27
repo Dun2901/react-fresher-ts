@@ -22,13 +22,15 @@ import {
   ReloadOutlined,
   SortAscendingOutlined,
   DownOutlined,
+  StarFilled,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import { addItemToCartAPI, getBooksAPI, getCategoriesAPI } from '@/services/api.ts';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import axios from 'axios';
 import './bookListPage.scss';
+import { getCurrentPath } from '@/utils/navigation';
 
 const { Sider, Content } = Layout;
 
@@ -43,6 +45,7 @@ const sortOptions = [
 
 const BookListPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, carts, setCarts } = useCurrentApp();
 
   const pageTopRef = useRef<HTMLDivElement | null>(null);
@@ -52,7 +55,7 @@ const BookListPage: React.FC = () => {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
 
   const [current, setCurrent] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(12);
+  const [pageSize, setPageSize] = useState<number>(24);
   const [total, setTotal] = useState<number>(0);
 
   const [sort, setSort] = useState<string>('-createdAt');
@@ -372,15 +375,26 @@ const BookListPage: React.FC = () => {
                 </Button>
               </div>
             ) : (
-              <Row gutter={[8, 8]} className="book-product-grid">
+              <Row gutter={[6, 8]} className="book-product-grid">
                 {listBook.map((book) => {
                   const inCart = carts.some((item) => item.bookId?._id === book._id);
+                  const averageRating = book.averageRating ?? 0;
+                  const reviewCount = book.reviewCount ?? 0;
+                  const sold = book.sold ?? 0;
+                  const isBestSeller = sold > 0;
 
                   return (
-                    <Col xs={12} sm={12} md={8} lg={8} xl={6} key={book._id}>
+                    <Col xs={12} sm={8} md={6} lg={6} xl={4} xxl={4} key={book._id}>
                       <div
                         className="book-card-mobile-shop"
-                        onClick={() => navigate(`/book/${book._id}`)}
+                        onClick={() =>
+                          navigate(`/book/${book._id}`, {
+                            state: {
+                              from: getCurrentPath(location),
+                              fromLabel: 'danh sách sách',
+                            },
+                          })
+                        }
                       >
                         <div className="book-card-mobile-shop__img">
                           <img
@@ -391,6 +405,10 @@ const BookListPage: React.FC = () => {
                                 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
                             }}
                           />
+
+                          {isBestSeller && (
+                            <span className="book-card-mobile-shop__badge">Bán chạy</span>
+                          )}
                         </div>
 
                         <div className="book-card-mobile-shop__body">
@@ -399,11 +417,15 @@ const BookListPage: React.FC = () => {
                           </div>
 
                           <div className="book-card-mobile-shop__author">
-                            Tác giả: {book.author}
+                            {book.author || 'Đang cập nhật'}
                           </div>
 
-                          <div className="book-card-mobile-shop__sold">
-                            {(book.sold ?? 0) > 0 ? `Đã bán ${book.sold}` : 'Chưa có lượt bán'}
+                          <div className="book-card-mobile-shop__meta">
+                            <span>
+                              <StarFilled /> {reviewCount > 0 ? averageRating.toFixed(1) : 'Mới'}
+                            </span>
+
+                            <span>{sold > 0 ? `${sold} đã bán` : 'Mới cập nhật'}</span>
                           </div>
 
                           <div className="book-card-mobile-shop__bottom">
@@ -421,11 +443,9 @@ const BookListPage: React.FC = () => {
                                 handleAddToCart(book);
                               }}
                               aria-label={inCart ? 'Mua thêm' : 'Thêm vào giỏ hàng'}
+                              title={inCart ? 'Mua thêm' : 'Thêm vào giỏ hàng'}
                             >
                               <ShoppingCartOutlined className="book-card-mobile-shop__cart-icon" />
-                              <span className="book-card-mobile-shop__cart-text">
-                                {inCart ? 'Mua thêm' : 'Thêm giỏ'}
-                              </span>
                             </button>
                           </div>
                         </div>
@@ -444,7 +464,7 @@ const BookListPage: React.FC = () => {
                   total={total}
                   responsive
                   showSizeChanger
-                  pageSizeOptions={['8', '12', '16', '20']}
+                  pageSizeOptions={['12', '18', '24', '30']}
                   onChange={handlePaginationChange}
                   showTotal={(totalBooks) => `Tổng ${totalBooks} sách`}
                 />

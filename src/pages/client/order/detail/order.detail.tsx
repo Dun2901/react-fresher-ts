@@ -28,10 +28,11 @@ import {
   UserOutlined,
   WalletOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { cancelOrderAPI, createVnpayPaymentUrlAPI, getMyOrderByIdAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './order.detail.scss';
+import { BackNavigationState, getBackButtonText, goBackOrFallback } from '@/utils/navigation';
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
@@ -211,6 +212,7 @@ const canRepayOrder = (order?: IOrder | null) => {
 const OrderDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
@@ -231,7 +233,16 @@ const OrderDetailPage = () => {
   const showRepayButton = canRepayOrder(order);
   const showMobileStickyActions = isMobile && !!order && (showCancelButton || showRepayButton);
 
-  const backPath = isHistoryStatus(order?.status) ? '/orders/history' : '/orders';
+  const routeState = location.state as BackNavigationState;
+  const isHistoryOrder = isHistoryStatus(order?.status);
+  const backPath = isHistoryOrder ? '/orders/history' : '/orders';
+  const fallbackBackLabel = isHistoryOrder ? 'lịch sử mua hàng' : 'đơn đang xử lý';
+
+  const handleBack = () => {
+    goBackOrFallback(navigate, backPath, routeState);
+  };
+
+  const backButtonText = getBackButtonText(routeState, fallbackBackLabel);
 
   const fetchOrderDetail = async () => {
     if (!id) return;
@@ -368,7 +379,7 @@ const OrderDetailPage = () => {
       <div className="order-detail">
         <Card className="order-detail__shell order-detail__empty-card">
           <Empty description="Không tìm thấy đơn hàng" />
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
+          <Button icon={<ArrowLeftOutlined />} onClick={handleBack}>
             Về đơn hàng của tôi
           </Button>
         </Card>
@@ -382,8 +393,8 @@ const OrderDetailPage = () => {
         <div className="order-detail__header">
           <div className="order-detail__header-left">
             <Space className="order-detail__breadcrumb" size={8} wrap>
-              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(backPath)}>
-                Quay lại
+              <Button icon={<ArrowLeftOutlined />} onClick={handleBack}>
+                {backButtonText}
               </Button>
 
               {!isMobile && (

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Skeleton, Tag } from 'antd';
 import { FireOutlined, TagsOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import './RelatedBooks.scss';
+import { getBackFromState, getBackLabelFromState, getCurrentPath } from '@/utils/navigation';
 
 interface RelatedBooksProps {
   books: IBookTable[];
@@ -14,12 +15,17 @@ const FALLBACK_BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa740
 
 const RelatedBooks: React.FC<RelatedBooksProps> = ({ books, isLoading = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fallbackFrom = getBackFromState(location.state) || '/book';
+  const fallbackFromLabel = getBackLabelFromState(location.state) || 'danh sách sách';
 
   const handleViewDetail = (bookId: string) => {
     navigate(`/book/${bookId}`, {
       state: {
-        from: '/book',
-        fromLabel: 'danh sách sách',
+        from: getCurrentPath(location),
+        fromLabel: 'sách trước đó',
+        fallbackFrom,
+        fallbackFromLabel,
       },
     });
 

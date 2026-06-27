@@ -29,7 +29,7 @@ const Homepage: React.FC = () => {
   const [listBook, setListBook] = useState<IBookTable[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const pageSize = 12;
+  const pageSize = 18;
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -269,14 +269,15 @@ const Homepage: React.FC = () => {
           {!isLoading && listBook.length === 0 ? (
             <Empty description="Chưa có sách để hiển thị" />
           ) : (
-            <Row gutter={[14, 14]} className="homepage-product-grid">
+            <Row gutter={[6, 8]} className="homepage-product-grid">
               {listBook.map((book) => {
                 const inCart = carts.some((item) => item.bookId?._id === book._id);
                 const averageRating = book.averageRating ?? 0;
                 const reviewCount = book.reviewCount ?? 0;
+                const sold = book.sold ?? 0;
 
                 return (
-                  <Col xs={12} sm={12} md={8} lg={6} xl={6} key={book._id}>
+                  <Col xs={12} sm={8} md={6} lg={6} xl={4} xxl={4} key={book._id}>
                     <div className="book-card-shopee" onClick={() => navigate(`/book/${book._id}`)}>
                       <div className="book-card-shopee__img-wrap">
                         <img
@@ -296,22 +297,16 @@ const Homepage: React.FC = () => {
                           {book.mainText}
                         </div>
 
-                        <div className="book-card-shopee__author">Tác giả: {book.author}</div>
+                        <div className="book-card-shopee__author">
+                          {book.author || 'Đang cập nhật'}
+                        </div>
 
                         <div className="book-card-shopee__meta">
-                          {reviewCount > 0 ? (
-                            <span>
-                              <StarFilled /> {averageRating.toFixed(1)} ({reviewCount})
-                            </span>
-                          ) : (
-                            <span>
-                              <StarFilled /> Chưa có đánh giá
-                            </span>
-                          )}
-
                           <span>
-                            {(book.sold ?? 0) > 0 ? `Đã bán ${book.sold}` : 'Mới cập nhật'}
+                            <StarFilled /> {reviewCount > 0 ? averageRating.toFixed(1) : 'Mới'}
                           </span>
+
+                          <span>{sold > 0 ? `${sold} đã bán` : 'Mới cập nhật'}</span>
                         </div>
 
                         <div className="book-card-shopee__bottom">
@@ -329,6 +324,7 @@ const Homepage: React.FC = () => {
                               handleAddToCart(book);
                             }}
                             aria-label={inCart ? 'Mua thêm' : 'Thêm vào giỏ hàng'}
+                            title={inCart ? 'Mua thêm' : 'Thêm vào giỏ hàng'}
                           >
                             <ShoppingCartOutlined className="book-card-shopee__cart-icon" />
                             <span className="book-card-shopee__btn-text">

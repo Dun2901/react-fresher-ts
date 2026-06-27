@@ -39,15 +39,20 @@ import RelatedBooks from './RelatedBooks';
 import { saveRecentlyViewedBook } from '@/utils/recentlyViewed';
 import RecentlyViewedBooks from './RecentlyViewedBooks';
 import ProductReviews from './reviews/ProductReviews';
+import {
+  BackNavigationState,
+  buildBookDetailFallbackState,
+  getBackButtonText,
+  getBackFromState,
+  goBackOrFallback,
+  isBookDetailPath,
+} from '@/utils/navigation';
 
 const FALLBACK_BOOK_IMAGE = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600';
 
 const AUTH_MESSAGE_KEY = 'auth-message-warning';
 
-type BookDetailLocationState = {
-  from?: string;
-  fromLabel?: string;
-} | null;
+type BookDetailLocationState = BackNavigationState;
 
 const BookDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,8 +63,6 @@ const BookDetailPage: React.FC = () => {
   const { isAuthenticated, carts, setCarts } = useCurrentApp();
 
   const routeState = location.state as BookDetailLocationState;
-  const from = routeState?.from;
-  const fromLabel = routeState?.fromLabel;
 
   const [bookData, setBookData] = useState<IBookTable | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -98,8 +101,19 @@ const BookDetailPage: React.FC = () => {
   const isOutOfStock = availableQuantity <= 0;
 
   const handleBack = () => {
-    if (from) {
-      navigate(from);
+    const fromPath = getBackFromState(routeState);
+
+    if (isBookDetailPath(fromPath)) {
+      navigate(fromPath as string, {
+        replace: true,
+        state: buildBookDetailFallbackState(routeState),
+      });
+
+      return;
+    }
+
+    if (fromPath) {
+      navigate(fromPath);
       return;
     }
 
@@ -107,11 +121,7 @@ const BookDetailPage: React.FC = () => {
   };
 
   const getBackButtonLabel = () => {
-    if (fromLabel) {
-      return `Quay lại ${fromLabel}`;
-    }
-
-    return 'Quay lại danh sách sách';
+    return getBackButtonText(routeState, 'danh sách sách');
   };
 
   const handleChangeImage = (nextIndex: number) => {
@@ -282,7 +292,12 @@ const BookDetailPage: React.FC = () => {
         message.success(`Đã thêm ${buyQuantity} cuốn vào giỏ hàng!`);
 
         if (goToCart) {
-          navigate('/cart');
+          navigate('/cart', {
+            state: {
+              from: location.pathname + location.search,
+              fromLabel: 'chi tiết sách',
+            },
+          });
         }
       }
     } catch (error) {
