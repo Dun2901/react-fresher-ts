@@ -87,7 +87,7 @@
     min-height: 220px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   &__loading-state {

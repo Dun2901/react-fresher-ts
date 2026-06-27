@@ -39,6 +39,7 @@ import {
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import vnpayLogo from '@/assets/img/vnpay.png';
 import './checkout.page.scss';
+import { BackNavigationState, getBackFromState } from '@/utils/navigation';
 
 const { TextArea } = Input;
 
@@ -72,9 +73,9 @@ interface IWardLocation {
   provinceCode: string;
 }
 
-type CheckoutLocationState = {
+type CheckoutLocationState = BackNavigationState & {
   selectedBookIds?: string[];
-} | null;
+};
 
 const getSelectedBookIdsFromStorage = () => {
   try {
@@ -107,10 +108,9 @@ const CheckoutPage: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const routeState = location.state as CheckoutLocationState;
 
   const [form] = Form.useForm<IOrderFormValues>();
-
-  const locationState = location.state as CheckoutLocationState;
 
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -123,10 +123,13 @@ const CheckoutPage: React.FC = () => {
   const [isLoadingWards, setIsLoadingWards] = useState<boolean>(false);
 
   const selectedProvinceCode = Form.useWatch('provinceCode', form);
+  const handleBackToCart = () => {
+    navigate(getBackFromState(routeState) || '/cart');
+  };
 
   const [selectedBookIds] = useState<string[]>(() => {
-    if (locationState?.selectedBookIds?.length) {
-      return locationState.selectedBookIds;
+    if (routeState?.selectedBookIds?.length) {
+      return routeState.selectedBookIds;
     }
 
     return getSelectedBookIdsFromStorage();
@@ -377,10 +380,14 @@ const CheckoutPage: React.FC = () => {
             title="Đặt hàng thành công!"
             subTitle="Cảm ơn bạn đã mua sắm. Đơn hàng đã được ghi nhận thành công."
             extra={[
-              <Button type="primary" key="book" onClick={() => navigate('/book')}>
+              <Button
+                type="primary"
+                key="book"
+                onClick={() => navigate('/book', { replace: true })}
+              >
                 Tiếp tục mua sắm
               </Button>,
-              <Button key="orders" onClick={() => navigate('/orders')}>
+              <Button key="orders" onClick={() => navigate('/orders', { replace: true })}>
                 Xem đơn hàng
               </Button>,
             ]}
@@ -426,7 +433,7 @@ const CheckoutPage: React.FC = () => {
             }
           />
 
-          <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate('/cart')}>
+          <Button type="primary" icon={<ArrowLeftOutlined />} onClick={handleBackToCart}>
             Quay lại giỏ hàng
           </Button>
         </div>
@@ -437,7 +444,7 @@ const CheckoutPage: React.FC = () => {
   return (
     <div className="checkout-page">
       <div className="checkout-header">
-        <button type="button" className="checkout-header__back" onClick={() => navigate('/cart')}>
+        <button type="button" className="checkout-header__back" onClick={handleBackToCart}>
           <ArrowLeftOutlined />
           <span>Quay lại giỏ hàng</span>
         </button>
@@ -464,11 +471,7 @@ const CheckoutPage: React.FC = () => {
                 </div>
               ))}
 
-              <Button
-                type="link"
-                className="checkout-stock-alert__link"
-                onClick={() => navigate('/cart')}
-              >
+              <Button type="link" className="checkout-stock-alert__link" onClick={handleBackToCart}>
                 Quay lại giỏ hàng để cập nhật
               </Button>
             </div>

@@ -22,9 +22,10 @@ import {
   ShoppingOutlined,
   TruckOutlined,
 } from '@ant-design/icons';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { cancelOrderAPI, createVnpayPaymentUrlAPI, getMyOrdersAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
+import { getCurrentPath } from '@/utils/navigation';
 import './current.order.scss';
 
 const { Text, Title } = Typography;
@@ -34,6 +35,26 @@ const CURRENT_ORDER_STATUSES: IOrder['status'][] = ['PENDING', 'CONFIRMED', 'SHI
 
 const DEFAULT_PAGE_SIZE = 5;
 const PAGE_SIZE_OPTIONS = [2, 3, 5, 10];
+
+const getValidPageNumber = (value: string | null, fallback = 1) => {
+  const page = Number(value);
+
+  if (!Number.isInteger(page) || page < 1) {
+    return fallback;
+  }
+
+  return page;
+};
+
+const getValidPageSize = (value: string | null, fallback = DEFAULT_PAGE_SIZE) => {
+  const pageSize = Number(value);
+
+  if (!PAGE_SIZE_OPTIONS.includes(pageSize)) {
+    return fallback;
+  }
+
+  return pageSize;
+};
 
 const orderStatusMap: Record<IOrder['status'], { text: string; color: string; message: string }> = {
   PENDING: {
@@ -132,6 +153,7 @@ const getErrorMessage = (error: any, fallbackMessage: string) => {
 const CurrentOrderPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
@@ -141,9 +163,10 @@ const CurrentOrderPage = () => {
   const [loading, setLoading] = useState(false);
   const [cancelLoadingId, setCancelLoadingId] = useState('');
   const [payingOrderId, setPayingOrderId] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-
+  const [currentPage, setCurrentPage] = useState(() =>
+    getValidPageNumber(searchParams.get('page')),
+  );
+  const [pageSize, setPageSize] = useState(() => getValidPageSize(searchParams.get('pageSize')));
   const [expandedOrderIds, setExpandedOrderIds] = useState<Record<string, boolean>>({});
 
   const pageSizeMenuItems: MenuProps['items'] = PAGE_SIZE_OPTIONS.map((size) => ({
@@ -151,16 +174,37 @@ const CurrentOrderPage = () => {
     label: `${size} đơn / trang`,
   }));
 
+  const updateCurrentOrderUrl = (nextPage: number, nextPageSize = pageSize) => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    nextParams.set('page', String(nextPage));
+    nextParams.set('pageSize', String(nextPageSize));
+
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleViewOrderDetail = useCallback(
+    (orderId: string) => {
+      navigate(`/orders/${orderId}`, {
+        state: {
+          from: getCurrentPath(location),
+          fromLabel: 'đơn đang xử lý',
+        },
+      });
+    },
+    [location, navigate],
+  );
+
   const handleViewBookDetail = useCallback(
     (bookId: string) => {
       navigate(`/book/${bookId}`, {
         state: {
-          from: location.pathname + location.search,
+          from: getCurrentPath(location),
           fromLabel: 'đơn hàng đang xử lý',
         },
       });
     },
-    [location.pathname, location.search, navigate],
+    [location, navigate],
   );
 
   const scrollToPageTop = () => {
@@ -181,16 +225,24 @@ const CurrentOrderPage = () => {
     setLoading(true);
 
     try {
-      const res = await getMyOrdersAPI(1, 10);
+      const res = await getMyOrdersAPI(1, 100);
       const allOrders = res.data?.result ?? [];
 
       const currentOrders = allOrders.filter((order: IOrder) =>
         CURRENT_ORDER_STATUSES.includes(order.status),
       );
 
+      const totalPages = Math.ceil(currentOrders.length / pageSize);
+
+      if (currentOrders.length > 0 && currentPage > totalPages) {
+        setCurrentPage(totalPages);
+        updateCurrentOrderUrl(totalPages, pageSize);
+        return;
+      }
+
       setOrders(currentOrders);
-      setCurrentPage(1);
     } catch (error: any) {
+      setOrders([]);
       message.error(getErrorMessage(error, 'Không thể tải danh sách đơn hàng'));
     } finally {
       setLoading(false);
@@ -234,12 +286,16 @@ const CurrentOrderPage = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    updateCurrentOrderUrl(page, pageSize);
     scrollToPageTop();
   };
 
   const handlePageSizeChange: MenuProps['onClick'] = ({ key }) => {
-    setPageSize(Number(key));
+    const nextPageSize = Number(key);
+
+    setPageSize(nextPageSize);
     setCurrentPage(1);
+    updateCurrentOrderUrl(1, nextPageSize);
     scrollToPageTop();
   };
 
@@ -256,9 +312,25 @@ const CurrentOrderPage = () => {
   };
 
   useEffect(() => {
+    const nextPage = getValidPageNumber(searchParams.get('page'));
+    const nextPageSize = getValidPageSize(searchParams.get('pageSize'));
+
+    if (nextPage !== currentPage) {
+      setCurrentPage(nextPage);
+    }
+
+    if (nextPageSize !== pageSize) {
+      setPageSize(nextPageSize);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    fetchCurrentOrders();
   }, []);
+
+  useEffect(() => {
+    fetchCurrentOrders();
+  }, [currentPage, pageSize]);
 
   const columns: ColumnsType<IOrder> = useMemo(
     () => [
@@ -395,7 +467,7 @@ const CurrentOrderPage = () => {
         align: 'right',
         render: (_, record) => (
           <div className="current-order__actions">
-            <Button size="middle" onClick={() => navigate(`/orders/${record._id}`)}>
+            <Button size="middle" onClick={() => handleViewOrderDetail(record._id)}>
               Chi tiết
             </Button>
 
@@ -421,7 +493,7 @@ const CurrentOrderPage = () => {
       cancelLoadingId,
       expandedOrderIds,
       handleViewBookDetail,
-      navigate,
+      handleViewOrderDetail,
       payingOrderId,
       toggleOrderProducts,
       handleCancelOrder,
@@ -536,7 +608,7 @@ const CurrentOrderPage = () => {
             )}
 
             <div className="current-order__mobile-secondary-actions">
-              <Button onClick={() => navigate(`/orders/${order._id}`)}>Chi tiết</Button>
+              <Button onClick={() => handleViewOrderDetail(order._id)}>Chi tiết</Button>
 
               {order.status === 'PENDING' && (
                 <Popconfirm
@@ -641,12 +713,17 @@ const CurrentOrderPage = () => {
             columns={columns}
             dataSource={orders}
             loading={loading}
-            pagination={{
-              current: currentPage,
-              pageSize,
-              showSizeChanger: false,
-              onChange: handlePageChange,
-            }}
+            pagination={
+              orders.length > pageSize
+                ? {
+                    current: currentPage,
+                    pageSize,
+                    total: orders.length,
+                    showSizeChanger: false,
+                    onChange: handlePageChange,
+                  }
+                : false
+            }
             locale={{
               emptyText: (
                 <Empty

@@ -24,9 +24,10 @@ import {
   ReloadOutlined,
   ShoppingOutlined,
 } from '@ant-design/icons';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { getMyHistoryOrdersAPI } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
+import { getCurrentPath } from '@/utils/navigation';
 import './order.history.scss';
 
 const { Text, Title } = Typography;
@@ -36,6 +37,26 @@ const HISTORY_ORDER_STATUSES: IOrder['status'][] = ['COMPLETED', 'CANCELLED'];
 
 const DEFAULT_PAGE_SIZE = 5;
 const PAGE_SIZE_OPTIONS = [2, 3, 5, 10];
+
+const getValidPageNumber = (value: string | null, fallback = 1) => {
+  const page = Number(value);
+
+  if (!Number.isInteger(page) || page < 1) {
+    return fallback;
+  }
+
+  return page;
+};
+
+const getValidPageSize = (value: string | null, fallback = DEFAULT_PAGE_SIZE) => {
+  const pageSize = Number(value);
+
+  if (!PAGE_SIZE_OPTIONS.includes(pageSize)) {
+    return fallback;
+  }
+
+  return pageSize;
+};
 
 const orderStatusMap: Record<IOrder['status'], { text: string; color: string; message: string }> = {
   PENDING: {
@@ -130,6 +151,7 @@ const getErrorMessage = (error: any, fallbackMessage: string) => {
 const OrderHistoryPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
@@ -137,8 +159,10 @@ const OrderHistoryPage = () => {
 
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [currentPage, setCurrentPage] = useState(() =>
+    getValidPageNumber(searchParams.get('page')),
+  );
+  const [pageSize, setPageSize] = useState(() => getValidPageSize(searchParams.get('pageSize')));
   const [totalOrders, setTotalOrders] = useState(0);
   const [expandedOrderIds, setExpandedOrderIds] = useState<Record<string, boolean>>({});
 
@@ -147,16 +171,37 @@ const OrderHistoryPage = () => {
     label: `${size} đơn / trang`,
   }));
 
-  const handleViewBookDetail = useCallback(
-    (bookId: string) => {
-      navigate(`/book/${bookId}`, {
+  const updateOrderHistoryUrl = (nextPage: number, nextPageSize = pageSize) => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    nextParams.set('page', String(nextPage));
+    nextParams.set('pageSize', String(nextPageSize));
+
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleViewOrderDetail = useCallback(
+    (orderId: string) => {
+      navigate(`/orders/${orderId}`, {
         state: {
-          from: location.pathname + location.search,
+          from: getCurrentPath(location),
           fromLabel: 'lịch sử mua hàng',
         },
       });
     },
-    [location.pathname, location.search, navigate],
+    [location, navigate],
+  );
+
+  const handleViewBookDetail = useCallback(
+    (bookId: string) => {
+      navigate(`/book/${bookId}`, {
+        state: {
+          from: getCurrentPath(location),
+          fromLabel: 'lịch sử mua hàng',
+        },
+      });
+    },
+    [location, navigate],
   );
 
   const scrollToPageTop = () => {
@@ -191,6 +236,7 @@ const OrderHistoryPage = () => {
 
       if (total > 0 && currentPage > totalPages) {
         setCurrentPage(totalPages);
+        updateOrderHistoryUrl(totalPages, pageSize);
         return;
       }
 
@@ -207,12 +253,16 @@ const OrderHistoryPage = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    updateOrderHistoryUrl(page, pageSize);
     scrollToPageTop();
   };
 
   const handlePageSizeChange: MenuProps['onClick'] = ({ key }) => {
-    setPageSize(Number(key));
+    const nextPageSize = Number(key);
+
+    setPageSize(nextPageSize);
     setCurrentPage(1);
+    updateOrderHistoryUrl(1, nextPageSize);
     scrollToPageTop();
   };
 
@@ -227,6 +277,19 @@ const OrderHistoryPage = () => {
     await fetchHistoryOrders();
     scrollToPageTop();
   };
+
+  useEffect(() => {
+    const nextPage = getValidPageNumber(searchParams.get('page'));
+    const nextPageSize = getValidPageSize(searchParams.get('pageSize'));
+
+    if (nextPage !== currentPage) {
+      setCurrentPage(nextPage);
+    }
+
+    if (nextPageSize !== pageSize) {
+      setPageSize(nextPageSize);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -357,13 +420,13 @@ const OrderHistoryPage = () => {
         width: 120,
         align: 'right',
         render: (_, record) => (
-          <Button icon={<EyeOutlined />} onClick={() => navigate(`/orders/${record._id}`)}>
+          <Button icon={<EyeOutlined />} onClick={() => handleViewOrderDetail(record._id)}>
             Chi tiết
           </Button>
         ),
       },
     ],
-    [expandedOrderIds, handleViewBookDetail, navigate, toggleOrderProducts],
+    [expandedOrderIds, handleViewBookDetail, toggleOrderProducts, handleViewOrderDetail],
   );
 
   const renderMobileOrderCard = (order: IOrder) => {
@@ -463,7 +526,7 @@ const OrderHistoryPage = () => {
           </div>
 
           <div className="order-history__mobile-actions">
-            <Button block icon={<EyeOutlined />} onClick={() => navigate(`/orders/${order._id}`)}>
+            <Button block icon={<EyeOutlined />} onClick={() => handleViewOrderDetail(order._id)}>
               Xem chi tiết
             </Button>
           </div>

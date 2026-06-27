@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   getRecentlyViewedBooks,
   IRecentlyViewedBook,
   RECENTLY_VIEWED_EVENT,
 } from '@/utils/recentlyViewed';
+import { getBackFromState, getBackLabelFromState, getCurrentPath } from '@/utils/navigation';
 
 interface IProps {
   currentBookId?: string;
@@ -27,6 +28,9 @@ const getBookImageUrl = (thumbnail: string) => {
 };
 
 const RecentlyViewedBooks = ({ currentBookId }: IProps) => {
+  const location = useLocation();
+  const fallbackFrom = getBackFromState(location.state) || '/book';
+  const fallbackFromLabel = getBackLabelFromState(location.state) || 'danh sách sách';
   const [books, setBooks] = useState<IRecentlyViewedBook[]>([]);
 
   const syncRecentlyViewedBooks = () => {
@@ -60,7 +64,17 @@ const RecentlyViewedBooks = ({ currentBookId }: IProps) => {
 
       <div className="recently-viewed__grid">
         {displayBooks.map((book) => (
-          <Link key={book._id} to={`/book/${book._id}`} className="recently-viewed__item">
+          <Link
+            key={book._id}
+            to={`/book/${book._id}`}
+            state={{
+              from: getCurrentPath(location),
+              fromLabel: 'sách vừa xem',
+              fallbackFrom,
+              fallbackFromLabel,
+            }}
+            className="recently-viewed__item"
+          >
             <div className="recently-viewed__image-wrap">
               <img
                 src={getBookImageUrl(book.thumbnail)}
