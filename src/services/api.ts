@@ -444,3 +444,8 @@ export const markNotificationReadAPI = (id: string) => {
 export const markAllNotificationsReadAPI = () => {
   return axios.patch<IBackendRes<{ success: boolean }>>('/notifications/read-all');
 };
+
+// ==================== MODULE CHATBOT ====================
+export const sendChatMessageAPI = (message: string, history: { role: 'user' | 'model'; text: string }[]) => {
+  return axios.post<IBackendRes<{ response: string }>>('/chatbot/chat', { message, history });
+};

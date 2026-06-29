@@ -84,7 +84,6 @@
   }
 
   &__body {
-    min-height: 220px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -100,8 +99,6 @@
   }
 
   &__list {
-    flex: 1;
-
     .ant-list-item {
       border-block-end: 0 !important;
     }
@@ -226,7 +223,6 @@
   }
 
   @media (max-width: 768px) {
-    min-height: calc(100vh - 54px);
     padding: 16px 10px 80px;
 
     &__container {
@@ -278,9 +274,7 @@
       }
     }
 
-    &__body {
-      min-height: 220px;
-    }
+
 
     &__loading-state {
       min-height: 220px;
