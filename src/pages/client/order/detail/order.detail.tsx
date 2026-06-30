@@ -366,9 +366,44 @@ const OrderDetailPage = () => {
 
   if (loading && !order) {
     return (
-      <div className="order-detail order-detail--loading">
+      <div className="order-detail">
         <Card className="order-detail__shell">
-          <Skeleton active paragraph={{ rows: 8 }} />
+          {/* Page Header Skeleton */}
+          <div className="order-detail__header" style={{ marginBottom: 24 }}>
+            <div className="order-detail__header-left">
+              <Space className="order-detail__breadcrumb" size={8} wrap>
+                <Button icon={<ArrowLeftOutlined />} onClick={handleBack}>
+                  {backButtonText}
+                </Button>
+              </Space>
+              <div className="order-detail__heading" style={{ marginTop: 12 }}>
+                <Skeleton.Input active size="large" style={{ width: 220 }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Status Card Skeleton */}
+          <div className="order-detail__status-card" style={{ marginBottom: 24, padding: 24 }}>
+            <Skeleton active paragraph={{ rows: 2 }} title={false} />
+          </div>
+
+          {/* Info Grid Skeleton */}
+          <div className="order-detail__info-grid" style={{ marginBottom: 24 }}>
+            <Card className="order-detail__section-card">
+              <Skeleton active paragraph={{ rows: 3 }} title={true} />
+            </Card>
+            <Card className="order-detail__section-card">
+              <Skeleton active paragraph={{ rows: 3 }} title={true} />
+            </Card>
+            <Card className="order-detail__section-card">
+              <Skeleton active paragraph={{ rows: 3 }} title={true} />
+            </Card>
+          </div>
+
+          {/* Items Card Skeleton */}
+          <Card className="order-detail__section-card">
+            <Skeleton active paragraph={{ rows: 6 }} />
+          </Card>
         </Card>
       </div>
     );

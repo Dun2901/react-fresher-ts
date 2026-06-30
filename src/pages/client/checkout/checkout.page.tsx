@@ -19,6 +19,7 @@ import {
   Tag,
   Modal,
   Tooltip,
+  Skeleton,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -112,7 +113,7 @@ const normalizePhone = (value?: string | number | null) => {
 };
 
 const CheckoutPage: React.FC = () => {
-  const { user, carts, setCarts } = useCurrentApp();
+  const { user, carts, setCarts, isCartLoading } = useCurrentApp();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -484,6 +485,17 @@ const CheckoutPage: React.FC = () => {
               <b>{formatCurrency(createdOrder.totalPrice)}</b>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCartLoading) {
+    return (
+      <div className="checkout-status-page">
+        <div className="checkout-empty-card">
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Skeleton active paragraph={{ rows: 4 }} style={{ marginTop: 16 }} />
         </div>
       </div>
     );
