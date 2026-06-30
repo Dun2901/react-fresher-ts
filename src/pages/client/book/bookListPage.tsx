@@ -24,7 +24,7 @@ import {
   DownOutlined,
   StarFilled,
 } from '@ant-design/icons';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context.tsx';
 import { addItemToCartAPI, getBooksAPI, getCategoriesAPI } from '@/services/api.ts';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
@@ -48,6 +48,9 @@ const BookListPage: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated, carts, setCarts } = useCurrentApp();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchWord = searchParams.get('search') || '';
+
   const pageTopRef = useRef<HTMLDivElement | null>(null);
 
   const [listBook, setListBook] = useState<IBookTable[]>([]);
@@ -55,6 +58,10 @@ const BookListPage: React.FC = () => {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
 
   const [current, setCurrent] = useState<number>(1);
+
+  useEffect(() => {
+    setCurrent(1);
+  }, [searchWord]);
   const [pageSize, setPageSize] = useState<number>(24);
   const [total, setTotal] = useState<number>(0);
 
@@ -131,6 +138,10 @@ const BookListPage: React.FC = () => {
           query += `&price<=${priceRange[1]}`;
         }
 
+        if (searchWord) {
+          query += `&mainText=/${searchWord}/i`;
+        }
+
         const res = await getBooksAPI(query);
 
         if (res?.data) {
@@ -155,7 +166,7 @@ const BookListPage: React.FC = () => {
     };
 
     loadBooks();
-  }, [current, pageSize, sort, selectedCategories, priceRange]);
+  }, [current, pageSize, sort, selectedCategories, priceRange, searchWord]);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -222,6 +233,7 @@ const BookListPage: React.FC = () => {
     setPriceRange([0, MAX_PRICE]);
     setSort('-createdAt');
     setCurrent(1);
+    setSearchParams({}, { replace: true });
   };
 
   const handleApplyMobileFilter = () => {
