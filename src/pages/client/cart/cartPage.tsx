@@ -11,6 +11,7 @@ import {
   message,
   Popconfirm,
   Row,
+  Skeleton,
   Space,
 } from 'antd';
 import {
@@ -32,7 +33,7 @@ import './cartPage.scss';
 import { BackNavigationState, getBackFromState, getCurrentPath } from '@/utils/navigation';
 
 const CartPage: React.FC = () => {
-  const { carts, setCarts } = useCurrentApp();
+  const { carts, setCarts, isCartLoading } = useCurrentApp();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -333,6 +334,17 @@ const CartPage: React.FC = () => {
       setClearingCart(false);
     }
   };
+
+  if (isCartLoading) {
+    return (
+      <div className="cart-empty-state">
+        <div className="cart-empty-state__card">
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Skeleton active paragraph={{ rows: 4 }} style={{ marginTop: 16 }} />
+        </div>
+      </div>
+    );
+  }
 
   if (carts.length === 0) {
     return (

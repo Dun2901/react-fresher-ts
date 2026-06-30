@@ -217,7 +217,7 @@ const OrderDetailPage = () => {
   const isMobile = !screens.md;
 
   const [order, setOrder] = useState<IOrder | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [payingLoading, setPayingLoading] = useState(false);
 
@@ -366,9 +366,44 @@ const OrderDetailPage = () => {
 
   if (loading && !order) {
     return (
-      <div className="order-detail order-detail--loading">
+      <div className="order-detail">
         <Card className="order-detail__shell">
-          <Skeleton active paragraph={{ rows: 8 }} />
+          {/* Page Header Skeleton */}
+          <div className="order-detail__header" style={{ marginBottom: 24 }}>
+            <div className="order-detail__header-left">
+              <Space className="order-detail__breadcrumb" size={8} wrap>
+                <Button icon={<ArrowLeftOutlined />} onClick={handleBack}>
+                  {backButtonText}
+                </Button>
+              </Space>
+              <div className="order-detail__heading" style={{ marginTop: 12 }}>
+                <Skeleton.Input active size="large" style={{ width: 220 }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Status Card Skeleton */}
+          <div className="order-detail__status-card" style={{ marginBottom: 24, padding: 24 }}>
+            <Skeleton active paragraph={{ rows: 2 }} title={false} />
+          </div>
+
+          {/* Info Grid Skeleton */}
+          <div className="order-detail__info-grid" style={{ marginBottom: 24 }}>
+            <Card className="order-detail__section-card">
+              <Skeleton active paragraph={{ rows: 3 }} title={true} />
+            </Card>
+            <Card className="order-detail__section-card">
+              <Skeleton active paragraph={{ rows: 3 }} title={true} />
+            </Card>
+            <Card className="order-detail__section-card">
+              <Skeleton active paragraph={{ rows: 3 }} title={true} />
+            </Card>
+          </div>
+
+          {/* Items Card Skeleton */}
+          <Card className="order-detail__section-card">
+            <Skeleton active paragraph={{ rows: 6 }} />
+          </Card>
         </Card>
       </div>
     );
@@ -577,13 +612,20 @@ const OrderDetailPage = () => {
 
               <div className="order-detail__info-row">
                 <Text type="secondary">Tạm tính</Text>
-                <Text>{formatCurrency(itemsSubtotal)}</Text>
+                <Text>{formatCurrency(order.originalPrice || itemsSubtotal)}</Text>
               </div>
 
               <div className="order-detail__info-row">
                 <Text type="secondary">Phí vận chuyển</Text>
                 <Text>{formatCurrency(shippingFee)}</Text>
               </div>
+
+              {order.discount ? (
+                <div className="order-detail__info-row">
+                  <Text type="secondary">Mã giảm giá {order.voucherCode ? `(${order.voucherCode})` : ''}</Text>
+                  <Text style={{ color: '#16a34a', fontWeight: 600 }}>-{formatCurrency(order.discount)}</Text>
+                </div>
+              ) : null}
 
               <div className="order-detail__info-row order-detail__info-row--total">
                 <Text strong>Tổng thanh toán</Text>

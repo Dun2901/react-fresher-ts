@@ -12,6 +12,7 @@ import {
   TagsOutlined,
   TeamOutlined,
   UserOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import { App, Avatar, Badge, Button, Dropdown, Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
@@ -180,6 +181,12 @@ const LayoutAdmin = () => {
       icon: <DollarCircleOutlined />,
       title: 'Quản lý đơn hàng',
     },
+    {
+      label: 'Mã giảm giá',
+      key: '/admin/voucher',
+      icon: <GiftOutlined />,
+      title: 'Quản lý mã giảm giá',
+    },
   ];
 
   const itemsDropdown: MenuProps['items'] = [
@@ -299,7 +306,7 @@ const LayoutAdmin = () => {
             <button type="button" className="layout-admin__user">
               <Avatar
                 className="layout-admin__user-avatar"
-                src={urlAvatar}
+                src={<img src={urlAvatar} referrerPolicy="no-referrer" />}
                 icon={<UserOutlined />}
               />
 

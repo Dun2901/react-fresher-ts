@@ -449,3 +449,38 @@ export const markAllNotificationsReadAPI = () => {
 export const sendChatMessageAPI = (message: string, history: { role: 'user' | 'model'; text: string }[]) => {
   return axios.post<IBackendRes<{ response: string }>>('/chatbot/chat', { message, history });
 };
+
+// ==================== MODULE VOUCHER ====================
+export const validateVoucherAPI = (code: string, cartTotal: number) => {
+  return axios.post<IBackendRes<{
+    isValid: boolean;
+    discount: number;
+    discountType: 'PERCENTAGE' | 'FIXED';
+    discountValue: number;
+    message: string;
+  }>>('/vouchers/validate', { code, cartTotal });
+};
+
+export const getClientVouchersAPI = () => {
+  return axios.get<IBackendRes<any[]>>('/vouchers/client');
+};
+
+export const getVouchersAPI = (currentPage: number, limit: number, queryStr?: string) => {
+  let url = `/vouchers?current=${currentPage}&pageSize=${limit}`;
+  if (queryStr) {
+    url += `&${queryStr}`;
+  }
+  return axios.get<IBackendRes<IModelPaginate<any>>>(url);
+};
+
+export const createVoucherAPI = (data: any) => {
+  return axios.post<IBackendRes<any>>('/vouchers', data);
+};
+
+export const updateVoucherAPI = (id: string, data: any) => {
+  return axios.patch<IBackendRes<any>>(`/vouchers/${id}`, data);
+};
+
+export const deleteVoucherAPI = (id: string) => {
+  return axios.delete<IBackendRes<any>>(`/vouchers/${id}`);
+};

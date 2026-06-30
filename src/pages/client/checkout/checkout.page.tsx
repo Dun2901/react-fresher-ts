@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
 import {
   Alert,
   Button,
@@ -16,13 +17,19 @@ import {
   Select,
   Spin,
   Tag,
+  Modal,
+  Tooltip,
+  Skeleton,
 } from 'antd';
 import {
   ArrowLeftOutlined,
+  CheckCircleFilled,
   CreditCardOutlined,
   EnvironmentOutlined,
   LoadingOutlined,
   PhoneOutlined,
+  RightOutlined,
+  TagOutlined,
   UserOutlined,
   WalletOutlined,
   WarningOutlined,
@@ -35,6 +42,8 @@ import {
   createVnpayPaymentUrlAPI,
   getProvincesAPI,
   getWardsByProvinceAPI,
+  validateVoucherAPI,
+  getClientVouchersAPI,
 } from '@/services/api';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import vnpayLogo from '@/assets/img/vnpay.png';
@@ -104,7 +113,7 @@ const normalizePhone = (value?: string | number | null) => {
 };
 
 const CheckoutPage: React.FC = () => {
-  const { user, carts, setCarts } = useCurrentApp();
+  const { user, carts, setCarts, isCartLoading } = useCurrentApp();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -116,6 +125,67 @@ const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isRedirectingPayment, setIsRedirectingPayment] = useState<boolean>(false);
   const [createdOrder, setCreatedOrder] = useState<IOrder | null>(null);
+
+  const [voucherCodeInput, setVoucherCodeInput] = useState<string>('');
+  const [appliedVoucher, setAppliedVoucher] = useState<{ code: string; discount: number } | null>(null);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState<boolean>(false);
+
+  const [clientVouchers, setClientVouchers] = useState<any[]>([]);
+  const [isModalVouchersOpen, setIsModalVouchersOpen] = useState<boolean>(false);
+  const [isLoadingClientVouchers, setIsLoadingClientVouchers] = useState<boolean>(false);
+
+  const fetchClientVouchers = async () => {
+    setIsLoadingClientVouchers(true);
+    try {
+      const res = await getClientVouchersAPI();
+      if (res?.data) {
+        setClientVouchers(res.data);
+      }
+    } catch (err) {
+      console.error('Fetch client vouchers error:', err);
+    } finally {
+      setIsLoadingClientVouchers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClientVouchers();
+  }, []);
+
+  const handleApplyVoucher = async () => {
+    if (!voucherCodeInput.trim()) {
+      setVoucherError('Vui lòng nhập mã giảm giá');
+      return;
+    }
+    setIsValidatingVoucher(true);
+    setVoucherError(null);
+    try {
+      const res = await validateVoucherAPI(voucherCodeInput, totalPrice);
+      if (res?.data?.isValid) {
+        setAppliedVoucher({
+          code: voucherCodeInput.trim().toUpperCase(),
+          discount: res.data.discount,
+        });
+        message.success(res.message || 'Áp dụng mã giảm giá thành công!');
+      } else {
+        setVoucherError(res?.data?.message || 'Mã giảm giá không hợp lệ');
+        setAppliedVoucher(null);
+      }
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.message || 'Lỗi xác thực mã giảm giá';
+      setVoucherError(errorMsg);
+      setAppliedVoucher(null);
+    } finally {
+      setIsValidatingVoucher(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherCodeInput('');
+    setVoucherError(null);
+  };
 
   const [provinces, setProvinces] = useState<IProvinceLocation[]>([]);
   const [wards, setWards] = useState<IWardLocation[]>([]);
@@ -304,6 +374,7 @@ const CheckoutPage: React.FC = () => {
       paymentMethod: values.paymentMethod,
       note: normalizeText(values.note) || undefined,
       selectedBookIds: hasSelectedBookIds ? selectedBookIds : undefined,
+      voucherCode: appliedVoucher ? appliedVoucher.code : undefined,
     };
 
     try {
@@ -414,6 +485,17 @@ const CheckoutPage: React.FC = () => {
               <b>{formatCurrency(createdOrder.totalPrice)}</b>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCartLoading) {
+    return (
+      <div className="checkout-status-page">
+        <div className="checkout-empty-card">
+          <Skeleton active paragraph={{ rows: 4 }} />
+          <Skeleton active paragraph={{ rows: 4 }} style={{ marginTop: 16 }} />
         </div>
       </div>
     );
@@ -703,11 +785,112 @@ const CheckoutPage: React.FC = () => {
                 <b className="checkout-free-text">Miễn phí</b>
               </div>
 
+              {/* VOUCHER PANEL */}
+              <Divider className="checkout-summary-divider" />
+
+              {/* Voucher row - clickable giống Shopee */}
+              {!appliedVoucher ? (
+                <div
+                  onClick={() => !isRedirectingPayment && setIsModalVouchersOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    marginBottom: '10px',
+                    border: '1.5px dashed #fb923c',
+                    borderRadius: '10px',
+                    cursor: isRedirectingPayment ? 'not-allowed' : 'pointer',
+                    background: '#fff7ed',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  <TagOutlined style={{ color: '#ea580c', fontSize: '18px', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '13px', color: '#ea580c' }}>Mã giảm giá</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>Chọn hoặc nhập mã khuyến mãi</div>
+                  </div>
+                  <RightOutlined style={{ color: '#ea580c', fontSize: '12px' }} />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    marginBottom: '10px',
+                    border: '1.5px solid #16a34a',
+                    borderRadius: '10px',
+                    background: '#f0fdf4',
+                  }}
+                >
+                  <CheckCircleFilled style={{ color: '#16a34a', fontSize: '18px', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#15803d' }}>
+                      {appliedVoucher.code}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#16a34a' }}>
+                      Giảm {formatCurrency(appliedVoucher.discount)}
+                    </div>
+                  </div>
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    onClick={handleRemoveVoucher}
+                    disabled={isRedirectingPayment}
+                    style={{ fontSize: '12px', height: 'auto', padding: '2px 8px' }}
+                  >
+                    Hủy
+                  </Button>
+                </div>
+              )}
+
+              {/* Ô nhập tay nếu muốn nhập trực tiếp */}
+              <div className="checkout-voucher-section" style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Input
+                    placeholder="Nhập mã giảm giá..."
+                    value={voucherCodeInput}
+                    onChange={(e) => setVoucherCodeInput(e.target.value)}
+                    onPressEnter={!appliedVoucher ? handleApplyVoucher : undefined}
+                    disabled={!!appliedVoucher || isRedirectingPayment}
+                    style={{ textTransform: 'uppercase' }}
+                    prefix={<TagOutlined style={{ color: '#d1d5db' }} />}
+                  />
+                  {!appliedVoucher && (
+                    <Button
+                      type="primary"
+                      ghost
+                      onClick={handleApplyVoucher}
+                      loading={isValidatingVoucher}
+                      disabled={isRedirectingPayment || !voucherCodeInput.trim()}
+                    >
+                      Áp dụng
+                    </Button>
+                  )}
+                </div>
+                {voucherError && (
+                  <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <WarningOutlined />
+                    {voucherError}
+                  </div>
+                )}
+              </div>
+
+              {appliedVoucher && (
+                <div className="checkout-price-row">
+                  <span style={{ color: '#16a34a' }}>Giảm giá ({appliedVoucher.code})</span>
+                  <b style={{ color: '#16a34a' }}>-{formatCurrency(appliedVoucher.discount)}</b>
+                </div>
+              )}
+
               <Divider className="checkout-summary-divider" />
 
               <div className="checkout-total-row">
                 <span>Tổng cần trả</span>
-                <b>{formatCurrency(totalPrice)}</b>
+                <b>{formatCurrency(totalPrice - (appliedVoucher?.discount || 0))}</b>
               </div>
 
               <Button
@@ -728,7 +911,7 @@ const CheckoutPage: React.FC = () => {
         <div className="mobile-checkout-bar">
           <div className="mobile-checkout-bar__price">
             <span>Tổng cần trả</span>
-            <b>{formatCurrency(totalPrice)}</b>
+            <b>{formatCurrency(totalPrice - (appliedVoucher?.discount || 0))}</b>
           </div>
 
           <Button
@@ -742,6 +925,114 @@ const CheckoutPage: React.FC = () => {
           </Button>
         </div>
       </Form>
+
+      <Modal
+        title="Mã giảm giá khả dụng"
+        open={isModalVouchersOpen}
+        onCancel={() => setIsModalVouchersOpen(false)}
+        footer={null}
+        width={500}
+        centered
+      >
+        <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '8px 0' }}>
+          {isLoadingClientVouchers ? (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>Đang tải danh sách voucher...</div>
+          ) : clientVouchers.length === 0 ? (
+            <Empty description="Hiện chưa có mã giảm giá nào." />
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {clientVouchers.map((voucher) => {
+                const isEligible = totalPrice >= voucher.minOrderValue;
+                return (
+                  <div
+                    key={voucher._id}
+                    style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      background: isEligible ? '#fff' : '#f9fafb',
+                      opacity: isEligible ? 1 : 0.7,
+                    }}
+                  >
+                    <div style={{ flex: 1, marginRight: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <Tag color="orange" style={{ fontWeight: 700, fontSize: '13px' }}>
+                          {voucher.code}
+                        </Tag>
+                        <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                          {voucher.discountType === 'PERCENTAGE'
+                            ? `Giảm ${voucher.discountValue}%`
+                            : `Giảm ${formatCurrency(voucher.discountValue)}`}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#4b5563' }}>
+                        Áp dụng cho đơn hàng từ {formatCurrency(voucher.minOrderValue)}
+                      </div>
+                      {voucher.maxDiscountValue && voucher.discountType === 'PERCENTAGE' && (
+                        <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                          Giảm tối đa: {formatCurrency(voucher.maxDiscountValue)}
+                        </div>
+                      )}
+                      {voucher.endDate && (
+                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                          HSD: {dayjs(voucher.endDate).format('DD-MM-YYYY HH:mm')}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      {isEligible ? (
+                        <Button
+                          type="primary"
+                          size="small"
+                          disabled={appliedVoucher?.code === voucher.code}
+                          onClick={() => {
+                            setVoucherCodeInput(voucher.code);
+                            setIsModalVouchersOpen(false);
+                            // Set a timeout to let the state update and apply automatically
+                            setTimeout(async () => {
+                              setIsValidatingVoucher(true);
+                              setVoucherError(null);
+                              try {
+                                const res = await validateVoucherAPI(voucher.code, totalPrice);
+                                if (res?.data?.isValid) {
+                                  setAppliedVoucher({
+                                    code: voucher.code,
+                                    discount: res.data.discount,
+                                  });
+                                  message.success(res.message || 'Áp dụng mã giảm giá thành công!');
+                                } else {
+                                  setVoucherError(res?.data?.message || 'Mã giảm giá không hợp lệ');
+                                  setAppliedVoucher(null);
+                                }
+                              } catch (err: any) {
+                                setVoucherError(err?.response?.data?.message || 'Lỗi áp dụng');
+                                setAppliedVoucher(null);
+                              } finally {
+                                setIsValidatingVoucher(false);
+                              }
+                            }, 50);
+                          }}
+                        >
+                          {appliedVoucher?.code === voucher.code ? 'Đã dùng' : 'Dùng mã'}
+                        </Button>
+                      ) : (
+                        <Tooltip title={`Đơn hàng tối thiểu phải từ ${formatCurrency(voucher.minOrderValue)}`}>
+                          <Button size="small" disabled>
+                            Chưa đủ ĐK
+                          </Button>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

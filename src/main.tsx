@@ -26,6 +26,7 @@ import {
   ExceptionOutlined,
   TagsOutlined,
   TeamOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import DetailBookPage from './pages/admin/detail.book';
 import VnpayReturnPage from './pages/client/payments/vnpay.return';
@@ -34,6 +35,7 @@ import OrderDetailPage from './pages/client/order/detail/order.detail';
 import CurrentOrdersPage from './pages/client/order/current/current.order';
 import OrderHistoryPage from './pages/client/order/history/order.history';
 import ManageCategoryPage from './pages/admin/manage.category';
+import ManageVoucherPage from './pages/admin/manage.voucher';
 import BookListPage from 'pages/client/book/bookListPage';
 import BookDetailPage from 'pages/client/book/bookDetailPage';
 import ProfilePage from './pages/client/profile/profile.page';
@@ -230,6 +232,21 @@ const router = createBrowserRouter([
             },
           },
         ],
+      },
+      {
+        path: 'voucher',
+        element: (
+          <ProtectedRoute>
+            <ManageVoucherPage />
+          </ProtectedRoute>
+        ),
+        handle: {
+          breadcrumb: {
+            label: 'Quản lý mã giảm giá',
+            href: '/admin/voucher',
+            icon: <GiftOutlined />,
+          },
+        },
       },
     ],
   },

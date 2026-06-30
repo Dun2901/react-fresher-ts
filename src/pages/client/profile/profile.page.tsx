@@ -201,7 +201,7 @@ const ProfilePage = () => {
           <Col xs={24} lg={8}>
             <Card className="profile-card profile-card--summary">
               <Space direction="vertical" align="center" size={14} className="profile-summary">
-                <Avatar size={104} src={getAvatarUrl(avatar)} icon={<UserOutlined />} />
+                <Avatar size={104} src={<img src={getAvatarUrl(avatar)} referrerPolicy="no-referrer" />} icon={<UserOutlined />} />
 
                 <div className="profile-summary__name">{profile?.fullName}</div>
                 <div className="profile-summary__email">{profile?.email}</div>
