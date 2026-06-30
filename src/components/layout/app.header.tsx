@@ -169,7 +169,7 @@ const AppHeader = () => {
                     <button className="user-profile-dropdown" type="button">
                       <Avatar
                         className="user-profile-avatar"
-                        src={getAvatarUrl(user?.avatar)}
+                        src={<img src={getAvatarUrl(user?.avatar)} referrerPolicy="no-referrer" />}
                         icon={<UserOutlined />}
                       />
 

@@ -16,6 +16,7 @@ interface IAppContext {
 
   carts: ICartItem[];
   setCarts: React.Dispatch<React.SetStateAction<ICartItem[]>>;
+  isCartLoading: boolean;
 }
 
 const CurrentAppContext = createContext<IAppContext | null>(null);
@@ -29,6 +30,7 @@ export const AppProvider = (props: TProps) => {
   const [user, setUser] = useState<IUser | null>(null);
   const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
   const [carts, setCarts] = useState<ICartItem[]>([]);
+  const [isCartLoading, setIsCartLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -45,6 +47,9 @@ export const AppProvider = (props: TProps) => {
       if (res.data) {
         setUser(res.data.user);
         setIsAuthenticated(true);
+      } else {
+        // Không authenticated — cart sẽ không fetch, tắt loading luôn
+        setIsCartLoading(false);
       }
 
       setIsAppLoading(false);
@@ -56,6 +61,7 @@ export const AppProvider = (props: TProps) => {
   useEffect(() => {
     const syncCart = async () => {
       if (isAuthenticated) {
+        setIsCartLoading(true);
         try {
           const res = await fetchMyCartAPI();
 
@@ -64,8 +70,13 @@ export const AppProvider = (props: TProps) => {
           }
         } catch (error) {
           console.error('Lỗi đồng bộ giỏ hàng từ DB:', error);
+        } finally {
+          setIsCartLoading(false);
         }
       } else {
+        // Chỉ clear cart, KHÔNG tắt isCartLoading ở đây
+        // vì effect này chạy ngay lúc mount (isAuthenticated=false)
+        // trong khi fetchAccount vẫn đang chạy async
         setCarts([]);
       }
     };
@@ -100,6 +111,7 @@ export const AppProvider = (props: TProps) => {
 
             carts,
             setCarts,
+            isCartLoading,
           }}
         >
           {props.children}

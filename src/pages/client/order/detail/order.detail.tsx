@@ -217,7 +217,7 @@ const OrderDetailPage = () => {
   const isMobile = !screens.md;
 
   const [order, setOrder] = useState<IOrder | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [payingLoading, setPayingLoading] = useState(false);
 
@@ -577,13 +577,20 @@ const OrderDetailPage = () => {
 
               <div className="order-detail__info-row">
                 <Text type="secondary">Tạm tính</Text>
-                <Text>{formatCurrency(itemsSubtotal)}</Text>
+                <Text>{formatCurrency(order.originalPrice || itemsSubtotal)}</Text>
               </div>
 
               <div className="order-detail__info-row">
                 <Text type="secondary">Phí vận chuyển</Text>
                 <Text>{formatCurrency(shippingFee)}</Text>
               </div>
+
+              {order.discount ? (
+                <div className="order-detail__info-row">
+                  <Text type="secondary">Mã giảm giá {order.voucherCode ? `(${order.voucherCode})` : ''}</Text>
+                  <Text style={{ color: '#16a34a', fontWeight: 600 }}>-{formatCurrency(order.discount)}</Text>
+                </div>
+              ) : null}
 
               <div className="order-detail__info-row order-detail__info-row--total">
                 <Text strong>Tổng thanh toán</Text>

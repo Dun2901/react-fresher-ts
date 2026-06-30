@@ -12,6 +12,7 @@ import {
   Tag,
   Typography,
   message,
+  Skeleton,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { MenuProps } from 'antd';
@@ -158,7 +159,7 @@ const OrderHistoryPage = () => {
   const pageTopRef = useRef<HTMLDivElement | null>(null);
 
   const [orders, setOrders] = useState<IOrder[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(() =>
     getValidPageNumber(searchParams.get('page')),
   );
@@ -408,10 +409,17 @@ const OrderHistoryPage = () => {
         key: 'totalPrice',
         width: 130,
         align: 'right',
-        render: (totalPrice: number) => (
-          <Text strong className="order-history__price">
-            {formatCurrency(totalPrice)}
-          </Text>
+        render: (totalPrice: number, record: IOrder) => (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <Text strong className="order-history__price">
+              {formatCurrency(totalPrice)}
+            </Text>
+            {record.discount && record.discount > 0 ? (
+              <span style={{ fontSize: '11px', color: '#16a34a' }} title={`Voucher: ${record.voucherCode || ''}`}>
+                Giảm: -{formatCurrency(record.discount)}
+              </span>
+            ) : null}
+          </div>
         ),
       },
       {
@@ -522,7 +530,14 @@ const OrderHistoryPage = () => {
 
           <div className="order-history__mobile-total">
             <span>Tổng số tiền ({totalItems} cuốn sách)</span>
-            <b>{formatCurrency(order.totalPrice)}</b>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <b>{formatCurrency(order.totalPrice)}</b>
+              {order.discount && order.discount > 0 ? (
+                <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600 }}>
+                  Giảm: -{formatCurrency(order.discount)}
+                </span>
+              ) : null}
+            </div>
           </div>
 
           <div className="order-history__mobile-actions">
@@ -534,6 +549,17 @@ const OrderHistoryPage = () => {
       </List.Item>
     );
   };
+
+  if (loading && orders.length === 0) {
+    return (
+      <div className="order-history">
+        <Card className="order-history__card">
+          <Skeleton active paragraph={{ rows: 6 }} />
+          <Skeleton active paragraph={{ rows: 6 }} style={{ marginTop: 24 }} />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="order-history" ref={pageTopRef}>

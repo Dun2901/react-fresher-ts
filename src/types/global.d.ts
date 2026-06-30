@@ -149,6 +149,9 @@ declare global {
     items: IOrderItem[];
     shippingAddress: IShippingAddress;
     totalPrice: number;
+    originalPrice?: number;
+    discount?: number;
+    voucherCode?: string;
     status: 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED';
     paymentMethod: 'COD' | 'ONLINE';
     paymentStatus: 'UNPAID' | 'PAID' | 'REFUNDED';
@@ -208,6 +211,7 @@ declare global {
     paymentMethod: 'COD' | 'ONLINE';
     note?: string;
     selectedBookIds?: string[];
+    voucherCode?: string;
   }
 
   // ------------REVIEW / RATING----------------------
