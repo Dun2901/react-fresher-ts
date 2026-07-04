@@ -13,10 +13,17 @@ import {
   GiftOutlined,
   StarFilled,
   BookOutlined,
+  HeartOutlined,
+  HeartFilled,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentApp } from 'components/context/app.context.tsx';
-import { addItemToCartAPI, getBooksAPI } from '@/services/api.ts';
+import {
+  addItemToCartAPI,
+  getBooksAPI,
+  addBookToWishlistAPI,
+  removeBookFromWishlistAPI,
+} from '@/services/api.ts';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import axios from 'axios';
 import './home.scss';
@@ -24,7 +31,14 @@ import './home.scss';
 const Homepage: React.FC = () => {
   const navigate = useNavigate();
 
-  const { isAuthenticated, carts, setCarts } = useCurrentApp();
+  const {
+    isAuthenticated,
+    carts,
+    setCarts,
+    wishlistBookIds,
+    setWishlistBookIds,
+    setWishlistItems,
+  } = useCurrentApp();
 
   const [listBook, setListBook] = useState<IBookTable[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -87,6 +101,35 @@ const Homepage: React.FC = () => {
       }
 
       message.error(errorMsg);
+    }
+  };
+
+  const handleToggleWishlist = async (e: React.MouseEvent, bookId: string) => {
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      showLoginRequiredMessage();
+      return;
+    }
+
+    const isFavorite = wishlistBookIds.includes(bookId);
+
+    try {
+      const res = isFavorite
+        ? await removeBookFromWishlistAPI(bookId)
+        : await addBookToWishlistAPI(bookId);
+
+      if (res && res.data) {
+        // Cập nhật lại kho lưu trữ Context toàn cục
+        setWishlistItems(res.data.bookIds || []);
+        setWishlistBookIds((res.data.bookIds || []).map((item: any) => item._id));
+        message.success(
+          isFavorite ? 'Đã xóa khỏi danh sách yêu thích!' : 'Đã thêm vào danh sách yêu thích!',
+        );
+      }
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi xử lý danh sách yêu thích.');
+      console.error('Lỗi Wishlist:', error);
     }
   };
 
@@ -275,6 +318,7 @@ const Homepage: React.FC = () => {
                 const averageRating = book.averageRating ?? 0;
                 const reviewCount = book.reviewCount ?? 0;
                 const sold = book.sold ?? 0;
+                const isFavorite = wishlistBookIds.includes(book._id);
 
                 return (
                   <Col xs={12} sm={8} md={6} lg={6} xl={4} xxl={4} key={book._id}>
@@ -288,6 +332,34 @@ const Homepage: React.FC = () => {
                               'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
                           }}
                         />
+
+                        <div
+                          className="book-card-shopee__wishlist-btn"
+                          onClick={(e) => handleToggleWishlist(e, book._id)}
+                          style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            zIndex: 10,
+                            background: 'rgba(255, 255, 255, 0.9)',
+                            padding: '6px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                            transition: 'transform 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.15)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                        >
+                          {isFavorite ? (
+                            <HeartFilled style={{ color: '#ff4d4f', fontSize: '16px' }} />
+                          ) : (
+                            <HeartOutlined style={{ color: '#8c8c8c', fontSize: '16px' }} />
+                          )}
+                        </div>
 
                         <span className="book-card-shopee__tag">Sách mới</span>
                       </div>
