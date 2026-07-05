@@ -1,4 +1,4 @@
-import { fetchAccountAPI, fetchMyCartAPI, fetchMyWishlistAPI } from '@/services/api.ts'; // Đã import thêm fetchMyWishlistAPI
+import { fetchAccountAPI, fetchMyCartAPI, fetchMyWishlistAPI } from '@/services/api.ts';
 import {
   connectNotificationSocket,
   disconnectNotificationSocket,
@@ -52,17 +52,40 @@ export const AppProvider = (props: TProps) => {
         localStorage.setItem('access_token', token);
       }
 
-      const res = await fetchAccountAPI();
+      try {
+        const res = await fetchAccountAPI();
 
-      if (res.data) {
-        setUser(res.data.user);
-        setIsAuthenticated(true);
-      } else {
+        if (res.data) {
+          setUser(res.data.user);
+          setIsAuthenticated(true);
+          setIsCartLoading(true);
+          setIsWishlistLoading(true);
+
+          const [cartRes, wishlistRes] = await Promise.all([
+            fetchMyCartAPI(),
+            fetchMyWishlistAPI(),
+          ]);
+
+          if (cartRes?.data) {
+            setCarts(cartRes.data.items || []);
+          }
+
+          if (wishlistRes && (wishlistRes as any).data) {
+            const listItems = (wishlistRes as any).data?.data?.bookIds || [];
+            setWishlistItems(listItems);
+            setWishlistBookIds(listItems.map((item: any) => item._id));
+          }
+        } else {
+          setIsCartLoading(false);
+          setIsWishlistLoading(false);
+        }
+      } catch (error) {
+        console.error('Lỗi khi khởi tạo tài khoản và danh sách:', error);
         setIsCartLoading(false);
-        setIsWishlistLoading(false); //không đăng nhập thi tắt loading wishlist
+        setIsWishlistLoading(false);
+      } finally {
+        setIsAppLoading(false);
       }
-
-      setIsAppLoading(false);
     };
 
     fetchAccount();
@@ -84,9 +107,10 @@ export const AppProvider = (props: TProps) => {
             setCarts(cartRes.data.items || []);
           }
 
-          if (wishlistRes && wishlistRes.data) {
-            setWishlistItems(wishlistRes.data.bookIds || []);
-            setWishlistBookIds((wishlistRes.data.bookIds || []).map((item: any) => item._id));
+          if (wishlistRes && (wishlistRes as any).data) {
+            const listItems = (wishlistRes as any).data?.data?.bookIds || [];
+            setWishlistItems(listItems);
+            setWishlistBookIds(listItems.map((item: any) => item._id));
           }
         } catch (error) {
           console.error('Lỗi đồng bộ dữ liệu từ DB:', error);

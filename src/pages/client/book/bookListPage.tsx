@@ -34,6 +34,7 @@ import {
   getCategoriesAPI,
   addBookToWishlistAPI,
   removeBookFromWishlistAPI,
+  fetchMyWishlistAPI,
 } from '@/services/api.ts';
 import { formatCurrency, getBookImageUrl } from '@/services/helper';
 import axios from 'axios';
@@ -296,12 +297,22 @@ const BookListPage: React.FC = () => {
         ? await removeBookFromWishlistAPI(bookId)
         : await addBookToWishlistAPI(bookId);
 
-      if (res && res.data) {
-        setWishlistItems(res.data.bookIds || []);
-        setWishlistBookIds((res.data.bookIds || []).map((item: any) => item._id));
+      if (res && ((res as any).statusCode === 200 || (res as any).statusCode === 201)) {
         message.success(
           isFavorite ? 'Đã xóa khỏi danh sách yêu thích!' : 'Đã thêm vào danh sách yêu thích!',
         );
+
+        const updatedWishlist = await fetchMyWishlistAPI();
+
+        let listItems: any[] = [];
+
+        if (updatedWishlist && (updatedWishlist as any).data) {
+          const actualData = (updatedWishlist as any).data;
+          listItems = actualData.data?.bookIds || actualData.bookIds || [];
+        }
+
+        setWishlistItems(listItems);
+        setWishlistBookIds(listItems.map((item: any) => item._id));
       }
     } catch (error) {
       message.error('Có lỗi xảy ra khi xử lý danh sách yêu thích.');
