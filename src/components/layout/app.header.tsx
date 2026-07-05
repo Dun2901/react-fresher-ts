@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DashboardOutlined,
   DownOutlined,
@@ -8,6 +8,7 @@ import {
   SearchOutlined,
   ShoppingOutlined,
   UserOutlined,
+  HeartOutlined,
 } from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
 import { Divider, Badge, Drawer, Avatar, Input, Dropdown } from 'antd';
@@ -22,7 +23,8 @@ import UserNotificationBell from '../notification/user.notification.bell';
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
 
-  const { isAuthenticated, user, setUser, setIsAuthenticated, carts } = useCurrentApp();
+  const { isAuthenticated, user, setUser, setIsAuthenticated, carts, wishlistBookIds } =
+    useCurrentApp();
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -64,6 +66,10 @@ const AppHeader = () => {
     navigate('/cart');
   };
 
+  const handleGoToWishlist = () => {
+    navigate('/wishlist');
+  };
+
   const userMenuItems: MenuProps['items'] = [];
 
   if (user?.role === 'ADMIN') {
@@ -83,6 +89,11 @@ const AppHeader = () => {
       label: 'Quản lý tài khoản',
       key: 'account',
       icon: <UserOutlined />,
+    },
+    {
+      label: 'Danh sách yêu thích',
+      key: 'wishlist',
+      icon: <HeartOutlined />,
     },
     {
       label: 'Đơn hàng của tôi',
@@ -113,6 +124,11 @@ const AppHeader = () => {
 
     if (key === 'account') {
       navigate('/profile');
+      return;
+    }
+
+    if (key === 'wishlist') {
+      handleGoToWishlist();
       return;
     }
 
@@ -177,8 +193,9 @@ const AppHeader = () => {
                     >
                       🔥 Tìm kiếm phổ biến
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}
->
+                    <div
+                      style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}
+                    >
                       {['Alice', 'Du lịch', 'Treasure Island', 'Lịch sử', 'Kinh tế', 'Tư duy'].map(
                         (item) => (
                           <button
@@ -199,16 +216,6 @@ const AppHeader = () => {
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                               textAlign: 'center',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = 'var(--color-primary)';
-                              e.currentTarget.style.color = 'var(--color-primary)';
-                              e.currentTarget.style.background = 'var(--color-primary-soft)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = '#f0f0f0';
-                              e.currentTarget.style.color = '#434343';
-                              e.currentTarget.style.background = '#fafafa';
                             }}
                           >
                             {item}
@@ -231,8 +238,9 @@ const AppHeader = () => {
                     >
                       📚 Thể loại nổi bật
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}
->
+                    <div
+                      style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}
+                    >
                       {['Văn học', 'Kinh tế', 'Kỹ năng sống', 'Thiếu nhi', 'Lịch sử'].map(
                         (categoryName) => (
                           <button
@@ -253,16 +261,6 @@ const AppHeader = () => {
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                               textAlign: 'center',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = 'var(--color-primary)';
-                              e.currentTarget.style.color = 'var(--color-primary)';
-                              e.currentTarget.style.background = 'var(--color-primary-soft)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = '#f0f0f0';
-                              e.currentTarget.style.color = '#434343';
-                              e.currentTarget.style.background = '#fafafa';
                             }}
                           >
                             {categoryName}
@@ -301,6 +299,30 @@ const AppHeader = () => {
 
           <div className="navbar-right">
             <nav className="navigation-actions">
+              <div
+                className="action-item-wishlist"
+                onClick={handleGoToWishlist}
+                style={{
+                  cursor: 'pointer',
+                  marginRight: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Badge
+                  count={isAuthenticated ? (wishlistBookIds?.length ?? 0) : 0}
+                  size="small"
+                  showZero
+                  color="#ff4d4f"
+                >
+                  <HeartOutlined
+                    style={{ fontSize: '21px', color: '#595959', transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#ff4d4f')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = '#595959')}
+                  />
+                </Badge>
+              </div>
+
               <div className="action-item-cart" onClick={handleGoToCart}>
                 <Badge
                   count={carts?.length ?? 0}
@@ -359,6 +381,18 @@ const AppHeader = () => {
       >
         {isAuthenticated && (
           <>
+            <p
+              className="drawer-nav-item"
+              onClick={() => {
+                navigate('/wishlist');
+                setOpenDrawer(false);
+              }}
+            >
+              Danh sách yêu thích ({wishlistBookIds?.length ?? 0})
+            </p>
+
+            <Divider className="drawer-divider" />
+
             <p
               className="drawer-nav-item"
               onClick={() => {
