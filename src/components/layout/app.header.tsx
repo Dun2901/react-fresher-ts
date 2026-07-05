@@ -9,9 +9,11 @@ import {
   ShoppingOutlined,
   UserOutlined,
   HeartOutlined,
+  AudioOutlined,
+  AudioMutedOutlined,
 } from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
-import { Divider, Badge, Drawer, Avatar, Input, Dropdown } from 'antd';
+import { Divider, Badge, Drawer, Avatar, Input, Dropdown, Tooltip, message, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import './app.header.scss';
@@ -32,6 +34,72 @@ const AppHeader = () => {
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  //timf kiếm bằng giọng nói (Web Speech API)
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [recognition, setRecognition] = useState<any>(null);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      const speechInstance = new SpeechRecognition();
+      speechInstance.continuous = false;
+      speechInstance.lang = 'vi-VN'; //nhận diện tiếng Việt
+      speechInstance.interimResults = false;
+
+      speechInstance.onresult = (event: any) => {
+        const textResult = event.results[0][0].transcript;
+        if (textResult) {
+          const cleanedText = textResult.replace(/\.$/, '');
+          setSearchValue(cleanedText);
+          setIsSearchFocused(false);
+          message.success(`Tìm kiếm: "${cleanedText}"`);
+
+          // chuyển hướng sang trang danh sách sách với voice vừa nhận
+          navigate(`/book?search=${encodeURIComponent(cleanedText.trim())}`);
+        }
+      };
+
+      speechInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      speechInstance.onerror = (event: any) => {
+        console.error('Lỗi nhận diện giọng nói:', event.error);
+        if (event.error === 'not-allowed') {
+          message.error('Vui lòng cấp quyền Microphone trên trình duyệt để tìm kiếm!');
+        } else {
+          message.error('Hệ thống chưa nghe rõ, vui lòng thử lại.');
+        }
+        setIsListening(false);
+      };
+
+      setRecognition(speechInstance);
+    }
+  }, [navigate]);
+
+  const handleToggleVoiceSearch = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!recognition) {
+      message.error('Trình duyệt của bạn hiện chưa hỗ trợ tính năng Speech Recognition.');
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (location.pathname !== '/book') {
@@ -165,7 +233,10 @@ const AppHeader = () => {
           <div className="navbar-center">
             <Dropdown
               open={isSearchFocused}
-              onOpenChange={(flag) => setIsSearchFocused(flag)}
+              onOpenChange={(flag) => {
+                if (isListening) return;
+                setIsSearchFocused(flag);
+              }}
               overlayStyle={{ width: '100%' }}
               getPopupContainer={(triggerNode) => triggerNode}
               dropdownRender={() => (
@@ -279,6 +350,30 @@ const AppHeader = () => {
                   className="search-bar-input"
                   placeholder="Bạn tìm sách gì hôm nay..."
                   prefix={<SearchOutlined style={{ color: '#bfbfbf', fontSize: '16px' }} />}
+                  // ĐƯA ICON MICRO VÀO PHẦN SUFFIX CỦA INPUT ANTD
+                  suffix={
+                    <Tooltip title={isListening ? 'Đang nghe...' : 'Tìm kiếm bằng giọng nói'}>
+                      {isListening ? (
+                        <AudioMutedOutlined
+                          onClick={handleToggleVoiceSearch}
+                          style={{ color: '#ff4d4f', fontSize: '16px', cursor: 'pointer' }}
+                          className="voice-icon-pulsing"
+                        />
+                      ) : (
+                        <AudioOutlined
+                          onClick={handleToggleVoiceSearch}
+                          style={{
+                            color: '#8c8c8c',
+                            fontSize: '16px',
+                            cursor: 'pointer',
+                            transition: 'color 0.2s',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#1677ff')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = '#8c8c8c')}
+                        />
+                      )}
+                    </Tooltip>
+                  }
                   allowClear
                   value={searchValue}
                   onChange={(e) => {
@@ -372,6 +467,27 @@ const AppHeader = () => {
           </div>
         </header>
       </div>
+
+      {/* modal hiển thị khi đang thu âm*/}
+      <Modal
+        open={isListening}
+        footer={null}
+        closable={false}
+        centered
+        width={280}
+        styles={{ body: { textAlign: 'center', padding: '24px' } }}
+      >
+        <div
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+        >
+          <AudioOutlined
+            style={{ fontSize: '36px', color: '#ff4d4f' }}
+            className="voice-icon-pulsing"
+          />
+          <div style={{ fontWeight: 600, fontSize: '15px', color: '#262626' }}>Mời bạn nói...</div>
+          <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Hệ thống đang lắng nghe tên sách</div>
+        </div>
+      </Modal>
 
       <Drawer
         title="Danh mục chức năng"

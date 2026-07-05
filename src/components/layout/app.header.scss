@@ -657,4 +657,23 @@
     margin: 6px 4px !important;
     background-color: #eef2f7;
   }
+
+  @keyframes voicePulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.25);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .voice-icon-pulsing {
+    animation: voicePulse 1.2s infinite ease-in-out;
+  }
 }
