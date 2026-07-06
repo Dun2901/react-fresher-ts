@@ -40,6 +40,7 @@ import BookListPage from 'pages/client/book/bookListPage';
 import BookDetailPage from 'pages/client/book/bookDetailPage';
 import ProfilePage from './pages/client/profile/profile.page';
 import NotificationsPage from './pages/client/notifications/notifications.page';
+import WishlistPage from 'pages/client/wishlist/wishlistPage.tsx';
 
 dayjs.locale('vi');
 
@@ -80,6 +81,12 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+
+      {
+        path: '/wishlist',
+        element: <WishlistPage />,
+      },
+
       {
         path: 'notifications',
         element: (

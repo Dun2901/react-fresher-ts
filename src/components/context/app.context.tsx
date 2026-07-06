@@ -1,4 +1,4 @@
-import { fetchAccountAPI, fetchMyCartAPI } from '@/services/api.ts';
+import { fetchAccountAPI, fetchMyCartAPI, fetchMyWishlistAPI } from '@/services/api.ts';
 import {
   connectNotificationSocket,
   disconnectNotificationSocket,
@@ -17,6 +17,12 @@ interface IAppContext {
   carts: ICartItem[];
   setCarts: React.Dispatch<React.SetStateAction<ICartItem[]>>;
   isCartLoading: boolean;
+
+  wishlistItems: IBookTable[];
+  setWishlistItems: React.Dispatch<React.SetStateAction<IBookTable[]>>;
+  setWishlistBookIds: React.Dispatch<React.SetStateAction<string[]>>;
+  wishlistBookIds: string[];
+  isWishlistLoading: boolean;
 }
 
 const CurrentAppContext = createContext<IAppContext | null>(null);
@@ -32,6 +38,10 @@ export const AppProvider = (props: TProps) => {
   const [carts, setCarts] = useState<ICartItem[]>([]);
   const [isCartLoading, setIsCartLoading] = useState<boolean>(true);
 
+  const [wishlistItems, setWishlistItems] = useState<IBookTable[]>([]);
+  const [wishlistBookIds, setWishlistBookIds] = useState<string[]>([]);
+  const [isWishlistLoading, setIsWishlistLoading] = useState<boolean>(true);
+
   useEffect(() => {
     const fetchAccount = async () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -42,46 +52,80 @@ export const AppProvider = (props: TProps) => {
         localStorage.setItem('access_token', token);
       }
 
-      const res = await fetchAccountAPI();
+      try {
+        const res = await fetchAccountAPI();
 
-      if (res.data) {
-        setUser(res.data.user);
-        setIsAuthenticated(true);
-      } else {
-        // Không authenticated — cart sẽ không fetch, tắt loading luôn
+        if (res.data) {
+          setUser(res.data.user);
+          setIsAuthenticated(true);
+          setIsCartLoading(true);
+          setIsWishlistLoading(true);
+
+          const [cartRes, wishlistRes] = await Promise.all([
+            fetchMyCartAPI(),
+            fetchMyWishlistAPI(),
+          ]);
+
+          if (cartRes?.data) {
+            setCarts(cartRes.data.items || []);
+          }
+
+          if (wishlistRes && (wishlistRes as any).data) {
+            const listItems = (wishlistRes as any).data?.data?.bookIds || [];
+            setWishlistItems(listItems);
+            setWishlistBookIds(listItems.map((item: any) => item._id));
+          }
+        } else {
+          setIsCartLoading(false);
+          setIsWishlistLoading(false);
+        }
+      } catch (error) {
+        console.error('Lỗi khi khởi tạo tài khoản và danh sách:', error);
         setIsCartLoading(false);
+        setIsWishlistLoading(false);
+      } finally {
+        setIsAppLoading(false);
       }
-
-      setIsAppLoading(false);
     };
 
     fetchAccount();
   }, []);
 
   useEffect(() => {
-    const syncCart = async () => {
+    const syncCartAndWishlist = async () => {
       if (isAuthenticated) {
         setIsCartLoading(true);
-        try {
-          const res = await fetchMyCartAPI();
+        setIsWishlistLoading(true);
 
-          if (res && res.data) {
-            setCarts(res.data.items || []);
+        try {
+          const [cartRes, wishlistRes] = await Promise.all([
+            fetchMyCartAPI(),
+            fetchMyWishlistAPI(),
+          ]);
+
+          if (cartRes && cartRes.data) {
+            setCarts(cartRes.data.items || []);
+          }
+
+          if (wishlistRes && (wishlistRes as any).data) {
+            const listItems = (wishlistRes as any).data?.data?.bookIds || [];
+            setWishlistItems(listItems);
+            setWishlistBookIds(listItems.map((item: any) => item._id));
           }
         } catch (error) {
-          console.error('Lỗi đồng bộ giỏ hàng từ DB:', error);
+          console.error('Lỗi đồng bộ dữ liệu từ DB:', error);
         } finally {
           setIsCartLoading(false);
+          setIsWishlistLoading(false);
         }
       } else {
-        // Chỉ clear cart, KHÔNG tắt isCartLoading ở đây
-        // vì effect này chạy ngay lúc mount (isAuthenticated=false)
-        // trong khi fetchAccount vẫn đang chạy async
         setCarts([]);
+        setWishlistItems([]);
+        setWishlistBookIds([]);
       }
     };
 
-    syncCart();
+    syncCartAndWishlist();
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -112,6 +156,12 @@ export const AppProvider = (props: TProps) => {
             carts,
             setCarts,
             isCartLoading,
+
+            wishlistItems,
+            setWishlistItems,
+            setWishlistBookIds,
+            wishlistBookIds,
+            isWishlistLoading,
           }}
         >
           {props.children}

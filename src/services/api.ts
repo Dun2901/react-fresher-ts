@@ -484,3 +484,19 @@ export const updateVoucherAPI = (id: string, data: any) => {
 export const deleteVoucherAPI = (id: string) => {
   return axios.delete<IBackendRes<any>>(`/vouchers/${id}`);
 };
+
+// --------------------MODULE WISHLIST-----------------------------
+//lấy danh sách yêu thích user đang đăng nhập
+export const fetchMyWishlistAPI = () => {
+  return axios.get<IBackendRes<IWishlist>>('/wishlists/me');
+};
+
+//thêm một cuốn sách vào danh sách yêu thích
+export const addBookToWishlistAPI = (bookId: string) => {
+  return axios.post<IBackendRes<IWishlist>>(`/wishlists/${bookId}`);
+};
+
+//xóa một cuốn sách khỏi danh sách yêu thích
+export const removeBookFromWishlistAPI = (bookId: string) => {
+  return axios.delete<IBackendRes<IWishlist>>(`/wishlists/${bookId}`);
+};

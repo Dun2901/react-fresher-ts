@@ -325,4 +325,15 @@ declare global {
     revenue: number;
     orderCount: number;
   }
+
+  // ------------WISHLIST----------------------
+
+  interface IWishlist {
+    _id: string;
+    userId: string;
+    bookIds: IBookTable[];
+    totalItems: number;
+    createdAt: string;
+    updatedAt: string;
+  }
 }

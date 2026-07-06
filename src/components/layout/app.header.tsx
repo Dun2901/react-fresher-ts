@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DashboardOutlined,
   DownOutlined,
@@ -8,9 +8,12 @@ import {
   SearchOutlined,
   ShoppingOutlined,
   UserOutlined,
+  HeartOutlined,
+  AudioOutlined,
+  AudioMutedOutlined,
 } from '@ant-design/icons';
 import { FiShoppingCart } from 'react-icons/fi';
-import { Divider, Badge, Drawer, Avatar, Input, Dropdown } from 'antd';
+import { Divider, Badge, Drawer, Avatar, Input, Dropdown, Tooltip, message, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import './app.header.scss';
@@ -22,7 +25,8 @@ import UserNotificationBell from '../notification/user.notification.bell';
 const AppHeader = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
 
-  const { isAuthenticated, user, setUser, setIsAuthenticated, carts } = useCurrentApp();
+  const { isAuthenticated, user, setUser, setIsAuthenticated, carts, wishlistBookIds } =
+    useCurrentApp();
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -30,6 +34,72 @@ const AppHeader = () => {
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  //timf kiếm bằng giọng nói (Web Speech API)
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [recognition, setRecognition] = useState<any>(null);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      const speechInstance = new SpeechRecognition();
+      speechInstance.continuous = false;
+      speechInstance.lang = 'vi-VN'; //nhận diện tiếng Việt
+      speechInstance.interimResults = false;
+
+      speechInstance.onresult = (event: any) => {
+        const textResult = event.results[0][0].transcript;
+        if (textResult) {
+          const cleanedText = textResult.replace(/\.$/, '');
+          setSearchValue(cleanedText);
+          setIsSearchFocused(false);
+          message.success(`Tìm kiếm: "${cleanedText}"`);
+
+          // chuyển hướng sang trang danh sách sách với voice vừa nhận
+          navigate(`/book?search=${encodeURIComponent(cleanedText.trim())}`);
+        }
+      };
+
+      speechInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      speechInstance.onerror = (event: any) => {
+        console.error('Lỗi nhận diện giọng nói:', event.error);
+        if (event.error === 'not-allowed') {
+          message.error('Vui lòng cấp quyền Microphone trên trình duyệt để tìm kiếm!');
+        } else {
+          message.error('Hệ thống chưa nghe rõ, vui lòng thử lại.');
+        }
+        setIsListening(false);
+      };
+
+      setRecognition(speechInstance);
+    }
+  }, [navigate]);
+
+  const handleToggleVoiceSearch = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!recognition) {
+      message.error('Trình duyệt của bạn hiện chưa hỗ trợ tính năng Speech Recognition.');
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (location.pathname !== '/book') {
@@ -64,6 +134,10 @@ const AppHeader = () => {
     navigate('/cart');
   };
 
+  const handleGoToWishlist = () => {
+    navigate('/wishlist');
+  };
+
   const userMenuItems: MenuProps['items'] = [];
 
   if (user?.role === 'ADMIN') {
@@ -83,6 +157,11 @@ const AppHeader = () => {
       label: 'Quản lý tài khoản',
       key: 'account',
       icon: <UserOutlined />,
+    },
+    {
+      label: 'Danh sách yêu thích',
+      key: 'wishlist',
+      icon: <HeartOutlined />,
     },
     {
       label: 'Đơn hàng của tôi',
@@ -113,6 +192,11 @@ const AppHeader = () => {
 
     if (key === 'account') {
       navigate('/profile');
+      return;
+    }
+
+    if (key === 'wishlist') {
+      handleGoToWishlist();
       return;
     }
 
@@ -149,7 +233,10 @@ const AppHeader = () => {
           <div className="navbar-center">
             <Dropdown
               open={isSearchFocused}
-              onOpenChange={(flag) => setIsSearchFocused(flag)}
+              onOpenChange={(flag) => {
+                if (isListening) return;
+                setIsSearchFocused(flag);
+              }}
               overlayStyle={{ width: '100%' }}
               getPopupContainer={(triggerNode) => triggerNode}
               dropdownRender={() => (
@@ -177,8 +264,9 @@ const AppHeader = () => {
                     >
                       🔥 Tìm kiếm phổ biến
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}
->
+                    <div
+                      style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}
+                    >
                       {['Alice', 'Du lịch', 'Treasure Island', 'Lịch sử', 'Kinh tế', 'Tư duy'].map(
                         (item) => (
                           <button
@@ -199,16 +287,6 @@ const AppHeader = () => {
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                               textAlign: 'center',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = 'var(--color-primary)';
-                              e.currentTarget.style.color = 'var(--color-primary)';
-                              e.currentTarget.style.background = 'var(--color-primary-soft)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = '#f0f0f0';
-                              e.currentTarget.style.color = '#434343';
-                              e.currentTarget.style.background = '#fafafa';
                             }}
                           >
                             {item}
@@ -231,8 +309,9 @@ const AppHeader = () => {
                     >
                       📚 Thể loại nổi bật
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}
->
+                    <div
+                      style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}
+                    >
                       {['Văn học', 'Kinh tế', 'Kỹ năng sống', 'Thiếu nhi', 'Lịch sử'].map(
                         (categoryName) => (
                           <button
@@ -254,16 +333,6 @@ const AppHeader = () => {
                               transition: 'all 0.2s',
                               textAlign: 'center',
                             }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = 'var(--color-primary)';
-                              e.currentTarget.style.color = 'var(--color-primary)';
-                              e.currentTarget.style.background = 'var(--color-primary-soft)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = '#f0f0f0';
-                              e.currentTarget.style.color = '#434343';
-                              e.currentTarget.style.background = '#fafafa';
-                            }}
                           >
                             {categoryName}
                           </button>
@@ -281,6 +350,30 @@ const AppHeader = () => {
                   className="search-bar-input"
                   placeholder="Bạn tìm sách gì hôm nay..."
                   prefix={<SearchOutlined style={{ color: '#bfbfbf', fontSize: '16px' }} />}
+                  // ĐƯA ICON MICRO VÀO PHẦN SUFFIX CỦA INPUT ANTD
+                  suffix={
+                    <Tooltip title={isListening ? 'Đang nghe...' : 'Tìm kiếm bằng giọng nói'}>
+                      {isListening ? (
+                        <AudioMutedOutlined
+                          onClick={handleToggleVoiceSearch}
+                          style={{ color: '#ff4d4f', fontSize: '16px', cursor: 'pointer' }}
+                          className="voice-icon-pulsing"
+                        />
+                      ) : (
+                        <AudioOutlined
+                          onClick={handleToggleVoiceSearch}
+                          style={{
+                            color: '#8c8c8c',
+                            fontSize: '16px',
+                            cursor: 'pointer',
+                            transition: 'color 0.2s',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#1677ff')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = '#8c8c8c')}
+                        />
+                      )}
+                    </Tooltip>
+                  }
                   allowClear
                   value={searchValue}
                   onChange={(e) => {
@@ -301,6 +394,30 @@ const AppHeader = () => {
 
           <div className="navbar-right">
             <nav className="navigation-actions">
+              <div
+                className="action-item-wishlist"
+                onClick={handleGoToWishlist}
+                style={{
+                  cursor: 'pointer',
+                  marginRight: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <Badge
+                  count={isAuthenticated ? (wishlistBookIds?.length ?? 0) : 0}
+                  size="small"
+                  showZero
+                  color="#ff4d4f"
+                >
+                  <HeartOutlined
+                    style={{ fontSize: '21px', color: '#595959', transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#ff4d4f')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = '#595959')}
+                  />
+                </Badge>
+              </div>
+
               <div className="action-item-cart" onClick={handleGoToCart}>
                 <Badge
                   count={carts?.length ?? 0}
@@ -351,6 +468,27 @@ const AppHeader = () => {
         </header>
       </div>
 
+      {/* modal hiển thị khi đang thu âm*/}
+      <Modal
+        open={isListening}
+        footer={null}
+        closable={false}
+        centered
+        width={280}
+        styles={{ body: { textAlign: 'center', padding: '24px' } }}
+      >
+        <div
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+        >
+          <AudioOutlined
+            style={{ fontSize: '36px', color: '#ff4d4f' }}
+            className="voice-icon-pulsing"
+          />
+          <div style={{ fontWeight: 600, fontSize: '15px', color: '#262626' }}>Mời bạn nói...</div>
+          <div style={{ fontSize: '12px', color: '#8c8c8c' }}>Hệ thống đang lắng nghe tên sách</div>
+        </div>
+      </Modal>
+
       <Drawer
         title="Danh mục chức năng"
         placement="left"
@@ -359,6 +497,18 @@ const AppHeader = () => {
       >
         {isAuthenticated && (
           <>
+            <p
+              className="drawer-nav-item"
+              onClick={() => {
+                navigate('/wishlist');
+                setOpenDrawer(false);
+              }}
+            >
+              Danh sách yêu thích ({wishlistBookIds?.length ?? 0})
+            </p>
+
+            <Divider className="drawer-divider" />
+
             <p
               className="drawer-nav-item"
               onClick={() => {
