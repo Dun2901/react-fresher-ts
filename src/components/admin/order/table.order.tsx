@@ -71,7 +71,7 @@ const paymentStatusMap: Record<PaymentStatus, { text: string; color: string }> =
 
 const paymentMethodMap: Record<PaymentMethod, string> = {
   COD: 'COD',
-  ONLINE: 'VNPay',
+  VNPAY: 'VNPay',
 };
 
 const getCustomerName = (order: IOrder) => {
@@ -488,7 +488,7 @@ const TableOrder = () => {
           COD: {
             text: 'Thanh toán khi nhận hàng',
           },
-          ONLINE: {
+          VNPAY: {
             text: 'VNPay',
           },
         },

@@ -80,7 +80,7 @@ const orderStatusMap: Record<
 
 const paymentMethodMap: Record<IOrder['paymentMethod'], string> = {
   COD: 'Thanh toán khi nhận hàng',
-  ONLINE: 'VNPay',
+  VNPAY: 'VNPay',
 };
 
 const paymentStatusMap: Record<IOrder['paymentStatus'], { text: string; color: string }> = {
@@ -204,7 +204,7 @@ const canCancelOrder = (order?: IOrder | null) => {
 const canRepayOrder = (order?: IOrder | null) => {
   return (
     order?.status === 'PENDING' &&
-    order.paymentMethod === 'ONLINE' &&
+    order.paymentMethod === 'VNPAY' &&
     order.paymentStatus === 'UNPAID'
   );
 };

@@ -93,7 +93,7 @@ const paymentStatusMap: Record<
 
 const paymentMethodMap: Record<PaymentMethod, string> = {
   COD: 'Thanh toán khi nhận hàng',
-  ONLINE: 'VNPay',
+  VNPAY: 'VNPay',
 };
 
 const statusFlow: OrderStatus[] = ['PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED'];
