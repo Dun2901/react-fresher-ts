@@ -153,7 +153,7 @@ declare global {
     discount?: number;
     voucherCode?: string;
     status: 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED';
-    paymentMethod: 'COD' | 'ONLINE';
+    paymentMethod: 'COD' | 'VNPAY';
     paymentStatus: 'UNPAID' | 'PAID' | 'REFUNDED';
     note?: string;
     createdBy?: { _id: string; email: string };
@@ -208,7 +208,7 @@ declare global {
   // DTO gửi lên khi đặt hàng
   interface ICheckoutDto {
     shippingAddress: IShippingAddress;
-    paymentMethod: 'COD' | 'ONLINE';
+    paymentMethod: 'COD' | 'VNPAY';
     note?: string;
     selectedBookIds?: string[];
     voucherCode?: string;

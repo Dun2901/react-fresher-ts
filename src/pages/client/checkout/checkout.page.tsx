@@ -64,7 +64,7 @@ interface IOrderFormValues {
 
   addressLine: string;
 
-  paymentMethod: 'COD' | 'ONLINE';
+  paymentMethod: 'COD' | 'VNPAY';
   note?: string;
 }
 
@@ -385,7 +385,7 @@ const CheckoutPage: React.FC = () => {
         throw new Error('Không nhận được thông tin đơn hàng');
       }
 
-      if (values.paymentMethod === 'ONLINE' && order._id) {
+      if (values.paymentMethod === 'VNPAY' && order._id) {
         setIsRedirectingPayment(true);
         message.loading('Đang chuyển sang cổng thanh toán VNPay...', 2);
 
@@ -713,7 +713,7 @@ const CheckoutPage: React.FC = () => {
                     </label>
 
                     <label className="payment-option">
-                      <Radio value="ONLINE" />
+                      <Radio value="VNPAY" />
 
                       <div className="payment-option__icon payment-option__icon--vnpay">
                         <img src={vnpayLogo} alt="VNPay" />
