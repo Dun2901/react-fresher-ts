@@ -655,7 +655,7 @@ const OrderDetailPage = () => {
               locale={{
                 emptyText: <Empty description="Không có sản phẩm trong đơn hàng" />,
               }}
-              renderItem={(item, index) => (
+              renderItem={(item) => (
                 <List.Item className="order-detail__mobile-list-item">
                   <Card className="order-detail__mobile-item-card">
                     <div className="order-detail__mobile-product">

@@ -19,7 +19,7 @@ type FieldType = {
   maxDiscountValue?: number;
   minOrderValue?: number;
   usageLimit?: number;
-  dateRange?: [dayjs.Dayjs, dayjs.Dayjs] | null;
+  dateRange?: [dayjs.Dayjs, dayjs.Dayjs];
   isActive: boolean;
 };
 
@@ -42,7 +42,7 @@ const VoucherModal = ({ openModal, setOpenModal, refreshTable, dataUpdate, setDa
         isActive: dataUpdate.isActive,
         dateRange: dataUpdate.startDate && dataUpdate.endDate 
           ? [dayjs(dataUpdate.startDate), dayjs(dataUpdate.endDate)]
-          : null,
+          : undefined,
       });
     } else {
       form.setFieldsValue({
@@ -51,7 +51,7 @@ const VoucherModal = ({ openModal, setOpenModal, refreshTable, dataUpdate, setDa
         minOrderValue: 0,
         usageLimit: 0,
         isActive: true,
-        dateRange: null,
+        dateRange: undefined,
       });
     }
   }, [dataUpdate, openModal]);

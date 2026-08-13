@@ -61,7 +61,7 @@ const TableUser = () => {
       title: '_id',
       dataIndex: '_id',
       hideInSearch: true,
-      render(dom, entity, index, action, schema) {
+      render(_, entity) {
         return <Link to={`/admin/user/${entity._id}`}>{entity._id}</Link>;
       },
     },
@@ -91,7 +91,7 @@ const TableUser = () => {
       title: 'Action',
       hideInSearch: true,
       width: 80,
-      render(dom, entity) {
+      render(_, entity) {
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <AiOutlineEdit

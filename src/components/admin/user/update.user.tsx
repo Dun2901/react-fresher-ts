@@ -53,19 +53,20 @@ const UpdateUser = (props: IProps) => {
 
       // ← set fileList nếu có avatar
       if (dataUpdate.avatar) {
-        const url = getAvatarUrl(dataUpdate.avatar);
-        const defaultUrl = getAvatarUrl("default-user.png");
+        const avatarName = dataUpdate.avatar;
+        const url = getAvatarUrl(avatarName) ?? "";
+        const defaultUrl = getAvatarUrl("default-user.png") ?? "";
 
         const img = new Image();
         img.src = url;
         img.onload = () => {
-          setFileList([{ uid: "-1", name: dataUpdate.avatar, status: "done", url, thumbUrl: url }]);
+          setFileList([{ uid: "-1", name: avatarName, status: "done", url, thumbUrl: url }]);
         };
         img.onerror = () => {
           setFileList([
             {
               uid: "-1",
-              name: dataUpdate.avatar,
+              name: avatarName,
               status: "done",
               url: defaultUrl,
               thumbUrl: defaultUrl,

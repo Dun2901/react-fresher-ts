@@ -116,9 +116,9 @@ const Chatbot: React.FC = () => {
       }));
 
       const res = await sendChatMessageAPI(userMsg, history);
-
-      if (res?.data?.response) {
-        setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
+      const responseText = res?.data?.response;
+      if (responseText) {
+        setMessages((prev) => [...prev, { sender: 'bot', text: responseText }]);
       } else {
         setMessages((prev) => [
           ...prev,

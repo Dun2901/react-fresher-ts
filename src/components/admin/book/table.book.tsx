@@ -3,7 +3,7 @@ import { dateRangeValidate } from '@/services/helper';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { App, Button, Popconfirm, Space } from 'antd';
+import { App, Button, Popconfirm } from 'antd';
 import { useRef, useState } from 'react';
 import { AiOutlineEdit } from 'react-icons/ai';
 import { MdDeleteOutline } from 'react-icons/md';
@@ -62,7 +62,7 @@ const TableBook = () => {
       title: '_id',
       dataIndex: '_id',
       hideInSearch: true,
-      render(dom, entity, index, action, schema) {
+      render(_, entity) {
         return <Link to={`/admin/book/${entity._id}`}>{entity._id}</Link>;
       },
     },
@@ -113,7 +113,7 @@ const TableBook = () => {
       title: 'Action',
       hideInSearch: true,
       width: 80,
-      render(dom, entity) {
+      render(_, entity) {
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <AiOutlineEdit
